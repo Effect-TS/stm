@@ -265,7 +265,9 @@ Added in v1.0.0
 **Signature**
 
 ```ts
-export declare const effect: typeof internal.effect
+export declare const effect: <R, A>(
+  f: (journal: Journal, fiberId: FiberId.FiberId, context: Context.Context<R>) => A
+) => STM<R, never, A>
 ```
 
 Added in v1.0.0

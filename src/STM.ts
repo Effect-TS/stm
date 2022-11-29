@@ -98,7 +98,9 @@ export type Journal = Map<TRef.TRef<unknown>, Entry.Entry>
 /**
  * @since 1.0.0
  */
-export const effect = internal.effect
+export const effect: <R, A>(
+  f: (journal: Journal, fiberId: FiberId.FiberId, context: Context.Context<R>) => A
+) => STM<R, never, A> = internal.effect
 
 /**
  * @since 1.0.0
