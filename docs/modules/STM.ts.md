@@ -364,7 +364,7 @@ Added in v1.0.0
 **Signature**
 
 ```ts
-export declare const isRetryException: (u: unknown) => u is internal.STMRetryException
+export declare const isRetryException: (u: unknown) => u is STMRetryException
 ```
 
 Added in v1.0.0

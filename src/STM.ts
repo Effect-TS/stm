@@ -226,7 +226,7 @@ export interface STMRetryException {
 /**
  * @since 1.0.0
  */
-export const isRetryException: (u: unknown) => u is internal.STMRetryException = internal.isRetryException
+export const isRetryException: (u: unknown) => u is STMRetryException = internal.isRetryException
 
 /**
  * @since 1.0.0
