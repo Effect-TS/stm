@@ -1,6 +1,8 @@
 import type * as FiberId from "@effect/io/Fiber/Id"
 import type * as internal from "@effect/io/internal/stm"
+import type * as ref from "@effect/io/internal/stm/ref"
 import type * as local from "@effect/stm/STM"
+import type * as TRef from "@effect/stm/TRef"
 
 /** @internal */
 declare module "@effect/stm/STM" {
@@ -29,4 +31,15 @@ declare module "@effect/io/internal/stm" {
     readonly error: E
   }
   interface STM<R, E, A> extends local.STM.Variance<R, E, A> {}
+}
+
+/** @internal */
+declare module "@effect/io/internal/stm/ref" {
+  interface Ref<A> extends TRef.TRef.Variance<A> {}
+  interface RefImpl<A> extends TRef.TRef.Variance<A> {}
+}
+
+/** @internal */
+declare module "@effect/stm/TRef" {
+  interface TRef<A> extends ref.Ref<A> {}
 }
