@@ -65,8 +65,7 @@ export const getAndSet: <A>(value: A) => (self: TRef<A>) => STM<never, never, A>
 /**
  * @since 1.0.0
  */
-export const getAndUpdate: <A>(f: (a: A) => A) => (self: internal.Ref<A>) => STM<never, never, A> =
-  internal.getAndUpdate
+export const getAndUpdate: <A>(f: (a: A) => A) => (self: TRef<A>) => STM<never, never, A> = internal.getAndUpdate
 
 /**
  * @since 1.0.0
