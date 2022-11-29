@@ -4,10 +4,13 @@
 
 import type * as Effect from "@effect/io/Effect"
 import type * as FiberId from "@effect/io/Fiber/Id"
+import type * as Entry from "@effect/stm/STM/Entry"
+import type * as TRef from "@effect/stm/TRef"
 import type * as Context from "@fp-ts/data/Context"
 
 /** @internal */
 import * as internal from "@effect/io/internal/stm"
+
 /** @internal */
 import type * as local from "@effect/stm/STM"
 
@@ -86,6 +89,11 @@ export const commit: <R, E, A>(self: STM<R, E, A>) => Effect.Effect<R, E, A> = i
  * @since 1.0.0
  */
 export const die: (defect: unknown) => STM<never, never, never> = internal.die
+
+/**
+ * @since 1.0.0
+ */
+export type Journal = Map<TRef.TRef<unknown>, Entry.Entry>
 
 /**
  * @since 1.0.0

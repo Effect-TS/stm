@@ -13,6 +13,7 @@ Added in v1.0.0
 <h2 class="text-delta">Table of contents</h2>
 
 - [utils](#utils)
+  - [Journal (type alias)](#journal-type-alias)
   - [STM (interface)](#stm-interface)
   - [STMDieException (interface)](#stmdieexception-interface)
   - [STMDieExceptionTypeId](#stmdieexceptiontypeid)
@@ -55,6 +56,16 @@ Added in v1.0.0
 ---
 
 # utils
+
+## Journal (type alias)
+
+**Signature**
+
+```ts
+export type Journal = Map<TRef.TRef<unknown>, Entry.Entry>
+```
+
+Added in v1.0.0
 
 ## STM (interface)
 
