@@ -2,7 +2,7 @@
  * @since 1.0.0
  */
 
-import type { Journal, STM } from "@effect/stm/STM"
+import type { STM } from "@effect/stm/STM"
 import type { Option } from "@fp-ts/data/Option"
 
 /** @internal */
@@ -74,7 +74,7 @@ export const getAndUpdateSome: <A>(f: (a: A) => Option<A>) => (self: TRef<A>) =>
 /**
  * @since 1.0.0
  */
-export const make: <A>(evaluate: () => A) => STM<never, never, TRef<A>> = internal.make
+export const make: <A>(value: A) => STM<never, never, TRef<A>> = internal.make
 
 /**
  * @since 1.0.0
@@ -98,16 +98,6 @@ export const set: <A>(value: A) => (self: TRef<A>) => STM<never, never, void> = 
  * @since 1.0.0
  */
 export const setAndGet: <A>(value: A) => (self: TRef<A>) => STM<never, never, A> = internal.setAndGet
-
-/**
- * @since 1.0.0
- */
-export const unsafeGet: (journal: Journal) => <A>(self: TRef<A>) => A = internal.unsafeGet
-
-/**
- * @since 1.0.0
- */
-export const unsafeSet: <A>(value: A, journal: Journal) => (self: TRef<A>) => void = internal.unsafeSet
 
 /**
  * @since 1.0.0
