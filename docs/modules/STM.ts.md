@@ -13,35 +13,17 @@ Added in v1.0.0
 <h2 class="text-delta">Table of contents</h2>
 
 - [utils](#utils)
-  - [Journal (type alias)](#journal-type-alias)
   - [STM (interface)](#stm-interface)
-  - [STMDieException (interface)](#stmdieexception-interface)
-  - [STMDieExceptionTypeId](#stmdieexceptiontypeid)
-  - [STMDieExceptionTypeId (type alias)](#stmdieexceptiontypeid-type-alias)
-  - [STMFailException (interface)](#stmfailexception-interface)
-  - [STMFailExceptionTypeId](#stmfailexceptiontypeid)
-  - [STMFailExceptionTypeId (type alias)](#stmfailexceptiontypeid-type-alias)
-  - [STMInterruptException (interface)](#stminterruptexception-interface)
-  - [STMInterruptExceptionTypeId](#stminterruptexceptiontypeid)
-  - [STMInterruptExceptionTypeId (type alias)](#stminterruptexceptiontypeid-type-alias)
-  - [STMRetryException (interface)](#stmretryexception-interface)
-  - [STMRetryExceptionTypeId](#stmretryexceptiontypeid)
-  - [STMRetryExceptionTypeId (type alias)](#stmretryexceptiontypeid-type-alias)
   - [STMTypeId](#stmtypeid)
   - [STMTypeId (type alias)](#stmtypeid-type-alias)
   - [catchAll](#catchall)
   - [commit](#commit)
   - [die](#die)
-  - [effect](#effect)
   - [ensuring](#ensuring)
   - [fail](#fail)
   - [flatMap](#flatmap)
   - [foldSTM](#foldstm)
   - [interrupt](#interrupt)
-  - [isDieException](#isdieexception)
-  - [isFailException](#isfailexception)
-  - [isInterruptException](#isinterruptexception)
-  - [isRetryException](#isretryexception)
   - [map](#map)
   - [orTry](#ortry)
   - [provideSomeEnvironment](#providesomeenvironment)
@@ -56,16 +38,6 @@ Added in v1.0.0
 ---
 
 # utils
-
-## Journal (type alias)
-
-**Signature**
-
-```ts
-export type Journal = Map<TRef.TRef<unknown>, Entry.Entry>
-```
-
-Added in v1.0.0
 
 ## STM (interface)
 
@@ -106,137 +78,6 @@ synchronization of Fibers and transactional data-types can be quite useful.
 
 ```ts
 export interface STM<R, E, A> extends STM.Variance<R, E, A>, Effect.Effect<R, E, A> {}
-```
-
-Added in v1.0.0
-
-## STMDieException (interface)
-
-**Signature**
-
-```ts
-export interface STMDieException {
-  readonly [STMDieExceptionTypeId]: STMDieExceptionTypeId
-  readonly defect: unknown
-}
-```
-
-Added in v1.0.0
-
-## STMDieExceptionTypeId
-
-**Signature**
-
-```ts
-export declare const STMDieExceptionTypeId: typeof STMDieExceptionTypeId
-```
-
-Added in v1.0.0
-
-## STMDieExceptionTypeId (type alias)
-
-**Signature**
-
-```ts
-export type STMDieExceptionTypeId = typeof STMDieExceptionTypeId
-```
-
-Added in v1.0.0
-
-## STMFailException (interface)
-
-**Signature**
-
-```ts
-export interface STMFailException<E> {
-  readonly [STMFailExceptionTypeId]: STMFailExceptionTypeId
-  readonly error: E
-}
-```
-
-Added in v1.0.0
-
-## STMFailExceptionTypeId
-
-**Signature**
-
-```ts
-export declare const STMFailExceptionTypeId: typeof STMFailExceptionTypeId
-```
-
-Added in v1.0.0
-
-## STMFailExceptionTypeId (type alias)
-
-**Signature**
-
-```ts
-export type STMFailExceptionTypeId = typeof STMFailExceptionTypeId
-```
-
-Added in v1.0.0
-
-## STMInterruptException (interface)
-
-**Signature**
-
-```ts
-export interface STMInterruptException {
-  readonly [STMInterruptExceptionTypeId]: STMInterruptExceptionTypeId
-  readonly fiberId: FiberId.FiberId
-}
-```
-
-Added in v1.0.0
-
-## STMInterruptExceptionTypeId
-
-**Signature**
-
-```ts
-export declare const STMInterruptExceptionTypeId: typeof STMInterruptExceptionTypeId
-```
-
-Added in v1.0.0
-
-## STMInterruptExceptionTypeId (type alias)
-
-**Signature**
-
-```ts
-export type STMInterruptExceptionTypeId = typeof STMInterruptExceptionTypeId
-```
-
-Added in v1.0.0
-
-## STMRetryException (interface)
-
-**Signature**
-
-```ts
-export interface STMRetryException {
-  readonly [STMRetryExceptionTypeId]: STMRetryExceptionTypeId
-}
-```
-
-Added in v1.0.0
-
-## STMRetryExceptionTypeId
-
-**Signature**
-
-```ts
-export declare const STMRetryExceptionTypeId: typeof STMRetryExceptionTypeId
-```
-
-Added in v1.0.0
-
-## STMRetryExceptionTypeId (type alias)
-
-**Signature**
-
-```ts
-export type STMRetryExceptionTypeId = typeof STMRetryExceptionTypeId
 ```
 
 Added in v1.0.0
@@ -289,18 +130,6 @@ Added in v1.0.0
 
 ```ts
 export declare const die: (defect: unknown) => STM<never, never, never>
-```
-
-Added in v1.0.0
-
-## effect
-
-**Signature**
-
-```ts
-export declare const effect: <R, A>(
-  f: (journal: Journal, fiberId: FiberId.FiberId, context: Context.Context<R>) => A
-) => STM<R, never, A>
 ```
 
 Added in v1.0.0
@@ -358,46 +187,6 @@ Added in v1.0.0
 
 ```ts
 export declare const interrupt: () => STM<never, never, never>
-```
-
-Added in v1.0.0
-
-## isDieException
-
-**Signature**
-
-```ts
-export declare const isDieException: (u: unknown) => u is STMDieException
-```
-
-Added in v1.0.0
-
-## isFailException
-
-**Signature**
-
-```ts
-export declare const isFailException: (u: unknown) => u is STMFailException<unknown>
-```
-
-Added in v1.0.0
-
-## isInterruptException
-
-**Signature**
-
-```ts
-export declare const isInterruptException: (u: unknown) => u is STMInterruptException
-```
-
-Added in v1.0.0
-
-## isRetryException
-
-**Signature**
-
-```ts
-export declare const isRetryException: (u: unknown) => u is STMRetryException
 ```
 
 Added in v1.0.0

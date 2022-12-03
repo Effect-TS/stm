@@ -1,6 +1,6 @@
 ---
 title: TRef.ts
-nav_order: 3
+nav_order: 2
 parent: Modules
 ---
 
@@ -25,8 +25,6 @@ Added in v1.0.0
   - [modifySome](#modifysome)
   - [set](#set)
   - [setAndGet](#setandget)
-  - [unsafeGet](#unsafeget)
-  - [unsafeSet](#unsafeset)
   - [update](#update)
   - [updateAndGet](#updateandget)
   - [updateSome](#updatesome)
@@ -124,7 +122,7 @@ Added in v1.0.0
 **Signature**
 
 ```ts
-export declare const make: <A>(evaluate: () => A) => STM<never, never, TRef<A>>
+export declare const make: <A>(value: A) => STM<never, never, TRef<A>>
 ```
 
 Added in v1.0.0
@@ -168,26 +166,6 @@ Added in v1.0.0
 
 ```ts
 export declare const setAndGet: <A>(value: A) => (self: TRef<A>) => STM<never, never, A>
-```
-
-Added in v1.0.0
-
-## unsafeGet
-
-**Signature**
-
-```ts
-export declare const unsafeGet: (journal: Journal) => <A>(self: TRef<A>) => A
-```
-
-Added in v1.0.0
-
-## unsafeSet
-
-**Signature**
-
-```ts
-export declare const unsafeSet: <A>(value: A, journal: Journal) => (self: TRef<A>) => void
 ```
 
 Added in v1.0.0

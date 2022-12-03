@@ -3,9 +3,6 @@
  */
 
 import type * as Effect from "@effect/io/Effect"
-import type * as FiberId from "@effect/io/Fiber/Id"
-import type * as Entry from "@effect/stm/STM/Entry"
-import type * as TRef from "@effect/stm/TRef"
 import type * as Context from "@fp-ts/data/Context"
 
 /** @internal */
@@ -95,18 +92,6 @@ export const die: (defect: unknown) => STM<never, never, never> = internal.die
 /**
  * @since 1.0.0
  */
-export type Journal = Map<TRef.TRef<unknown>, Entry.Entry>
-
-/**
- * @since 1.0.0
- */
-export const effect: <R, A>(
-  f: (journal: Journal, fiberId: FiberId.FiberId, context: Context.Context<R>) => A
-) => STM<R, never, A> = internal.effect
-
-/**
- * @since 1.0.0
- */
 export const ensuring: <R1, B>(
   finalizer: STM<R1, never, B>
 ) => <R, E, A>(self: STM<R, E, A>) => STM<R1 | R, E, A> = internal.ensuring
@@ -135,100 +120,6 @@ export const foldSTM: <E, R1, E1, A1, A, R2, E2, A2>(
  * @since 1.0.0
  */
 export const interrupt: () => STM<never, never, never> = internal.interrupt
-
-/**
- * @since 1.0.0
- */
-export const STMDieExceptionTypeId: unique symbol = internal.STMDieExceptionTypeId as unknown as STMDieExceptionTypeId
-
-/**
- * @since 1.0.0
- */
-export type STMDieExceptionTypeId = typeof STMDieExceptionTypeId
-
-/**
- * @since 1.0.0
- */
-export interface STMDieException {
-  readonly [STMDieExceptionTypeId]: STMDieExceptionTypeId
-  readonly defect: unknown
-}
-
-/**
- * @since 1.0.0
- */
-export const isDieException: (u: unknown) => u is STMDieException = internal.isDieException
-
-/**
- * @since 1.0.0
- */
-export const STMFailExceptionTypeId: unique symbol = internal
-  .STMFailExceptionTypeId as unknown as STMFailExceptionTypeId
-
-/**
- * @since 1.0.0
- */
-export type STMFailExceptionTypeId = typeof STMFailExceptionTypeId
-
-/**
- * @since 1.0.0
- */
-export interface STMFailException<E> {
-  readonly [STMFailExceptionTypeId]: STMFailExceptionTypeId
-  readonly error: E
-}
-
-/**
- * @since 1.0.0
- */
-export const isFailException: (u: unknown) => u is STMFailException<unknown> = internal.isFailException
-
-/**
- * @since 1.0.0
- */
-export const STMInterruptExceptionTypeId: unique symbol = internal
-  .STMInterruptExceptionTypeId as unknown as STMInterruptExceptionTypeId
-
-/**
- * @since 1.0.0
- */
-export type STMInterruptExceptionTypeId = typeof STMInterruptExceptionTypeId
-
-/**
- * @since 1.0.0
- */
-export interface STMInterruptException {
-  readonly [STMInterruptExceptionTypeId]: STMInterruptExceptionTypeId
-  readonly fiberId: FiberId.FiberId
-}
-
-/**
- * @since 1.0.0
- */
-export const isInterruptException: (u: unknown) => u is STMInterruptException = internal.isInterruptException
-
-/**
- * @since 1.0.0
- */
-export const STMRetryExceptionTypeId: unique symbol = internal
-  .STMRetryExceptionTypeId as unknown as STMRetryExceptionTypeId
-
-/**
- * @since 1.0.0
- */
-export type STMRetryExceptionTypeId = typeof STMRetryExceptionTypeId
-
-/**
- * @since 1.0.0
- */
-export interface STMRetryException {
-  readonly [STMRetryExceptionTypeId]: STMRetryExceptionTypeId
-}
-
-/**
- * @since 1.0.0
- */
-export const isRetryException: (u: unknown) => u is STMRetryException = internal.isRetryException
 
 /**
  * @since 1.0.0
