@@ -1,5 +1,11 @@
 # @effect/stm
 
+## 0.0.2
+
+### Patch Changes
+
+- [#5](https://github.com/Effect-TS/stm/pull/5) [`0bdece0`](https://github.com/Effect-TS/stm/commit/0bdece0fc80c12550e414db0ae6b574f1ab5d1bf) Thanks [@IMax153](https://github.com/IMax153)! - decouple stm from io stm
+
 ## 0.0.1
 
 ### Patch Changes
