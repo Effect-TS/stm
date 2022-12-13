@@ -1,5 +1,11 @@
 # @effect/stm
 
+## 0.0.3
+
+### Patch Changes
+
+- [#7](https://github.com/Effect-TS/stm/pull/7) [`899d45d`](https://github.com/Effect-TS/stm/commit/899d45d995aa8e8d4263828d88ec50c3416a08da) Thanks [@IMax153](https://github.com/IMax153)! - upgrade dependencies
+
 ## 0.0.2
 
 ### Patch Changes
