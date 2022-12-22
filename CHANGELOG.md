@@ -1,5 +1,11 @@
 # @effect/stm
 
+## 0.0.5
+
+### Patch Changes
+
+- [#11](https://github.com/Effect-TS/stm/pull/11) [`b837d8d`](https://github.com/Effect-TS/stm/commit/b837d8dd70f59e37fe81cae96585e479e47b7f2c) Thanks [@mikearnaldi](https://github.com/mikearnaldi)! - fix byRef equality
+
 ## 0.0.4
 
 ### Patch Changes
