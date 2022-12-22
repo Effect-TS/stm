@@ -6,6 +6,7 @@ import type * as TxnId from "@effect/stm/internal/stm/txnId"
 import * as Versioned from "@effect/stm/internal/stm/versioned"
 import type * as STM from "@effect/stm/STM"
 import type * as TRef from "@effect/stm/TRef"
+import * as Equal from "@fp-ts/data/Equal"
 import { pipe } from "@fp-ts/data/Function"
 import * as Option from "@fp-ts/data/Option"
 
@@ -30,6 +31,7 @@ export class TRefImpl<A> implements TRef.TRef<A> {
   /** @internal */
   versioned: Versioned.Versioned<A>
   constructor(value: A) {
+    Equal.considerByRef(this)
     this.versioned = new Versioned.Versioned(value)
     this.todos = new Map()
   }

@@ -7,6 +7,7 @@ import * as tRef from "@effect/stm/internal/tRef"
 import * as STM from "@effect/stm/STM"
 import type * as TRef from "@effect/stm/TRef"
 import type * as TSemaphore from "@effect/stm/TSemaphore"
+import * as Equal from "@fp-ts/data/Equal"
 import { pipe } from "@fp-ts/data/Function"
 
 /** @internal */
@@ -20,7 +21,9 @@ export const TSemaphoreTypeId: TSemaphore.TSemaphoreTypeId = Symbol.for(
 /** @internal */
 class TSemaphoreImpl implements TSemaphore.TSemaphore {
   readonly [TSemaphoreTypeId]: TSemaphore.TSemaphoreTypeId = TSemaphoreTypeId
-  constructor(readonly permits: TRef.TRef<number>) {}
+  constructor(readonly permits: TRef.TRef<number>) {
+    Equal.considerByRef(this)
+  }
 }
 
 /**
