@@ -415,6 +415,7 @@ export class STMDriver<R, E, A> {
     readonly fiberId: FiberId.FiberId,
     r0: Context.Context<R>
   ) {
+    Equal.considerByRef(this)
     this.env = r0 as Context.Context<unknown>
   }
 

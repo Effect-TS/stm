@@ -20,7 +20,7 @@ importers:
       '@effect-ts/build-utils': 0.40.3
       '@effect-ts/core': ^0.60.2
       '@effect/core': ^0.0.16
-      '@effect/io': ~0.0.41
+      '@effect/io': ~0.0.42
       '@effect/language-service': ^0.0.15
       '@fp-ts/core': ~0.0.11
       '@fp-ts/data': ~0.0.28
@@ -61,7 +61,7 @@ importers:
       vite: ^4.0.3
       vitest: 0.26.2
     dependencies:
-      '@effect/io': 0.0.41
+      '@effect/io': 0.0.42
       '@fp-ts/core': 0.0.11
       '@fp-ts/data': 0.0.28
     devDependencies:
@@ -685,8 +685,8 @@ packages:
       '@tsplus/stdlib': 0.2.8
     dev: true
 
-  /@effect/io/0.0.41:
-    resolution: {integrity: sha512-W3bsyouaBF3EUZ4WYucR5bnXd6i/rIcr0/jqx7491GyHxL3QbwHMYlu19YITAZGziHO7SEoUTsckgZlHIKz4Eg==}
+  /@effect/io/0.0.42:
+    resolution: {integrity: sha512-l6Mtm8KadL1pbV9BmyO7q0sz2oZn1mmSdLOYLtKe3A74t8h6+zEVB7XcUvTFa3U6wqtbg+sjxTT+FMM9k3o4rw==}
     dependencies:
       '@fp-ts/core': 0.0.11
       '@fp-ts/data': 0.0.28
