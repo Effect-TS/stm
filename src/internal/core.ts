@@ -21,7 +21,8 @@ import * as Chunk from "@fp-ts/data/Chunk"
 import type * as Context from "@fp-ts/data/Context"
 import * as Either from "@fp-ts/data/Either"
 import * as Equal from "@fp-ts/data/Equal"
-import { pipe } from "@fp-ts/data/Function"
+import type { LazyArg } from "@fp-ts/data/Function"
+import { constVoid, pipe } from "@fp-ts/data/Function"
 
 /** @internal */
 const STMSymbolKey = "@effect/stm/STM"
@@ -112,14 +113,14 @@ interface STMRetry extends Op<OpCodes.OP_RETRY, {}> {}
 /** @internal */
 interface STMFail extends
   Op<OpCodes.OP_FAIL, {
-    readonly error: unknown
+    readonly error: LazyArg<unknown>
   }>
 {}
 
 /** @internal */
 interface STMDie extends
   Op<OpCodes.OP_DIE, {
-    readonly defect: unknown
+    readonly defect: LazyArg<unknown>
   }>
 {}
 
@@ -158,6 +159,19 @@ const proto = Object.assign({}, {
  */
 export const commit = <R, E, A>(self: STM.STM<R, E, A>): Effect.Effect<R, E, A> => {
   const trace = getCallTrace()
+  return unsafeAtomically(self, constVoid, constVoid).traced(trace)
+}
+
+/**
+ * @macro traced
+ * @internal
+ */
+export const unsafeAtomically = <R, E, A>(
+  self: STM.STM<R, E, A>,
+  onDone: (exit: Exit.Exit<E, A>) => unknown,
+  onInterrupt: LazyArg<unknown>
+): Effect.Effect<R, E, A> => {
+  const trace = getCallTrace()
   return effectCore.withFiberRuntime<R, E, A>((state) => {
     const fiberId = state.id()
     const env = state.getFiberRef(effectCore.currentEnvironment) as Context.Context<R>
@@ -165,52 +179,31 @@ export const commit = <R, E, A>(self: STM.STM<R, E, A>): Effect.Effect<R, E, A> 
     const commitResult = tryCommitSync(fiberId, self, env, scheduler)
     switch (commitResult.op) {
       case TryCommitOpCodes.OP_DONE: {
+        onDone(commitResult.exit)
         return effectCore.done(commitResult.exit)
       }
       case TryCommitOpCodes.OP_SUSPEND: {
         const txnId = TxnId.make()
         const state: { value: STMState.STMState<E, A> } = { value: STMState.running }
-        const io = effectCore.async(
-          (k: (effect: Effect.Effect<R, E, A>) => unknown): void => {
-            if (STMState.isRunning(state.value)) {
-              if (Journal.isInvalid(commitResult.journal)) {
-                const result = tryCommit(fiberId, self, state, env, scheduler)
-                switch (result.op) {
-                  case TryCommitOpCodes.OP_DONE: {
-                    completeTryCommit(result.exit, k)
-                    break
-                  }
-                  case TryCommitOpCodes.OP_SUSPEND: {
-                    Journal.addTodo(
-                      txnId,
-                      result.journal,
-                      () => tryCommitAsync(fiberId, self, txnId, state, env, scheduler, k)
-                    )
-                    break
-                  }
-                }
-              } else {
-                Journal.addTodo(
-                  txnId,
-                  commitResult.journal,
-                  () => tryCommitAsync(fiberId, self, txnId, state, env, scheduler, k)
-                )
-              }
-            }
-          }
+        const effect = effectCore.async(
+          (k: (effect: Effect.Effect<R, E, A>) => unknown): void =>
+            tryCommitAsync(fiberId, self, txnId, state, env, scheduler, k)
         )
         return effectCore.uninterruptibleMask((restore) =>
           pipe(
-            restore(io),
+            restore(effect),
             effectCore.catchAllCause((cause) => {
               let currentState = state.value
               if (Equal.equals(currentState, STMState.running)) {
                 state.value = STMState.interrupted
               }
               currentState = state.value
-              return STMState.isDone(currentState)
-                ? effectCore.done(currentState.exit)
-                : effectCore.failCause(cause)
+              if (STMState.isDone(currentState)) {
+                onDone(currentState.exit)
+                return effectCore.done(currentState.exit)
+              }
+              onInterrupt()
+              return effectCore.failCause(cause)
             })
           )
         )
@@ -428,6 +421,10 @@ export class STMDriver<R, E, A> {
     }
   }
 
+  getEnv(): Context.Context<R> {
+    return this.env
+  }
+
   pushStack(cont: Continuation) {
     this.contStack.push(cont)
     if ("trace" in cont) {
@@ -512,7 +509,7 @@ export class STMDriver<R, E, A> {
               this.stackToLines(),
               this.execution?.toChunkReversed() || Chunk.empty()
             )
-            exit = TExit.die(current.defect, annotation)
+            exit = TExit.die(current.defect(), annotation)
             break
           }
           case OpCodes.OP_FAIL: {
@@ -523,10 +520,10 @@ export class STMDriver<R, E, A> {
             )
             const cont = this.nextFailure()
             if (!cont) {
-              exit = TExit.fail(current.error, annotation)
+              exit = TExit.fail(current.error(), annotation)
             } else {
               this.logTrace(cont.trace)
-              curr = cont.failK(current.error) as Primitive
+              curr = cont.failK(current.error()) as Primitive
             }
             break
           }
@@ -552,7 +549,7 @@ export class STMDriver<R, E, A> {
           }
           case OpCodes.OP_WITH_STM_RUNTIME: {
             this.logTrace(current.trace)
-            curr = current.evaluate(this) as Primitive
+            curr = current.evaluate(this as STMDriver<unknown, unknown, unknown>) as Primitive
             break
           }
           case OpCodes.OP_ON_SUCCESS:
@@ -627,11 +624,44 @@ export const catchAll = <E, R1, E1, B>(f: (e: E) => STM.STM<R1, E1, B>) => {
  */
 export const die = (defect: unknown): STM.STM<never, never, never> => {
   const trace = getCallTrace()
+  return dieSync(() => defect).traced(trace)
+}
+
+/**
+ * @macro traced
+ * @internal
+ */
+export const dieMessage = (message: string): STM.STM<never, never, never> => {
+  const trace = getCallTrace()
+  return dieSync(() => Cause.RuntimeException(message)).traced(trace)
+}
+
+/**
+ * @macro traced
+ * @internal
+ */
+export const dieSync = (evaluate: LazyArg<unknown>): STM.STM<never, never, never> => {
+  const trace = getCallTrace()
   const stm = Object.create(proto)
   stm.opSTM = OpCodes.OP_DIE
-  stm.defect = defect
+  stm.defect = evaluate
   stm.trace = trace
   return stm
+}
+
+/**
+ * @macro traced
+ * @internal
+ */
+export const effect = <R, A>(
+  f: (
+    journal: Journal.Journal,
+    fiberId: FiberId.FiberId,
+    environment: Context.Context<R>
+  ) => A
+): STM.STM<R, never, A> => {
+  const trace = getCallTrace()
+  return withSTMRuntime((_) => succeed(f(_.journal, _.fiberId, _.getEnv()))).traced(trace)
 }
 
 /**
@@ -656,9 +686,18 @@ export const ensuring = <R1, B>(finalizer: STM.STM<R1, never, B>) => {
  */
 export const fail = <E>(error: E): STM.STM<never, E, never> => {
   const trace = getCallTrace()
+  return failSync(() => error).traced(trace)
+}
+
+/**
+ * @macro traced
+ * @internal
+ */
+export const failSync = <E>(evaluate: LazyArg<E>): STM.STM<never, E, never> => {
+  const trace = getCallTrace()
   const stm = Object.create(proto)
   stm.opSTM = OpCodes.OP_FAIL
-  stm.error = error
+  stm.error = evaluate
   stm.trace = trace
   return stm
 }
@@ -720,6 +759,19 @@ export const interrupt = (): STM.STM<never, never, never> => {
     stm.fiberId = _.fiberId
     return stm
   })
+}
+
+/**
+ * @macro traced
+ * @internal
+ */
+export const interruptWith = (fiberId: FiberId.FiberId): STM.STM<never, never, never> => {
+  const trace = getCallTrace()
+  const stm = Object.create(proto)
+  stm.opSTM = OpCodes.OP_INTERRUPT
+  stm.trace = trace
+  stm.fiberId = fiberId
+  return stm
 }
 
 /**

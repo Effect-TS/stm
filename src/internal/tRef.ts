@@ -36,11 +36,11 @@ export class TRefImpl<A> implements TRef.TRef<A> {
     this.todos = new Map()
   }
   modify<B>(f: (a: A) => readonly [B, A]): STM.STM<never, never, B> {
-    return core.withSTMRuntime((_) => {
-      const entry = getOrMakeEntry(this, _.journal)
+    return core.effect<never, B>((journal) => {
+      const entry = getOrMakeEntry(this, journal)
       const [retValue, newValue] = f(Entry.unsafeGet(entry) as A)
       Entry.unsafeSet(entry, newValue)
-      return core.succeed(retValue)
+      return retValue
     })
   }
 }
@@ -51,10 +51,10 @@ export class TRefImpl<A> implements TRef.TRef<A> {
  */
 export const make = <A>(value: A): STM.STM<never, never, TRef.TRef<A>> => {
   const trace = getCallTrace()
-  return core.withSTMRuntime((_) => {
+  return core.effect<never, TRef.TRef<A>>((journal) => {
     const ref = new TRefImpl(value)
-    _.journal.set(ref, Entry.make(ref, true))
-    return core.succeed(ref)
+    journal.set(ref, Entry.make(ref, true))
+    return ref
   }).traced(trace)
 }
 
