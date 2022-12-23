@@ -56,6 +56,20 @@ export const analyzeJournal = (journal: Journal): JournalAnalysis => {
 }
 
 /** @internal */
+export const prepareResetJournal = (journal: Journal): () => unknown => {
+  const saved: Journal = new Map<TRef.TRef<unknown>, Entry.Entry>()
+  for (const entry of journal) {
+    saved.set(entry[0], Entry.copy(entry[1]))
+  }
+  return () => {
+    journal.clear()
+    for (const entry of saved) {
+      journal.set(entry[0], entry[1])
+    }
+  }
+}
+
+/** @internal */
 export const collectTodos = (journal: Journal): Map<TxnId.TxnId, Todo> => {
   const allTodos: Map<TxnId.TxnId, Todo> = new Map()
   for (const [, entry] of journal) {
