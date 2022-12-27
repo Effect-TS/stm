@@ -1,6 +1,6 @@
 import { getCallTrace } from "@effect/io/Debug"
 import * as core from "@effect/stm/internal/core"
-import * as OpCodes from "@effect/stm/internal/opCodes/tQueue"
+import * as OpCodes from "@effect/stm/internal/opCodes/strategy"
 import * as stm from "@effect/stm/internal/stm"
 import * as tRef from "@effect/stm/internal/tRef"
 import * as STM from "@effect/stm/STM"
@@ -29,14 +29,14 @@ export const TDequeueTypeId: TQueue.TDequeueTypeId = Symbol.for(TDequeueSymbolKe
  *
  * @internal
  */
-type TQueueStrategy = BackPressure | Dropping | Sliding
+export type TQueueStrategy = BackPressure | Dropping | Sliding
 
 /**
  * A strategy that retries if the queue is at capacity.
  *
  * @internal
  */
-interface BackPressure {
+export interface BackPressure {
   readonly op: OpCodes.OP_BACKPRESSURE_STRATEGY
 }
 
@@ -45,7 +45,7 @@ interface BackPressure {
  *
  * @internal
  */
-interface Dropping {
+export interface Dropping {
   readonly op: OpCodes.OP_DROPPING_STRATEGY
 }
 
@@ -54,32 +54,32 @@ interface Dropping {
  *
  * @internal
  */
-interface Sliding {
+export interface Sliding {
   readonly op: OpCodes.OP_SLIDING_STRATEGY
 }
 
 /** @internal */
-const BackPressure: TQueueStrategy = {
+export const BackPressure: TQueueStrategy = {
   op: OpCodes.OP_BACKPRESSURE_STRATEGY
 }
 
 /** @internal */
-const Dropping: TQueueStrategy = {
+export const Dropping: TQueueStrategy = {
   op: OpCodes.OP_DROPPING_STRATEGY
 }
 
 /** @internal */
-const Sliding: TQueueStrategy = {
+export const Sliding: TQueueStrategy = {
   op: OpCodes.OP_SLIDING_STRATEGY
 }
 
 /** @internal */
-const tDequeueVariance = {
+export const tDequeueVariance = {
   _Out: (_: never) => _
 }
 
 /** @internal */
-const tEnqueueVariance = {
+export const tEnqueueVariance = {
   _In: (_: unknown) => _
 }
 
@@ -293,7 +293,7 @@ export const isTDequeue = (u: unknown): u is TQueue.TDequeue<unknown> => {
  * @macro traced
  * @internal
  */
-export const awaitShutdown = <A>(self: TQueue.TQueue<A>): STM.STM<never, never, void> => {
+export const awaitShutdown = <A>(self: TQueue.TDequeue<A> | TQueue.TEnqueue<A>): STM.STM<never, never, void> => {
   const trace = getCallTrace()
   return self.awaitShutdown().traced(trace)
 }
@@ -308,7 +308,7 @@ export const bounded = <A>(requestedCapacity: number): STM.STM<never, never, TQu
 }
 
 /** @internal */
-export const capacity = <A>(self: TQueue.TQueue<A>): number => {
+export const capacity = <A>(self: TQueue.TDequeue<A> | TQueue.TEnqueue<A>): number => {
   return self.capacity()
 }
 
@@ -325,7 +325,7 @@ export const dropping = <A>(requestedCapacity: number): STM.STM<never, never, TQ
  * @macro traced
  * @internal
  */
-export const isEmpty = <A>(self: TQueue.TQueue<A>): STM.STM<never, never, boolean> => {
+export const isEmpty = <A>(self: TQueue.TDequeue<A> | TQueue.TEnqueue<A>): STM.STM<never, never, boolean> => {
   const trace = getCallTrace()
   return self.isEmpty().traced(trace)
 }
@@ -334,7 +334,7 @@ export const isEmpty = <A>(self: TQueue.TQueue<A>): STM.STM<never, never, boolea
  * @macro traced
  * @internal
  */
-export const isFull = <A>(self: TQueue.TQueue<A>): STM.STM<never, never, boolean> => {
+export const isFull = <A>(self: TQueue.TDequeue<A> | TQueue.TEnqueue<A>): STM.STM<never, never, boolean> => {
   const trace = getCallTrace()
   return self.isFull().traced(trace)
 }
@@ -343,7 +343,7 @@ export const isFull = <A>(self: TQueue.TQueue<A>): STM.STM<never, never, boolean
  * @macro traced
  * @internal
  */
-export const isShutdown = <A>(self: TQueue.TQueue<A>): STM.STM<never, never, boolean> => {
+export const isShutdown = <A>(self: TQueue.TDequeue<A> | TQueue.TEnqueue<A>): STM.STM<never, never, boolean> => {
   const trace = getCallTrace()
   return self.isShutdown().traced(trace)
 }
@@ -354,7 +354,7 @@ export const isShutdown = <A>(self: TQueue.TQueue<A>): STM.STM<never, never, boo
  */
 export const offer = <A>(value: A) => {
   const trace = getCallTrace()
-  return (self: TQueue.TQueue<A>): STM.STM<never, never, void> => self.offer(value).traced(trace)
+  return (self: TQueue.TEnqueue<A>): STM.STM<never, never, void> => self.offer(value).traced(trace)
 }
 
 /**
@@ -363,14 +363,14 @@ export const offer = <A>(value: A) => {
  */
 export const offerAll = <A>(iterable: Iterable<A>) => {
   const trace = getCallTrace()
-  return (self: TQueue.TQueue<A>): STM.STM<never, never, boolean> => self.offerAll(iterable).traced(trace)
+  return (self: TQueue.TEnqueue<A>): STM.STM<never, never, boolean> => self.offerAll(iterable).traced(trace)
 }
 
 /**
  * @macro traced
  * @internal
  */
-export const peek = <A>(self: TQueue.TQueue<A>): STM.STM<never, never, A> => {
+export const peek = <A>(self: TQueue.TDequeue<A>): STM.STM<never, never, A> => {
   const trace = getCallTrace()
   return self.peek().traced(trace)
 }
@@ -379,7 +379,7 @@ export const peek = <A>(self: TQueue.TQueue<A>): STM.STM<never, never, A> => {
  * @macro traced
  * @internal
  */
-export const peekOption = <A>(self: TQueue.TQueue<A>): STM.STM<never, never, Option.Option<A>> => {
+export const peekOption = <A>(self: TQueue.TDequeue<A>): STM.STM<never, never, Option.Option<A>> => {
   const trace = getCallTrace()
   return self.peekOption().traced(trace)
 }
@@ -388,7 +388,7 @@ export const peekOption = <A>(self: TQueue.TQueue<A>): STM.STM<never, never, Opt
  * @macro traced
  * @internal
  */
-export const poll = <A>(self: TQueue.TQueue<A>): STM.STM<never, never, Option.Option<A>> => {
+export const poll = <A>(self: TQueue.TDequeue<A>): STM.STM<never, never, Option.Option<A>> => {
   const trace = getCallTrace()
   return pipe(self.takeUpTo(1), core.map(Chunk.head)).traced(trace)
 }
@@ -399,7 +399,7 @@ export const poll = <A>(self: TQueue.TQueue<A>): STM.STM<never, never, Option.Op
  */
 export const seek = <A>(predicate: Predicate<A>) => {
   const trace = getCallTrace()
-  return (self: TQueue.TQueue<A>): STM.STM<never, never, A> =>
+  return (self: TQueue.TDequeue<A>): STM.STM<never, never, A> =>
     pipe(
       self.take(),
       core.flatMap((a) => predicate(a) ? core.succeed(a) : pipe(self, seek(predicate)))
@@ -410,7 +410,7 @@ export const seek = <A>(predicate: Predicate<A>) => {
  * @macro traced
  * @internal
  */
-export const shutdown = <A>(self: TQueue.TQueue<A>): STM.STM<never, never, void> => {
+export const shutdown = <A>(self: TQueue.TDequeue<A> | TQueue.TEnqueue<A>): STM.STM<never, never, void> => {
   const trace = getCallTrace()
   return self.shutdown().traced(trace)
 }
@@ -419,7 +419,7 @@ export const shutdown = <A>(self: TQueue.TQueue<A>): STM.STM<never, never, void>
  * @macro traced
  * @internal
  */
-export const size = <A>(self: TQueue.TQueue<A>): STM.STM<never, never, number> => {
+export const size = <A>(self: TQueue.TDequeue<A> | TQueue.TEnqueue<A>): STM.STM<never, never, number> => {
   const trace = getCallTrace()
   return self.size().traced(trace)
 }
@@ -437,7 +437,7 @@ export const sliding = <A>(requestedCapacity: number): STM.STM<never, never, TQu
  * @macro traced
  * @internal
  */
-export const take = <A>(self: TQueue.TQueue<A>): STM.STM<never, never, A> => {
+export const take = <A>(self: TQueue.TDequeue<A>): STM.STM<never, never, A> => {
   const trace = getCallTrace()
   return self.take().traced(trace)
 }
@@ -446,7 +446,7 @@ export const take = <A>(self: TQueue.TQueue<A>): STM.STM<never, never, A> => {
  * @macro traced
  * @internal
  */
-export const takeAll = <A>(self: TQueue.TQueue<A>): STM.STM<never, never, Chunk.Chunk<A>> => {
+export const takeAll = <A>(self: TQueue.TDequeue<A>): STM.STM<never, never, Chunk.Chunk<A>> => {
   const trace = getCallTrace()
   return self.takeAll().traced(trace)
 }
@@ -457,7 +457,7 @@ export const takeAll = <A>(self: TQueue.TQueue<A>): STM.STM<never, never, Chunk.
  */
 export const takeBetween = (min: number, max: number) => {
   const trace = getCallTrace()
-  return <A>(self: TQueue.TQueue<A>): STM.STM<never, never, Chunk.Chunk<A>> =>
+  return <A>(self: TQueue.TDequeue<A>): STM.STM<never, never, Chunk.Chunk<A>> =>
     stm.suspend(() => {
       /** @macro traced */
       const takeRemainder = (min: number, max: number, acc: Chunk.Chunk<A>): STM.STM<never, never, Chunk.Chunk<A>> => {
@@ -501,7 +501,7 @@ export const takeBetween = (min: number, max: number) => {
  */
 export const takeN = (n: number) => {
   const trace = getCallTrace()
-  return <A>(self: TQueue.TQueue<A>): STM.STM<never, never, Chunk.Chunk<A>> =>
+  return <A>(self: TQueue.TDequeue<A>): STM.STM<never, never, Chunk.Chunk<A>> =>
     pipe(self, takeBetween(n, n)).traced(trace)
 }
 
@@ -510,7 +510,7 @@ export const takeN = (n: number) => {
  * @internal
  */
 export const takeUpTo = (max: number) => {
-  return <A>(self: TQueue.TQueue<A>): STM.STM<never, never, Chunk.Chunk<A>> => {
+  return <A>(self: TQueue.TDequeue<A>): STM.STM<never, never, Chunk.Chunk<A>> => {
     const trace = getCallTrace()
     return self.takeUpTo(max).traced(trace)
   }
@@ -522,7 +522,7 @@ export const takeUpTo = (max: number) => {
  */
 export const unbounded = <A>(): STM.STM<never, never, TQueue.TQueue<A>> => {
   const trace = getCallTrace()
-  return makeQueue<A>(Number.POSITIVE_INFINITY, Dropping).traced(trace)
+  return makeQueue<A>(Number.MAX_SAFE_INTEGER, Dropping).traced(trace)
 }
 
 /**

@@ -4,8 +4,10 @@
 import type * as Cause from "@effect/io/Cause"
 import type * as Effect from "@effect/io/Effect"
 import type * as FiberId from "@effect/io/Fiber/Id"
+import type { EnforceNonEmptyRecord } from "@effect/io/src/internal/types"
 import * as core from "@effect/stm/internal/core"
 import * as stm from "@effect/stm/internal/stm"
+import type { NonEmptyArraySTM, TupleSTM } from "@effect/stm/internal/types"
 import type * as Chunk from "@fp-ts/data/Chunk"
 import type * as Context from "@fp-ts/data/Context"
 import type * as Either from "@fp-ts/data/Either"
@@ -1267,6 +1269,22 @@ export const someOrFail: <E2>(error: LazyArg<E2>) => <R, E, A>(self: STM<R, E, O
 export const someOrFailException: <R, E, A>(
   self: STM<R, E, Option.Option<A>>
 ) => STM<R, E | Cause.NoSuchElementException, A> = stm.someOrFailException
+
+/**
+ * @macro traced
+ * @since 1.0.0
+ * @category constructors
+ */
+export const struct: <NER extends Record<string, STM<any, any, any>>>(
+  r: EnforceNonEmptyRecord<NER> | Record<string, STM<any, any, any>>
+) => STM<
+  [NER[keyof NER]] extends [{ [STMTypeId]: { _R: (_: never) => infer R } }] ? R : never,
+  [NER[keyof NER]] extends [{ [STMTypeId]: { _E: (_: never) => infer E } }] ? E : never,
+  {
+    [K in keyof NER]: [NER[K]] extends [{ [STMTypeId]: { _A: (_: never) => infer A } }] ? A : never
+  }
+> = stm.struct
+
 /**
  * Returns an `STM` effect that succeeds with the specified value.
  *
@@ -1387,6 +1405,21 @@ export const tapError: <E, R2, E2, _>(
  * @category constructors
  */
 export const tryCatch: <E, A>(attempt: () => A, onThrow: (u: unknown) => E) => Effect.Effect<never, E, A> = stm.tryCatch
+
+/**
+ * Like `forEach` + `identity` with a tuple type.
+ *
+ * @macro traced
+ * @since 1.0.0
+ * @category constructors
+ */
+export const tuple: <T extends NonEmptyArraySTM>(
+  ...t: T
+) => STM<
+  [T[number]] extends [{ [STMTypeId]: { _R: (_: never) => infer R } }] ? R : never,
+  [T[number]] extends [{ [STMTypeId]: { _E: (_: never) => infer E } }] ? E : never,
+  TupleSTM<T>
+> = stm.tuple
 
 /**
  * Converts a `STM<R, Either<E, A>, A2>` into a `STM<R, E, Either<A2, A>>`.

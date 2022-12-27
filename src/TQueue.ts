@@ -303,7 +303,7 @@ export const isShutdown: <A>(self: TQueue<A>) => STM.STM<never, never, boolean> 
  * @since 1.0.0
  * @category mutations
  */
-export const offer: <A>(value: A) => (self: TQueue<A>) => STM.STM<never, never, void> = internal.offer
+export const offer: <A>(value: A) => (self: TEnqueue<A>) => STM.STM<never, never, void> = internal.offer
 
 /**
  * For Bounded TQueue: uses the `BackPressure` Strategy, places the values in
@@ -324,7 +324,7 @@ export const offer: <A>(value: A) => (self: TQueue<A>) => STM.STM<never, never, 
  * @since 1.0.0
  * @category mutations
  */
-export const offerAll: <A>(iterable: Iterable<A>) => (self: TQueue<A>) => STM.STM<never, never, boolean> =
+export const offerAll: <A>(iterable: Iterable<A>) => (self: TEnqueue<A>) => STM.STM<never, never, boolean> =
   internal.offerAll
 
 /**
@@ -335,7 +335,7 @@ export const offerAll: <A>(iterable: Iterable<A>) => (self: TQueue<A>) => STM.ST
  * @since 1.0.0
  * @category getters
  */
-export const peek: <A>(self: TQueue<A>) => STM.STM<never, never, A> = internal.peek
+export const peek: <A>(self: TDequeue<A>) => STM.STM<never, never, A> = internal.peek
 
 /**
  * Views the next element in the queue without removing it, returning `None`
@@ -345,7 +345,7 @@ export const peek: <A>(self: TQueue<A>) => STM.STM<never, never, A> = internal.p
  * @since 1.0.0
  * @category getters
  */
-export const peekOption: <A>(self: TQueue<A>) => STM.STM<never, never, Option.Option<A>> = internal.peekOption
+export const peekOption: <A>(self: TDequeue<A>) => STM.STM<never, never, Option.Option<A>> = internal.peekOption
 
 /**
  * Takes a single element from the queue, returning `None` if the queue is
@@ -355,7 +355,7 @@ export const peekOption: <A>(self: TQueue<A>) => STM.STM<never, never, Option.Op
  * @since 1.0.0
  * @category getters
  */
-export const poll: <A>(self: TQueue<A>) => STM.STM<never, never, Option.Option<A>> = internal.poll
+export const poll: <A>(self: TDequeue<A>) => STM.STM<never, never, Option.Option<A>> = internal.poll
 
 /**
  * Drops elements from the queue while they do not satisfy the predicate,
@@ -366,7 +366,7 @@ export const poll: <A>(self: TQueue<A>) => STM.STM<never, never, Option.Option<A
  * @since 1.0.0
  * @category mutations
  */
-export const seek: <A>(predicate: Predicate<A>) => (self: TQueue<A>) => STM.STM<never, never, A> = internal.seek
+export const seek: <A>(predicate: Predicate<A>) => (self: TDequeue<A>) => STM.STM<never, never, A> = internal.seek
 
 /**
  * Interrupts any fibers that are suspended on `offer` or `take`. Future calls
@@ -409,7 +409,7 @@ export const sliding: <A>(requestedCapacity: number) => STM.STM<never, never, TQ
  * @since 1.0.0
  * @category mutations
  */
-export const take: <A>(self: TQueue<A>) => STM.STM<never, never, A> = internal.take
+export const take: <A>(self: TDequeue<A>) => STM.STM<never, never, A> = internal.take
 
 /**
  * Takes all the values in the queue and returns the values. If the queue is
@@ -419,7 +419,7 @@ export const take: <A>(self: TQueue<A>) => STM.STM<never, never, A> = internal.t
  * @since 1.0.0
  * @category mutations
  */
-export const takeAll: <A>(self: TQueue<A>) => STM.STM<never, never, Chunk.Chunk<A>> = internal.takeAll
+export const takeAll: <A>(self: TDequeue<A>) => STM.STM<never, never, Chunk.Chunk<A>> = internal.takeAll
 
 /**
  * Takes a number of elements from the queue between the specified minimum and
@@ -430,8 +430,10 @@ export const takeAll: <A>(self: TQueue<A>) => STM.STM<never, never, Chunk.Chunk<
  * @since 1.0.0
  * @category mutations
  */
-export const takeBetween: (min: number, max: number) => <A>(self: TQueue<A>) => STM.STM<never, never, Chunk.Chunk<A>> =
-  internal.takeBetween
+export const takeBetween: (
+  min: number,
+  max: number
+) => <A>(self: TDequeue<A>) => STM.STM<never, never, Chunk.Chunk<A>> = internal.takeBetween
 
 /**
  * Takes the specified number of elements from the queue. If there are fewer
@@ -442,7 +444,7 @@ export const takeBetween: (min: number, max: number) => <A>(self: TQueue<A>) => 
  * @since 1.0.0
  * @category mutations
  */
-export const takeN: (n: number) => <A>(self: TQueue<A>) => STM.STM<never, never, Chunk.Chunk<A>> = internal.takeN
+export const takeN: (n: number) => <A>(self: TDequeue<A>) => STM.STM<never, never, Chunk.Chunk<A>> = internal.takeN
 
 /**
  * Takes up to max number of values from the queue.
@@ -451,7 +453,7 @@ export const takeN: (n: number) => <A>(self: TQueue<A>) => STM.STM<never, never,
  * @since 1.0.0
  * @category mutations
  */
-export const takeUpTo: (max: number) => <A>(self: TQueue<A>) => STM.STM<never, never, Chunk.Chunk<A>> =
+export const takeUpTo: (max: number) => <A>(self: TDequeue<A>) => STM.STM<never, never, Chunk.Chunk<A>> =
   internal.takeUpTo
 
 /**

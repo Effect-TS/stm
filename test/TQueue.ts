@@ -21,7 +21,7 @@ describe.concurrent("TQueue", () => {
         STM.map(TQueue.capacity),
         STM.commit
       ))
-      assert.strictEqual(result, Number.POSITIVE_INFINITY)
+      assert.strictEqual(result, Number.MAX_SAFE_INTEGER)
     }))
 
   it.effect("offer & take", () =>
