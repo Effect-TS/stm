@@ -4,9 +4,11 @@ import * as Effect from "@effect/io/Effect"
 import * as Exit from "@effect/io/Exit"
 import type * as FiberId from "@effect/io/Fiber/Id"
 import * as effectCore from "@effect/io/internal/core"
+import type { EnforceNonEmptyRecord } from "@effect/io/src/internal/types"
 import * as core from "@effect/stm/internal/core"
 import * as Journal from "@effect/stm/internal/stm/journal"
 import * as STMState from "@effect/stm/internal/stm/stmState"
+import type { NonEmptyArraySTM, TupleSTM } from "@effect/stm/internal/types"
 import type * as STM from "@effect/stm/STM"
 import * as Chunk from "@fp-ts/data/Chunk"
 import * as Context from "@fp-ts/data/Context"
@@ -1173,6 +1175,33 @@ export const someOrFailException = <R, E, A>(
  * @macro traced
  * @internal
  */
+export const struct = <NER extends Record<string, STM.STM<any, any, any>>>(
+  r: EnforceNonEmptyRecord<NER> | Record<string, STM.STM<any, any, any>>
+): STM.STM<
+  [NER[keyof NER]] extends [{ [core.STMTypeId]: { _R: (_: never) => infer R } }] ? R : never,
+  [NER[keyof NER]] extends [{ [core.STMTypeId]: { _E: (_: never) => infer E } }] ? E : never,
+  {
+    [K in keyof NER]: [NER[K]] extends [{ [core.STMTypeId]: { _A: (_: never) => infer A } }] ? A : never
+  }
+> => {
+  const trace = getCallTrace()
+  return pipe(
+    Object.entries(r),
+    forEach(([_, e]) => pipe(e, core.map((a) => [_, a] as const))),
+    core.map((values) => {
+      const res = {}
+      for (const [k, v] of values) {
+        res[k] = v
+      }
+      return res
+    })
+  ).traced(trace) as any
+}
+
+/**
+ * @macro traced
+ * @internal
+ */
 export const succeedLeft = <A>(value: A): STM.STM<never, never, Either.Either<A, never>> => {
   const trace = getCallTrace()
   return core.succeed(Either.left(value)).traced(trace)
@@ -1292,6 +1321,21 @@ export const tryCatch = <E, A>(
       return core.fail(onThrow(error))
     }
   }).traced(trace)
+}
+
+/**
+ * @macro traced
+ * @internal
+ */
+export const tuple = <T extends NonEmptyArraySTM>(
+  ...t: T
+): STM.STM<
+  [T[number]] extends [{ [core.STMTypeId]: { _R: (_: never) => infer R } }] ? R : never,
+  [T[number]] extends [{ [core.STMTypeId]: { _E: (_: never) => infer E } }] ? E : never,
+  TupleSTM<T>
+> => {
+  const trace = getCallTrace()
+  return pipe(collectAll(t), core.map(Chunk.toReadonlyArray)).traced(trace) as any
 }
 
 /**
