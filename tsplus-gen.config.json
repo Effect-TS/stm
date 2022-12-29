@@ -1,0 +1,66 @@
+{
+  "project": {
+    "packageName": "@effect/stm",
+    "tsconfig": "tsconfig.build.json",
+    "rootDir": "src",
+    "exclude": ["**/internal/**"],
+    "moduleConfig": {
+      "@effect/stm": {
+        "staticPrefixes": ["from", "unsafeFrom", "make", "unsafeMake"],
+        "fluentNamespaces": ["effect/stm", "effect/io"]
+      }
+    }
+  },
+  "namespaces": [
+    {
+      "name": "effect/stm",
+      "type": {
+        "include": true,
+        "includeCompanion": true,
+        "companionSuffix": ".Ops"
+      },
+      "static": {
+        "include": true,
+        "staticSuffix": ".Ops"
+      },
+      "fluent": {
+        "include": true,
+        "includeStatic": true,
+        "staticSuffix": ".Aspects"
+      },
+      "pipeable": {
+        "include": true,
+        "includeStatic": true,
+        "staticSuffix": ".Aspects"
+      },
+      "getter": {
+        "include": true,
+        "includeStatic": true,
+        "staticSuffix": ".Aspects"
+      }
+    },
+    {
+      "name": "effect/io",
+      "static": {
+        "include": true,
+        "staticSuffix": ".Ops"
+      },
+      "getter": {
+        "include": true,
+        "includeStatic": true,
+        "staticSuffix": ".Ops"
+      },
+      "pipeable": {
+        "include": true,
+        "includeStatic": true,
+        "staticSuffix": ".Ops"
+      },
+      "fluent": {
+        "include": true,
+        "includeStatic": true,
+        "staticSuffix": ".Ops"
+      }
+    }
+  ],
+  "additionalExtensions": []
+}
