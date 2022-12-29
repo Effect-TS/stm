@@ -1,5 +1,21 @@
 # @effect/stm
 
+## 0.0.7
+
+### Patch Changes
+
+- [#20](https://github.com/Effect-TS/stm/pull/20) [`745a352`](https://github.com/Effect-TS/stm/commit/745a352c1a864317e490e8938fb6a4f47aaf58d6) Thanks [@IMax153](https://github.com/IMax153)! - add TPriorityQueue
+
+- [#18](https://github.com/Effect-TS/stm/pull/18) [`87fedf0`](https://github.com/Effect-TS/stm/commit/87fedf068df101a4ba5a1015ee5eb6ebde8bbb05) Thanks [@IMax153](https://github.com/IMax153)! - add THub
+
+- [#22](https://github.com/Effect-TS/stm/pull/22) [`093bffe`](https://github.com/Effect-TS/stm/commit/093bffeb9cf42c206196eb916f22c17d135f0209) Thanks [@mikearnaldi](https://github.com/mikearnaldi)! - Update effect/io
+
+- [#17](https://github.com/Effect-TS/stm/pull/17) [`0f252e4`](https://github.com/Effect-TS/stm/commit/0f252e457d819034b68f284f5ba6f4cb11851f2c) Thanks [@IMax153](https://github.com/IMax153)! - add TArray
+
+- [#15](https://github.com/Effect-TS/stm/pull/15) [`4ee11cc`](https://github.com/Effect-TS/stm/commit/4ee11ccacfd14f8d93ea9238fe31317eb3644f7e) Thanks [@IMax153](https://github.com/IMax153)! - add TQueue
+
+- [#19](https://github.com/Effect-TS/stm/pull/19) [`c97e5b5`](https://github.com/Effect-TS/stm/commit/c97e5b5f9a24b5e1cda278956887904ffc4db83a) Thanks [@IMax153](https://github.com/IMax153)! - add TDeferred
+
 ## 0.0.6
 
 ### Patch Changes
