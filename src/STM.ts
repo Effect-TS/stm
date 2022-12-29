@@ -91,6 +91,18 @@ export declare namespace STM {
 }
 
 /**
+ * @category models
+ * @since 1.0.0
+ */
+export interface STMGen<R, E, A> {
+  readonly _R: () => R
+  readonly _E: () => E
+  readonly _A: () => A
+  readonly value: STM<R, E, A>
+  [Symbol.iterator](): Generator<STMGen<R, E, A>, A>
+}
+
+/**
  * Returns an effect that submerges the error case of an `Either` into the
  * `STM`. The inverse operation of `STM.either`.
  *
@@ -629,6 +641,19 @@ export const fromEither: <E, A>(either: Either.Either<E, A>) => STM<never, E, A>
  * @category constructors
  */
 export const fromOption: <A>(option: Option.Option<A>) => STM<never, Option.Option<never>, A> = stm.fromOption
+
+/**
+ * @macro traced
+ * @since 1.0.0
+ * @category constructors
+ */
+export const gen: <Eff extends STMGen<any, any, any>, AEff>(
+  f: (resume: <R, E, A>(self: STM<R, E, A>) => STMGen<R, E, A>) => Generator<Eff, AEff, any>
+) => STM<
+  [Eff] extends [never] ? never : [Eff] extends [STMGen<infer R, any, any>] ? R : never,
+  [Eff] extends [never] ? never : [Eff] extends [STMGen<any, infer E, any>] ? E : never,
+  AEff
+> = stm.gen
 
 /**
  * Returns a successful effect with the head of the list if the list is

@@ -4,6 +4,7 @@ import * as Effect from "@effect/io/Effect"
 import * as Exit from "@effect/io/Exit"
 import type * as FiberId from "@effect/io/Fiber/Id"
 import * as effectCore from "@effect/io/internal/core"
+import * as SingleShotGen from "@effect/io/internal/singleShotGen"
 import type { EnforceNonEmptyRecord } from "@effect/io/src/internal/types"
 import * as core from "@effect/stm/internal/core"
 import * as Journal from "@effect/stm/internal/stm/journal"
@@ -13,6 +14,7 @@ import type * as STM from "@effect/stm/STM"
 import * as Chunk from "@fp-ts/data/Chunk"
 import * as Context from "@fp-ts/data/Context"
 import * as Either from "@fp-ts/data/Either"
+import * as Equal from "@fp-ts/data/Equal"
 import type { LazyArg } from "@fp-ts/data/Function"
 import { constFalse, constTrue, identity, pipe } from "@fp-ts/data/Function"
 import * as Option from "@fp-ts/data/Option"
@@ -571,6 +573,40 @@ export const fromOption = <A>(option: Option.Option<A>): STM.STM<never, Option.O
 }
 
 /**
+ * @internal
+ */
+class STMGen {
+  constructor(readonly value: STM.STM<any, any, any>) {
+    Equal.considerByRef(this)
+  }
+  [Symbol.iterator]() {
+    return new SingleShotGen.SingleShotGen(this)
+  }
+}
+
+/**
+ * Inspired by https://github.com/tusharmath/qio/pull/22 (revised)
+ * @internal
+ */
+export const gen: typeof STM.gen = (f) => {
+  const trace = getCallTrace()
+  return suspend(() => {
+    const iterator = f((self) => new STMGen(self) as any)
+    const state = iterator.next()
+    const run = (
+      state: IteratorYieldResult<any> | IteratorReturnResult<any>
+    ): STM.STM<any, any, any> =>
+      (state.done ?
+        core.succeed(state.value) :
+        pipe(
+          state.value.value as unknown as STM.STM<any, any, any>,
+          core.flatMap((val: any) => run(iterator.next(val)))
+        )).traced(trace)
+    return run(state)
+  }).traced(trace)
+}
+
+/**
  * @macro traced
  * @internal
  */
@@ -829,6 +865,10 @@ export const orElse = <R2, E2, A2>(that: LazyArg<STM.STM<R2, E2, A2>>) => {
       )
     ).traced(trace)
 }
+// def orElse[R1 <: R, E1, A1 >: A](that: => ZSTM[R1, E1, A1]): ZSTM[R1, E1, A1] =
+//   Effect[Any, Nothing, () => Any]((journal, _, _) => prepareResetJournal(journal)).flatMap { reset =>
+//     self.orTry(ZSTM.succeed(reset()) *> that).catchAll(_ => ZSTM.succeed(reset()) *> that)
+//   }
 
 /**
  * @macro traced
