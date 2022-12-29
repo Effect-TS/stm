@@ -34,17 +34,18 @@ class UnpureBarrier {
     this.#isOpen = true
   }
   await(): Effect.Effect<never, never, unknown> {
-    return pipe(
-      Effect.suspend(() =>
-        Effect.attempt(() => {
-          if (this.#isOpen) {
-            return void 0
-          }
-          throw new Error()
-        })
-      ),
-      Effect.eventually
-    )
+    return Effect.async((cb) => {
+      const check = () => {
+        if (this.#isOpen) {
+          cb(Effect.unit())
+        } else {
+          setTimeout(() => {
+            check()
+          }, 100)
+        }
+      }
+      setTimeout(check, 100)
+    })
   }
 }
 
@@ -124,6 +125,19 @@ const compute3TRefN = (
     ),
     STM.commit,
     Effect.repeatN(n)
+  )
+
+const permutation = (ref1: TRef.TRef<number>, ref2: TRef.TRef<number>): STM.STM<never, never, void> =>
+  pipe(
+    STM.tuple(TRef.get(ref1), TRef.get(ref2)),
+    STM.flatMap(([a, b]) =>
+      pipe(
+        ref1,
+        TRef.set(b),
+        STM.tap(() => pipe(ref2, TRef.set(a))),
+        STM.asUnit
+      )
+    )
   )
 
 describe.concurrent("STM", () => {
@@ -1445,8 +1459,7 @@ describe.concurrent("STM", () => {
       assert.deepStrictEqual(Exit.unannotate(result), Exit.fail(10_000))
     }))
 
-  // TODO(Mike/Max): returns 1, should return 10_000
-  it.effect.skip("stack-safety - long orElse chains", () =>
+  it.effect("stack-safety - long orElse chains", () =>
     Effect.gen(function*($) {
       const transaction = pipe(
         TRef.make(0),
@@ -1547,8 +1560,7 @@ describe.concurrent("STM", () => {
       assert.strictEqual(value, 9)
     }))
 
-  // TODO(Mike/Max): never terminates
-  it.effect.skip("condition locks - resume after satisfying the condition", () => {
+  it.effect("condition locks - resume after satisfying the condition", () => {
     const barrier = new UnpureBarrier()
     return Effect.gen(function*($) {
       const done = yield* $(Deferred.make<never, void>())
@@ -1563,9 +1575,7 @@ describe.concurrent("STM", () => {
       )
       const fiber = yield* $(pipe(
         STM.commit(transaction),
-        Effect.zipLeft(Effect.log("HERE")),
         Effect.zipLeft(pipe(done, Deferred.succeed<void>(void 0))),
-        Effect.zipLeft(Effect.log("HERE!")),
         Effect.fork
       ))
       yield* $(barrier.await())
@@ -1579,8 +1589,7 @@ describe.concurrent("STM", () => {
     })
   })
 
-  // TODO(Mike/Max): error thrown in runtime
-  it.effect.skip("condition locks - resume directly when the condition is already satisfied", () =>
+  it.effect("condition locks - resume directly when the condition is already satisfied", () =>
     Effect.gen(function*($) {
       const sender = yield* $(TRef.make(100))
       const receiver = yield* $(TRef.make(0))
@@ -1593,145 +1602,171 @@ describe.concurrent("STM", () => {
       assert.strictEqual(receiverValue, 150)
     }))
 
-  //   suite("transfer an amount to a sender and send it back the account should contains the amount to transfer")(
-  //     test("run both transactions sequentially in 10 fibers.") {
-  //       for {
-  //         sender    <- TRef.makeCommit(100)
-  //         receiver  <- TRef.makeCommit(0)
-  //         toReceiver = transfer(receiver, sender, 150)
-  //         toSender   = transfer(sender, receiver, 150)
-  //         f         <- ZIO.forkAll(List.fill(10)(toReceiver *> toSender))
-  //         _         <- sender.update(_ + 50).commit
-  //         _         <- f.join
-  //         senderV   <- sender.get.commit
-  //         receiverV <- receiver.get.commit
-  //       } yield assert(senderV)(equalTo(150)) && assert(receiverV)(equalTo(0))
-  //     },
-  //     test("run 10 transactions `toReceiver` and 10 `toSender` concurrently.") {
-  //       for {
-  //         sender    <- TRef.makeCommit(50)
-  //         receiver  <- TRef.makeCommit(0)
-  //         toReceiver = transfer(receiver, sender, 100)
-  //         toSender   = transfer(sender, receiver, 100)
-  //         f1        <- ZIO.forkAll(List.fill(10)(toReceiver))
-  //         f2        <- ZIO.forkAll(List.fill(10)(toSender))
-  //         _         <- sender.update(_ + 50).commit
-  //         _         <- f1.join
-  //         _         <- f2.join
-  //         senderV   <- sender.get.commit
-  //         receiverV <- receiver.get.commit
-  //       } yield assert(senderV)(equalTo(100)) && assert(receiverV)(equalTo(0))
-  //     },
-  //     test("run transactions `toReceiver` 10 times and `toSender` 10 times each in 100 fibers concurrently.") {
-  //       for {
-  //         sender      <- TRef.makeCommit(50)
-  //         receiver    <- TRef.makeCommit(0)
-  //         toReceiver10 = transfer(receiver, sender, 100).repeatN(9)
-  //         toSender10   = transfer(sender, receiver, 100).repeatN(9)
-  //         f           <- toReceiver10.zipPar(toSender10).fork
-  //         _           <- sender.update(_ + 50).commit
-  //         _           <- f.join
-  //         senderV     <- sender.get.commit
-  //         receiverV   <- receiver.get.commit
-  //       } yield assert(senderV)(equalTo(100)) && assert(receiverV)(equalTo(0))
-  //     }
-  //   ),
-  //   test(
-  //     "Perform atomically a single transaction that has a tvar for 20 fibers, each one checks the value and increment it."
-  //   ) {
-  //     for {
-  //       tvar <- TRef.makeCommit(0)
-  //       fiber <- ZIO.forkAll(
-  //                  (0 to 20).map(i =>
-  //                    (for {
-  //                      v <- tvar.get
-  //                      _ <- STM.check(v == i)
-  //                      _ <- tvar.update(_ + 1)
-  //                    } yield ()).commit
-  //                  )
-  //                )
-  //       _ <- fiber.join
-  //       v <- tvar.get.commit
-  //     } yield assert(v)(equalTo(21))
-  //   },
-  //   suite("Perform atomically a transaction with a condition that couldn't be satisfied, it should be suspended")(
-  //     test("interrupt the fiber should terminate the transaction") {
-  //       val barrier = new UnpureBarrier
-  //       for {
-  //         tvar <- TRef.makeCommit(0)
-  //         fiber <- (for {
-  //                    v <- tvar.get
-  //                    _ <- STM.succeed(barrier.open())
-  //                    _ <- STM.check(v > 0)
-  //                    _ <- tvar.update(10 / _)
-  //                  } yield ()).commit.fork
-  //         _ <- barrier.await
-  //         _ <- fiber.interrupt
-  //         _ <- tvar.set(10).commit
-  //         v <- liveClockSleep(10.millis) *> tvar.get.commit
-  //       } yield assert(v)(equalTo(10))
-  //     } @@ zioTag(interruption),
-  //     test(
-  //       "interrupt the fiber that has executed the transaction in 100 different fibers, should terminate all transactions"
-  //     ) {
-  //       val barrier = new UnpureBarrier
-  //       for {
-  //         tvar <- TRef.makeCommit(0)
-  //         fiber <- ZIO.forkAll(List.fill(100)((for {
-  //                    v <- tvar.get
-  //                    _ <- STM.succeed(barrier.open())
-  //                    _ <- STM.check(v < 0)
-  //                    _ <- tvar.set(10)
-  //                  } yield ()).commit))
-  //         _ <- barrier.await
-  //         _ <- fiber.interrupt
-  //         _ <- tvar.set(-1).commit
-  //         v <- liveClockSleep(10.millis) *> tvar.get.commit
-  //       } yield assert(v)(equalTo(-1))
-  //     } @@ nonFlaky,
-  //     test("interrupt the fiber and observe it, it should be resumed with Interrupted Cause") {
-  //       for {
-  //         selfId  <- ZIO.fiberId
-  //         v       <- TRef.makeCommit(1)
-  //         f       <- v.get.flatMap(v => STM.check(v == 0)).commit.fork
-  //         _       <- f.interrupt
-  //         observe <- f.join.sandbox.either
-  //       } yield assert(observe)(isLeft(containsCause(Cause.interrupt(selfId))))
-  //     } @@ zioTag(interruption)
-  //   ),
-  //   test("Using `collect` filter and map simultaneously the value produced by the transaction") {
-  //     assertZIO(STM.succeed((1 to 20).toList).collect { case l if l.forall(_ > 0) => "Positive" }.commit)(
-  //       equalTo("Positive")
-  //     )
-  //   },
-  //   test("Using `collectSTM` filter and map simultaneously the value produced by the transaction") {
-  //     assertZIO(
-  //       STM
-  //         .succeed((1 to 20).toList)
-  //         .collectSTM[Any, Nothing, String] { case l if l.forall(_ > 0) => STM.succeed("Positive") }
-  //         .commit
-  //     )(equalTo("Positive"))
-  //   }
-  // ),
-  // test("Permute 2 variables") {
-  //   for {
-  //     tvar1 <- TRef.makeCommit(1)
-  //     tvar2 <- TRef.makeCommit(2)
-  //     _     <- permutation(tvar1, tvar2).commit
-  //     v1    <- tvar1.get.commit
-  //     v2    <- tvar2.get.commit
-  //   } yield assert(v1)(equalTo(2)) && assert(v2)(equalTo(1))
-  // },
-  // test("Permute 2 variables in 100 fibers, the 2 variables should contains the same values") {
-  //   for {
-  //     tvar1 <- TRef.makeCommit(1)
-  //     tvar2 <- TRef.makeCommit(2)
-  //     oldV1 <- tvar1.get.commit
-  //     oldV2 <- tvar2.get.commit
-  //     f     <- ZIO.forkAll(List.fill(100)(permutation(tvar1, tvar2).commit))
-  //     _     <- f.join
-  //     v1    <- tvar1.get.commit
-  //     v2    <- tvar2.get.commit
-  //   } yield assert(v1)(equalTo(oldV1)) && assert(v2)(equalTo(oldV2))
-  // },
+  it.effect("condition locks - run both transactions sequentially", () =>
+    Effect.gen(function*($) {
+      const sender = yield* $(TRef.make(100))
+      const receiver = yield* $(TRef.make(0))
+      const toReceiver = transfer(receiver, sender, 150)
+      const toSender = transfer(sender, receiver, 150)
+      const fiber = yield* $(pipe(
+        Array.from({ length: 10 }, () => pipe(toReceiver, Effect.zipRight(toSender))),
+        Effect.forkAll
+      ))
+      yield* $(pipe(sender, TRef.update((n) => n + 50)))
+      yield* $(Fiber.join(fiber))
+      const senderValue = yield* $(TRef.get(sender))
+      const receiverValue = yield* $(TRef.get(receiver))
+      assert.strictEqual(senderValue, 150)
+      assert.strictEqual(receiverValue, 0)
+    }))
+
+  it.effect("condition locks - run both transactions concurrently #1", () =>
+    Effect.gen(function*($) {
+      const sender = yield* $(TRef.make(50))
+      const receiver = yield* $(TRef.make(0))
+      const toReceiver = transfer(receiver, sender, 100)
+      const toSender = transfer(sender, receiver, 100)
+      const fiber1 = yield* $(pipe(
+        Array.from({ length: 10 }, () => toReceiver),
+        Effect.forkAll
+      ))
+      const fiber2 = yield* $(pipe(
+        Array.from({ length: 10 }, () => toSender),
+        Effect.forkAll
+      ))
+      yield* $(pipe(sender, TRef.update((n) => n + 50)))
+      yield* $(Fiber.join(fiber1))
+      yield* $(Fiber.join(fiber2))
+      const senderValue = yield* $(TRef.get(sender))
+      const receiverValue = yield* $(TRef.get(receiver))
+      assert.strictEqual(senderValue, 100)
+      assert.strictEqual(receiverValue, 0)
+    }))
+
+  it.effect("condition locks - run both transactions concurrently #2", () =>
+    Effect.gen(function*($) {
+      const sender = yield* $(TRef.make(50))
+      const receiver = yield* $(TRef.make(0))
+      const toReceiver = pipe(transfer(receiver, sender, 100), Effect.repeatN(9))
+      const toSender = pipe(transfer(sender, receiver, 100), Effect.repeatN(9))
+      const fiber = yield* $(pipe(toReceiver, Effect.zipPar(toSender), Effect.fork))
+      yield* $(pipe(sender, TRef.update((n) => n + 50)))
+      yield* $(Fiber.join(fiber))
+      const senderValue = yield* $(TRef.get(sender))
+      const receiverValue = yield* $(TRef.get(receiver))
+      assert.strictEqual(senderValue, 100)
+      assert.strictEqual(receiverValue, 0)
+    }))
+
+  it.effect("condition locks - atomically run a transaction with a TRef for 20 fibers, each one checking and incrementing the value", () =>
+    Effect.gen(function*($) {
+      const ref = yield* $(TRef.make(1))
+      const fiber = yield* $(pipe(
+        Chunk.range(1, 20),
+        Chunk.map((i) =>
+          pipe(
+            TRef.get(ref),
+            STM.tap((n) => STM.check(() => n === i)),
+            STM.tap(() => pipe(ref, TRef.update((n) => n + 1))),
+            STM.commit
+          )
+        ),
+        Effect.forkAll
+      ))
+      yield* $(Fiber.join(fiber))
+      const result = yield* $(TRef.get(ref))
+      assert.strictEqual(result, 21)
+    }))
+
+  it.effect("condition locks - atomically run a transaction that could not be satisfied", () => {
+    const barrier = new UnpureBarrier()
+    return Effect.gen(function*($) {
+      const ref = yield* $(TRef.make(0))
+      const fiber = yield* $(pipe(
+        TRef.get(ref),
+        STM.tap(() => STM.sync(() => barrier.open())),
+        STM.tap((n) => STM.check(() => n > 0)),
+        STM.tap(() => pipe(ref, TRef.update((n) => Math.floor(10 / n)))),
+        STM.commit,
+        Effect.fork
+      ))
+      yield* $(barrier.await())
+      yield* $(Fiber.interrupt(fiber))
+      yield* $(pipe(ref, TRef.set(10)))
+      const result = yield* $(pipe(Effect.yieldNow(), Effect.zipRight(TRef.get(ref))))
+      assert.strictEqual(result, 10)
+    })
+  })
+
+  it.effect("condition locks - interrupt one fiber executing a transaction should terminate all transactions", () => {
+    const barrier = new UnpureBarrier()
+    return Effect.gen(function*($) {
+      const ref = yield* $(TRef.make(0))
+      const fiber = yield* $(pipe(
+        Array.from({ length: 100 }, () =>
+          pipe(
+            TRef.get(ref),
+            STM.tap(() => STM.sync(() => barrier.open())),
+            STM.tap((n) => STM.check(() => n < 0)),
+            STM.tap(() => pipe(ref, TRef.set(10))),
+            STM.commit
+          )),
+        Effect.forkAll
+      ))
+      yield* $(barrier.await())
+      yield* $(Fiber.interrupt(fiber))
+      yield* $(pipe(ref, TRef.set(-1)))
+      const result = yield* $(pipe(Effect.yieldNow(), Effect.zipRight(TRef.get(ref))))
+      assert.strictEqual(result, -1)
+    })
+  })
+
+  it.effect("condition locks - interrupt fiber and observe it", () =>
+    Effect.gen(function*($) {
+      const fiberId = yield* $(Effect.fiberId())
+      const ref = yield* $(TRef.make(1))
+      const fiber = yield* $(pipe(
+        TRef.get(ref),
+        STM.flatMap((n) => STM.check(() => n === 0)),
+        STM.commit,
+        Effect.fork
+      ))
+      yield* $(Fiber.interrupt(fiber))
+      const result = yield* $(pipe(Fiber.join(fiber), Effect.sandbox, Effect.either))
+      assert.isTrue(
+        Either.isLeft(result) &&
+          pipe(
+            Cause.unannotate(result.left),
+            Cause.contains(Cause.interrupt(fiberId))
+          )
+      )
+    }))
+
+  it.effect("permutations - permutes two variables", () =>
+    Effect.gen(function*($) {
+      const ref1 = yield* $(TRef.make(1))
+      const ref2 = yield* $(TRef.make(2))
+      yield* $(permutation(ref1, ref2))
+      const result1 = yield* $(TRef.get(ref1))
+      const result2 = yield* $(TRef.get(ref2))
+      assert.strictEqual(result1, 2)
+      assert.strictEqual(result2, 1)
+    }))
+
+  it.effect("permutations - permutes two variables in 100 fibers", () =>
+    Effect.gen(function*($) {
+      const ref1 = yield* $(TRef.make(1))
+      const ref2 = yield* $(TRef.make(2))
+      const oldValue1 = yield* $(TRef.get(ref1))
+      const oldValue2 = yield* $(TRef.get(ref2))
+      const fiber = yield* $(pipe(
+        Array.from({ length: 100 }, () => STM.commit(permutation(ref1, ref2))),
+        Effect.forkAll
+      ))
+      yield* $(Fiber.join(fiber))
+      const result1 = yield* $(TRef.get(ref1))
+      const result2 = yield* $(TRef.get(ref2))
+      assert.strictEqual(result1, oldValue1)
+      assert.strictEqual(result2, oldValue2)
+    }))
 })

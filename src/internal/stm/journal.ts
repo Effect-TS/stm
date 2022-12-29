@@ -56,7 +56,7 @@ export const analyzeJournal = (journal: Journal): JournalAnalysis => {
 }
 
 /** @internal */
-export const prepareResetJournal = (journal: Journal): () => unknown => {
+export const prepareResetJournal = (journal: Journal): () => void => {
   const saved: Journal = new Map<TRef.TRef<unknown>, Entry.Entry>()
   for (const entry of journal) {
     saved.set(entry[0], Entry.copy(entry[1]))

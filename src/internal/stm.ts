@@ -16,7 +16,7 @@ import * as Context from "@fp-ts/data/Context"
 import * as Either from "@fp-ts/data/Either"
 import * as Equal from "@fp-ts/data/Equal"
 import type { LazyArg } from "@fp-ts/data/Function"
-import { constFalse, constTrue, identity, pipe } from "@fp-ts/data/Function"
+import { constFalse, constTrue, constVoid, identity, pipe } from "@fp-ts/data/Function"
 import * as Option from "@fp-ts/data/Option"
 import type { Predicate } from "@fp-ts/data/Predicate"
 
@@ -111,6 +111,15 @@ export const asSome = <R, E, A>(self: STM.STM<R, E, A>): STM.STM<R, E, Option.Op
 export const asSomeError = <R, E, A>(self: STM.STM<R, E, A>): STM.STM<R, Option.Option<E>, A> => {
   const trace = getCallTrace()
   return pipe(self, mapError(Option.some)).traced(trace)
+}
+
+/**
+ * @macro traced
+ * @internal
+ */
+export const asUnit = <R, E, A>(self: STM.STM<R, E, A>): STM.STM<R, E, void> => {
+  const trace = getCallTrace()
+  return pipe(self, core.map(constVoid)).traced(trace)
 }
 
 /**
@@ -855,7 +864,7 @@ export const orElse = <R2, E2, A2>(that: LazyArg<STM.STM<R2, E2, A2>>) => {
   const trace = getCallTrace()
   return <R, E, A>(self: STM.STM<R, E, A>): STM.STM<R | R2, E2, A | A2> =>
     pipe(
-      core.effect<R, LazyArg<unknown>>((journal) => Journal.prepareResetJournal(journal)),
+      core.effect<R, LazyArg<void>>((journal) => Journal.prepareResetJournal(journal)),
       core.flatMap((reset) =>
         pipe(
           self,
@@ -865,10 +874,6 @@ export const orElse = <R2, E2, A2>(that: LazyArg<STM.STM<R2, E2, A2>>) => {
       )
     ).traced(trace)
 }
-// def orElse[R1 <: R, E1, A1 >: A](that: => ZSTM[R1, E1, A1]): ZSTM[R1, E1, A1] =
-//   Effect[Any, Nothing, () => Any]((journal, _, _) => prepareResetJournal(journal)).flatMap { reset =>
-//     self.orTry(ZSTM.succeed(reset()) *> that).catchAll(_ => ZSTM.succeed(reset()) *> that)
-//   }
 
 /**
  * @macro traced

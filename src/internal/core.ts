@@ -225,7 +225,6 @@ const tryCommit = <R, E, A>(
   const analysis = Journal.analyzeJournal(journal)
 
   if (analysis === Journal.JournalAnalysisReadWrite) {
-    state.value = STMState.fromTExit(tExit)
     Journal.commitJournal(journal)
   } else if (analysis === Journal.JournalAnalysisInvalid) {
     throw new Error("BUG: STM.TryCommit.tryCommit - please report an issue at https://github.com/Effect-TS/io/issues")
@@ -233,9 +232,11 @@ const tryCommit = <R, E, A>(
 
   switch (tExit.op) {
     case TExitOpCodes.OP_SUCCEED: {
+      state.value = STMState.fromTExit(tExit)
       return completeTodos(Exit.succeed(tExit.value), journal, scheduler)
     }
     case TExitOpCodes.OP_FAIL: {
+      state.value = STMState.fromTExit(tExit)
       const cause = Cause.fail(tExit.error)
       return completeTodos(
         Exit.failCause(
@@ -248,6 +249,7 @@ const tryCommit = <R, E, A>(
       )
     }
     case TExitOpCodes.OP_DIE: {
+      state.value = STMState.fromTExit(tExit)
       const cause = Cause.die(tExit.defect)
       return completeTodos(
         Exit.failCause(
@@ -260,6 +262,7 @@ const tryCommit = <R, E, A>(
       )
     }
     case TExitOpCodes.OP_INTERRUPT: {
+      state.value = STMState.fromTExit(tExit)
       const cause = Cause.interrupt(fiberId)
       return completeTodos(
         Exit.failCause(
