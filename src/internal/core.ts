@@ -194,7 +194,7 @@ export const unsafeAtomically = <R, E, A>(
             restore(effect),
             effectCore.catchAllCause((cause) => {
               let currentState = state.value
-              if (Equal.equals(currentState, STMState.running)) {
+              if (STMState.isRunning(currentState)) {
                 state.value = STMState.interrupted
               }
               currentState = state.value
@@ -474,7 +474,7 @@ export class STMDriver<R, E, A> {
 
   nextSuccess() {
     let current = this.popStack()
-    while (current && current.opSTM !== OpCodes.OP_ON_SUCCESS) {
+    while (current !== undefined && current.opSTM !== OpCodes.OP_ON_SUCCESS) {
       current = this.popStack()
     }
     return current
@@ -482,7 +482,7 @@ export class STMDriver<R, E, A> {
 
   nextFailure() {
     let current = this.popStack()
-    while (current && current.opSTM !== OpCodes.OP_ON_FAILURE) {
+    while (current !== undefined && current.opSTM !== OpCodes.OP_ON_FAILURE) {
       current = this.popStack()
     }
     return current
@@ -490,7 +490,7 @@ export class STMDriver<R, E, A> {
 
   nextRetry() {
     let current = this.popStack()
-    while (current && current.opSTM !== OpCodes.OP_ON_RETRY) {
+    while (current !== undefined && current.opSTM !== OpCodes.OP_ON_RETRY) {
       current = this.popStack()
     }
     return current
@@ -519,7 +519,7 @@ export class STMDriver<R, E, A> {
               this.execution?.toChunkReversed() || Chunk.empty()
             )
             const cont = this.nextFailure()
-            if (!cont) {
+            if (cont === undefined) {
               exit = TExit.fail(current.error(), annotation)
             } else {
               this.logTrace(cont.trace)
@@ -530,7 +530,7 @@ export class STMDriver<R, E, A> {
           case OpCodes.OP_RETRY: {
             this.logTrace(curr.trace)
             const cont = this.nextRetry()
-            if (!cont) {
+            if (cont === undefined) {
               exit = TExit.retry
             } else {
               this.logTrace(cont.trace)
@@ -573,7 +573,7 @@ export class STMDriver<R, E, A> {
             this.logTrace(current.trace)
             const value = current.value
             const cont = this.nextSuccess()
-            if (!cont) {
+            if (cont === undefined) {
               exit = TExit.succeed(value)
             } else {
               this.logTrace(cont.trace)
@@ -585,7 +585,7 @@ export class STMDriver<R, E, A> {
             this.logTrace(current.trace)
             const value = current.evaluate()
             const cont = this.nextSuccess()
-            if (!cont) {
+            if (cont === undefined) {
               exit = TExit.succeed(value)
             } else {
               this.logTrace(cont.trace)
