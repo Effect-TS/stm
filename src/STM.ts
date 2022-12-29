@@ -140,6 +140,17 @@ export const asSome: <R, E, A>(self: STM<R, E, A>) => STM<R, E, Option.Option<A>
 export const asSomeError: <R, E, A>(self: STM<R, E, A>) => STM<R, Option.Option<E>, A> = stm.asSomeError
 
 /**
+ * This function maps the success value of an `STM` to `void`. If the original
+ * `STM` succeeds, the returned `STM` will also succeed. If the original `STM`
+ * fails, the returned `STM` will fail with the same error.
+ *
+ * @macro traced
+ * @since 1.0.0
+ * @category mapping
+ */
+export const asUnit: <R, E, A>(self: STM<R, E, A>) => STM<R, E, void> = stm.asUnit
+
+/**
  * Treats the specified `acquire` transaction as the acquisition of a
  * resource. The `acquire` transaction will be executed interruptibly. If it
  * is a success and is committed the specified `release` workflow will be

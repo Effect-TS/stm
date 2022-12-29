@@ -39,8 +39,8 @@ export const copy = (self: Entry): Entry => ({
   ref: self.ref,
   isNew: self.isNew,
   isChanged: self.isChanged,
-  expected: self.ref.versioned,
-  newValue: self.ref.versioned.value
+  expected: self.expected,
+  newValue: self.newValue
 })
 
 /** @internal */
