@@ -51,12 +51,12 @@ export const acquireUseRelease = <R, E, A, R2, E2, A2, R3, E3, A3>(
           }
         )
       ),
-      Effect.foldCauseEffect(
+      Effect.matchCauseEffect(
         (cause) => {
           if (STMState.isDone(state) && Exit.isSuccess(state.exit)) {
             return pipe(
               release(state.exit.value),
-              Effect.foldCauseEffect(
+              Effect.matchCauseEffect(
                 (cause2) => Effect.failCause(Cause.parallel(cause, cause2)),
                 () => Effect.failCause(cause)
               )
@@ -67,11 +67,11 @@ export const acquireUseRelease = <R, E, A, R2, E2, A2, R3, E3, A3>(
         (a) =>
           pipe(
             restore(use(a)),
-            Effect.foldCauseEffect(
+            Effect.matchCauseEffect(
               (cause) =>
                 pipe(
                   release(a),
-                  Effect.foldCauseEffect(
+                  Effect.matchCauseEffect(
                     (cause2) => Effect.failCause(Cause.parallel(cause, cause2)),
                     () => Effect.failCause(cause)
                   )
