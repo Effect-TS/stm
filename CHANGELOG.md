@@ -1,5 +1,11 @@
 # @effect/stm
 
+## 0.0.8
+
+### Patch Changes
+
+- [#23](https://github.com/Effect-TS/stm/pull/23) [`c4bfb63`](https://github.com/Effect-TS/stm/commit/c4bfb630ce90b32d9b81b7e013531d36c7a911c1) Thanks [@IMax153](https://github.com/IMax153)! - fix several STM bugs
+
 ## 0.0.7
 
 ### Patch Changes
