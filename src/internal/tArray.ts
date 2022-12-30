@@ -24,7 +24,7 @@ const tArrayVariance = {
 }
 
 /** @internal */
-class TArrayImpl<A> implements TArray.TArray<A> {
+export class TArrayImpl<A> implements TArray.TArray<A> {
   readonly [TArrayTypeId] = tArrayVariance
   constructor(readonly chunk: Chunk.Chunk<TRef.TRef<A>>) {}
 }
