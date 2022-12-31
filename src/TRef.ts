@@ -38,6 +38,12 @@ export interface TRef<A> extends TRef.Variance<A> {
    * Note: the method is unbound, exposed only for potential extensions.
    */
   modify<B>(f: (a: A) => readonly [B, A]): STM.STM<never, never, B>
+}
+/**
+ * @internal
+ * @since 1.0.0
+ */
+export interface TRef<A> {
   /** @internal */
   todos: Map<TxnId.TxnId, Journal.Todo>
   /** @internal */

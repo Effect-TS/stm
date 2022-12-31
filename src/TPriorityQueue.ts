@@ -32,7 +32,12 @@ export type TPriorityQueueTypeId = typeof TPriorityQueueTypeId
  * @since 1.0.0
  * @category models
  */
-export interface TPriorityQueue<A> extends TPriorityQueue.Variance<A> {
+export interface TPriorityQueue<A> extends TPriorityQueue.Variance<A> {}
+/**
+ * @internal
+ * @since 1.0.0
+ */
+export interface TPriorityQueue<A> {
   /** @internal */
   readonly ref: TRef.TRef<SortedMap.SortedMap<A, [A, ...Array<A>]>>
 }

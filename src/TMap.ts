@@ -29,7 +29,12 @@ export type TMapTypeId = typeof TMapTypeId
  * @since 1.0.0
  * @category models
  */
-export interface TMap<K, V> extends TMap.Variance<K, V> {
+export interface TMap<K, V> extends TMap.Variance<K, V> {}
+/**
+ * @internal
+ * @since 1.0.0
+ */
+export interface TMap<K, V> {
   /** @internal */
   readonly tBuckets: TRef.TRef<TArray.TArray<Chunk.Chunk<readonly [K, V]>>>
   /** @internal */
