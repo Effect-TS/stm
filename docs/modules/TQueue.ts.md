@@ -1,6 +1,6 @@
 ---
 title: TQueue.ts
-nav_order: 2
+nav_order: 7
 parent: Modules
 ---
 
@@ -173,7 +173,7 @@ queue is empty.
 **Signature**
 
 ```ts
-export declare const peek: <A>(self: TQueue<A>) => STM.STM<never, never, A>
+export declare const peek: <A>(self: TDequeue<A>) => STM.STM<never, never, A>
 ```
 
 Added in v1.0.0
@@ -186,7 +186,7 @@ if the queue is empty.
 **Signature**
 
 ```ts
-export declare const peekOption: <A>(self: TQueue<A>) => STM.STM<never, never, Option.Option<A>>
+export declare const peekOption: <A>(self: TDequeue<A>) => STM.STM<never, never, Option.Option<A>>
 ```
 
 Added in v1.0.0
@@ -199,7 +199,7 @@ empty.
 **Signature**
 
 ```ts
-export declare const poll: <A>(self: TQueue<A>) => STM.STM<never, never, Option.Option<A>>
+export declare const poll: <A>(self: TDequeue<A>) => STM.STM<never, never, Option.Option<A>>
 ```
 
 Added in v1.0.0
@@ -403,7 +403,7 @@ Places one value in the queue.
 **Signature**
 
 ```ts
-export declare const offer: <A>(value: A) => (self: TQueue<A>) => STM.STM<never, never, void>
+export declare const offer: <A>(value: A) => (self: TEnqueue<A>) => STM.STM<never, never, void>
 ```
 
 Added in v1.0.0
@@ -427,7 +427,7 @@ queue but if there is no room it will not enqueue them and return false.
 **Signature**
 
 ```ts
-export declare const offerAll: <A>(iterable: Iterable<A>) => (self: TQueue<A>) => STM.STM<never, never, boolean>
+export declare const offerAll: <A>(iterable: Iterable<A>) => (self: TEnqueue<A>) => STM.STM<never, never, boolean>
 ```
 
 Added in v1.0.0
@@ -441,7 +441,7 @@ Retries if no elements satisfy the predicate.
 **Signature**
 
 ```ts
-export declare const seek: <A>(predicate: Predicate<A>) => (self: TQueue<A>) => STM.STM<never, never, A>
+export declare const seek: <A>(predicate: Predicate<A>) => (self: TDequeue<A>) => STM.STM<never, never, A>
 ```
 
 Added in v1.0.0
@@ -467,7 +467,7 @@ a computation that resumes when an item has been added to the queue.
 **Signature**
 
 ```ts
-export declare const take: <A>(self: TQueue<A>) => STM.STM<never, never, A>
+export declare const take: <A>(self: TDequeue<A>) => STM.STM<never, never, A>
 ```
 
 Added in v1.0.0
@@ -480,7 +480,7 @@ empty returns an empty collection.
 **Signature**
 
 ```ts
-export declare const takeAll: <A>(self: TQueue<A>) => STM.STM<never, never, Chunk.Chunk<A>>
+export declare const takeAll: <A>(self: TDequeue<A>) => STM.STM<never, never, Chunk.Chunk<A>>
 ```
 
 Added in v1.0.0
@@ -497,7 +497,7 @@ retries until at least the minimum number of elements have been collected.
 export declare const takeBetween: (
   min: number,
   max: number
-) => <A>(self: TQueue<A>) => STM.STM<never, never, Chunk.Chunk<A>>
+) => <A>(self: TDequeue<A>) => STM.STM<never, never, Chunk.Chunk<A>>
 ```
 
 Added in v1.0.0
@@ -511,7 +511,7 @@ become available.
 **Signature**
 
 ```ts
-export declare const takeN: (n: number) => <A>(self: TQueue<A>) => STM.STM<never, never, Chunk.Chunk<A>>
+export declare const takeN: (n: number) => <A>(self: TDequeue<A>) => STM.STM<never, never, Chunk.Chunk<A>>
 ```
 
 Added in v1.0.0
@@ -523,7 +523,7 @@ Takes up to max number of values from the queue.
 **Signature**
 
 ```ts
-export declare const takeUpTo: (max: number) => <A>(self: TQueue<A>) => STM.STM<never, never, Chunk.Chunk<A>>
+export declare const takeUpTo: (max: number) => <A>(self: TDequeue<A>) => STM.STM<never, never, Chunk.Chunk<A>>
 ```
 
 Added in v1.0.0

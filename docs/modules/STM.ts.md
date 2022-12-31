@@ -35,6 +35,7 @@ Added in v1.0.0
   - [filterNot](#filternot)
   - [fromEither](#fromeither)
   - [fromOption](#fromoption)
+  - [gen](#gen)
   - [interrupt](#interrupt)
   - [interruptWith](#interruptwith)
   - [iterate](#iterate)
@@ -50,6 +51,7 @@ Added in v1.0.0
   - [service](#service)
   - [serviceWith](#servicewith)
   - [serviceWithSTM](#servicewithstm)
+  - [struct](#struct)
   - [succeed](#succeed)
   - [succeedLeft](#succeedleft)
   - [succeedNone](#succeednone)
@@ -58,6 +60,7 @@ Added in v1.0.0
   - [suspend](#suspend)
   - [sync](#sync)
   - [tryCatch](#trycatch)
+  - [tuple](#tuple)
   - [unit](#unit)
 - [destructors](#destructors)
   - [commit](#commit)
@@ -106,12 +109,14 @@ Added in v1.0.0
   - [as](#as)
   - [asSome](#assome)
   - [asSomeError](#assomeerror)
+  - [asUnit](#asunit)
   - [map](#map)
   - [mapAttempt](#mapattempt)
   - [mapBoth](#mapboth)
   - [mapError](#maperror)
 - [models](#models)
   - [STM (interface)](#stm-interface)
+  - [STMGen (interface)](#stmgen-interface)
 - [mutations](#mutations)
   - [absolve](#absolve)
   - [collect](#collect)
@@ -466,6 +471,22 @@ export declare const fromOption: <A>(option: Option.Option<A>) => STM<never, Opt
 
 Added in v1.0.0
 
+## gen
+
+**Signature**
+
+```ts
+export declare const gen: <Eff extends STMGen<any, any, any>, AEff>(
+  f: (resume: <R, E, A>(self: STM<R, E, A>) => STMGen<R, E, A>) => Generator<Eff, AEff, any>
+) => STM<
+  [Eff] extends [never] ? never : [Eff] extends [STMGen<infer R, any, any>] ? R : never,
+  [Eff] extends [never] ? never : [Eff] extends [STMGen<any, infer E, any>] ? E : never,
+  AEff
+>
+```
+
+Added in v1.0.0
+
 ## interrupt
 
 Interrupts the fiber running the effect.
@@ -714,6 +735,22 @@ export declare const serviceWithSTM: <T>(
 
 Added in v1.0.0
 
+## struct
+
+**Signature**
+
+```ts
+export declare const struct: <NER extends Record<string, STM<any, any, any>>>(
+  r: Record<string, STM<any, any, any>> | EnforceNonEmptyRecord<NER>
+) => STM<
+  [NER[keyof NER]] extends [{ [STMTypeId]: { _R: (_: never) => infer R } }] ? R : never,
+  [NER[keyof NER]] extends [{ [STMTypeId]: { _E: (_: never) => infer E } }] ? E : never,
+  { [K in keyof NER]: [NER[K]] extends [{ [STMTypeId]: { _A: (_: never) => infer A } }] ? A : never }
+>
+```
+
+Added in v1.0.0
+
 ## succeed
 
 Returns an `STM` effect that succeeds with the specified value.
@@ -808,6 +845,24 @@ exceptions into typed failed effects.
 
 ```ts
 export declare const tryCatch: <E, A>(attempt: () => A, onThrow: (u: unknown) => E) => Effect.Effect<never, E, A>
+```
+
+Added in v1.0.0
+
+## tuple
+
+Like `forEach` + `identity` with a tuple type.
+
+**Signature**
+
+```ts
+export declare const tuple: <T extends [STM<any, any, any>, ...STM<any, any, any>[]]>(
+  ...t: T
+) => STM<
+  [T[number]] extends [{ [STMTypeId]: { _R: (_: never) => infer R } }] ? R : never,
+  [T[number]] extends [{ [STMTypeId]: { _E: (_: never) => infer E } }] ? E : never,
+  TupleSTM<T>
+>
 ```
 
 Added in v1.0.0
@@ -1377,6 +1432,20 @@ export declare const asSomeError: <R, E, A>(self: STM<R, E, A>) => STM<R, Option
 
 Added in v1.0.0
 
+## asUnit
+
+This function maps the success value of an `STM` to `void`. If the original
+`STM` succeeds, the returned `STM` will also succeed. If the original `STM`
+fails, the returned `STM` will fail with the same error.
+
+**Signature**
+
+```ts
+export declare const asUnit: <R, E, A>(self: STM<R, E, A>) => STM<R, E, void>
+```
+
+Added in v1.0.0
+
 ## map
 
 Maps the value produced by the effect.
@@ -1478,6 +1547,22 @@ export interface STM<R, E, A> extends STM.Variance<R, E, A>, Effect.Effect<R, E,
   traced(trace: string | undefined): STM<R, E, A>
   /** @internal */
   commit(): Effect.Effect<R, E, A>
+}
+```
+
+Added in v1.0.0
+
+## STMGen (interface)
+
+**Signature**
+
+```ts
+export interface STMGen<R, E, A> {
+  readonly _R: () => R
+  readonly _E: () => E
+  readonly _A: () => A
+  readonly value: STM<R, E, A>
+  [Symbol.iterator](): Generator<STMGen<R, E, A>, A>
 }
 ```
 
