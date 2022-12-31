@@ -450,8 +450,8 @@ describe.concurrent("STM", () => {
   it.effect("fold - handles both failure and success", () =>
     Effect.gen(function*($) {
       const transaction = STM.struct({
-        success: pipe(STM.succeed("yes"), STM.fold(() => -1, () => 1)),
-        failure: pipe(STM.fail("no"), STM.fold(() => -1, () => 1))
+        success: pipe(STM.succeed("yes"), STM.match(() => -1, () => 1)),
+        failure: pipe(STM.fail("no"), STM.match(() => -1, () => 1))
       })
       const { failure, success } = yield* $(STM.commit(transaction))
       assert.strictEqual(success, 1)
@@ -461,8 +461,8 @@ describe.concurrent("STM", () => {
   it.effect("foldSTM - folds over the `STM` effect, and handle failure and success", () =>
     Effect.gen(function*($) {
       const transaction = STM.struct({
-        success: pipe(STM.succeed("yes"), STM.foldSTM(() => STM.succeed("no"), STM.succeed)),
-        failure: pipe(STM.fail("no"), STM.foldSTM(STM.succeed, () => STM.succeed("yes")))
+        success: pipe(STM.succeed("yes"), STM.matchSTM(() => STM.succeed("no"), STM.succeed)),
+        failure: pipe(STM.fail("no"), STM.matchSTM(STM.succeed, () => STM.succeed("yes")))
       })
       const { failure, success } = yield* $(STM.commit(transaction))
       assert.strictEqual(failure, "no")
@@ -1443,13 +1443,13 @@ describe.concurrent("STM", () => {
 
   it.effect("stack-safety - long fold chains", () =>
     Effect.gen(function*($) {
-      const result = yield* $(chain(10_000)(STM.fold(() => 0, (n) => n + 1)))
+      const result = yield* $(chain(10_000)(STM.match(() => 0, (n) => n + 1)))
       assert.strictEqual(result, 10_000)
     }))
 
   it.effect("stack-safety - long foldSTM chains", () =>
     Effect.gen(function*($) {
-      const result = yield* $(chain(10_000)(STM.foldSTM(() => STM.succeed(0), (n) => STM.succeed(n + 1))))
+      const result = yield* $(chain(10_000)(STM.matchSTM(() => STM.succeed(0), (n) => STM.succeed(n + 1))))
       assert.strictEqual(result, 10_000)
     }))
 

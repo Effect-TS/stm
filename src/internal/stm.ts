@@ -226,7 +226,7 @@ export const collectSTM = <A, R2, E2, A2>(pf: (a: A) => Option.Option<STM.STM<R2
   return <R, E>(self: STM.STM<R, E, A>): STM.STM<R | R2, E | E2, A2> =>
     pipe(
       self,
-      core.foldSTM(core.fail, (a) => {
+      core.matchSTM(core.fail, (a) => {
         const option = pf(a)
         return Option.isSome(option) ? option.value : core.retry()
       })
@@ -261,7 +261,7 @@ export const cond = <E, A>(
  */
 export const either = <R, E, A>(self: STM.STM<R, E, A>): STM.STM<R, never, Either.Either<E, A>> => {
   const trace = getCallTrace()
-  return pipe(self, fold<E, Either.Either<E, A>, A, Either.Either<E, A>>(Either.left, Either.right)).traced(trace)
+  return pipe(self, match<E, Either.Either<E, A>, A, Either.Either<E, A>>(Either.left, Either.right)).traced(trace)
 }
 
 /**
@@ -299,7 +299,7 @@ export const environmentWithSTM = <R0, R, E, A>(
  */
 export const eventually = <R, E, A>(self: STM.STM<R, E, A>): STM.STM<R, E, A> => {
   const trace = getCallTrace()
-  return pipe(self, core.foldSTM(() => eventually(self), core.succeed)).traced(trace)
+  return pipe(self, core.matchSTM(() => eventually(self), core.succeed)).traced(trace)
 }
 
 /**
@@ -461,7 +461,7 @@ export const filterOrFail = <A, E2>(predicate: Predicate<A>, error: LazyArg<E2>)
 export const flatMapError = <E, R2, E2>(f: (error: E) => STM.STM<R2, never, E2>) => {
   const trace = getCallTrace()
   return <R, A>(self: STM.STM<R, E, A>): STM.STM<R | R2, E2, A> =>
-    pipe(self, core.foldSTM((e) => flip(f(e)), core.succeed)).traced(trace)
+    pipe(self, core.matchSTM((e) => flip(f(e)), core.succeed)).traced(trace)
 }
 
 /**
@@ -489,7 +489,7 @@ export const flattenErrorOption = <E2>(fallback: LazyArg<E2>) => {
  */
 export const flip = <R, E, A>(self: STM.STM<R, E, A>): STM.STM<R, A, E> => {
   const trace = getCallTrace()
-  return pipe(self, core.foldSTM(core.succeed, core.fail)).traced(trace)
+  return pipe(self, core.matchSTM(core.succeed, core.fail)).traced(trace)
 }
 
 /**
@@ -505,10 +505,10 @@ export const flipWith = <R, A, E, R2, A2, E2>(f: (stm: STM.STM<R, A, E>) => STM.
  * @macro traced
  * @internal
  */
-export const fold = <E, A2, A, A3>(f: (error: E) => A2, g: (value: A) => A3) => {
+export const match = <E, A2, A, A3>(f: (error: E) => A2, g: (value: A) => A3) => {
   const trace = getCallTrace()
   return <R>(self: STM.STM<R, E, A>): STM.STM<R, never, A2 | A3> =>
-    pipe(self, core.foldSTM((e) => core.succeed(f(e)), (a) => core.succeed(g(a)))).traced(trace)
+    pipe(self, core.matchSTM((e) => core.succeed(f(e)), (a) => core.succeed(g(a)))).traced(trace)
 }
 
 /**
@@ -623,7 +623,7 @@ export const head = <R, E, A>(self: STM.STM<R, E, Iterable<A>>): STM.STM<R, Opti
   const trace = getCallTrace()
   return pipe(
     self,
-    core.foldSTM(
+    core.matchSTM(
       (e) => core.fail(Option.some(e)),
       (a) =>
         pipe(
@@ -656,7 +656,7 @@ export const ifSTM = <R1, R2, E1, E2, A, A1>(
  */
 export const ignore = <R, E, A>(self: STM.STM<R, E, A>): STM.STM<R, never, void> => {
   const trace = getCallTrace()
-  return pipe(self, fold(unit, unit)).traced(trace)
+  return pipe(self, match(unit, unit)).traced(trace)
 }
 
 /**
@@ -665,7 +665,7 @@ export const ignore = <R, E, A>(self: STM.STM<R, E, A>): STM.STM<R, never, void>
  */
 export const isFailure = <R, E, A>(self: STM.STM<R, E, A>): STM.STM<R, never, boolean> => {
   const trace = getCallTrace()
-  return pipe(self, fold(constTrue, constFalse)).traced(trace)
+  return pipe(self, match(constTrue, constFalse)).traced(trace)
 }
 
 /**
@@ -674,7 +674,7 @@ export const isFailure = <R, E, A>(self: STM.STM<R, E, A>): STM.STM<R, never, bo
  */
 export const isSuccess = <R, E, A>(self: STM.STM<R, E, A>): STM.STM<R, never, boolean> => {
   const trace = getCallTrace()
-  return pipe(self, fold(constFalse, constTrue)).traced(trace)
+  return pipe(self, match(constFalse, constTrue)).traced(trace)
 }
 
 /**
@@ -702,7 +702,7 @@ export const left = <R, E, A, A2>(self: STM.STM<R, E, Either.Either<A, A2>>): ST
   const trace = getCallTrace()
   return pipe(
     self,
-    core.foldSTM(
+    core.matchSTM(
       (e) => core.fail(Either.left(e)),
       Either.match(core.succeed, (a2) => core.fail(Either.right(a2)))
     )
@@ -756,7 +756,7 @@ export const loopDiscard = <Z, R, E, X>(
 export const mapAttempt = <A, B>(f: (a: A) => B) => {
   const trace = getCallTrace()
   return <R, E>(self: STM.STM<R, E, A>): STM.STM<R, unknown, B> =>
-    pipe(self, core.foldSTM((e) => core.fail(e), (a) => attempt(() => f(a)))).traced(trace)
+    pipe(self, core.matchSTM((e) => core.fail(e), (a) => attempt(() => f(a)))).traced(trace)
 }
 
 /**
@@ -766,7 +766,7 @@ export const mapAttempt = <A, B>(f: (a: A) => B) => {
 export const mapBoth = <E, E2, A, A2>(f: (error: E) => E2, g: (value: A) => A2) => {
   const trace = getCallTrace()
   return <R>(self: STM.STM<R, E, A>): STM.STM<R, E2, A2> =>
-    pipe(self, core.foldSTM((e) => core.fail(f(e)), (a) => core.succeed(g(a)))).traced(trace)
+    pipe(self, core.matchSTM((e) => core.fail(f(e)), (a) => core.succeed(g(a)))).traced(trace)
 }
 
 /**
@@ -776,7 +776,7 @@ export const mapBoth = <E, E2, A, A2>(f: (error: E) => E2, g: (value: A) => A2) 
 export const mapError = <E, E2>(f: (error: E) => E2) => {
   const trace = getCallTrace()
   return <R, A>(self: STM.STM<R, E, A>): STM.STM<R, E2, A> =>
-    pipe(self, core.foldSTM((e) => core.fail(f(e)), core.succeed)).traced(trace)
+    pipe(self, core.matchSTM((e) => core.fail(f(e)), core.succeed)).traced(trace)
 }
 
 /**
@@ -785,7 +785,7 @@ export const mapError = <E, E2>(f: (error: E) => E2) => {
  */
 export const merge = <R, E, A>(self: STM.STM<R, E, A>): STM.STM<R, never, E | A> => {
   const trace = getCallTrace()
-  return pipe(self, core.foldSTM((e) => core.succeed(e), core.succeed)).traced(trace)
+  return pipe(self, core.matchSTM((e) => core.succeed(e), core.succeed)).traced(trace)
 }
 
 /**
@@ -821,7 +821,7 @@ export const none = <R, E, A>(self: STM.STM<R, E, Option.Option<A>>): STM.STM<R,
   const trace = getCallTrace()
   return pipe(
     self,
-    core.foldSTM(
+    core.matchSTM(
       (e) => core.fail(Option.some(e)),
       Option.match(unit, () => core.fail(Option.none))
     )
@@ -834,7 +834,7 @@ export const none = <R, E, A>(self: STM.STM<R, E, Option.Option<A>>): STM.STM<R,
  */
 export const option = <R, E, A>(self: STM.STM<R, E, A>): STM.STM<R, never, Option.Option<A>> => {
   const trace = getCallTrace()
-  return pipe(self, fold(() => Option.none, Option.some)).traced(trace)
+  return pipe(self, match(() => Option.none, Option.some)).traced(trace)
 }
 
 /**
@@ -1136,7 +1136,7 @@ export const right = <R, E, A, A2>(self: STM.STM<R, E, Either.Either<A, A2>>): S
   const trace = getCallTrace()
   return pipe(
     self,
-    core.foldSTM(
+    core.matchSTM(
       (e) => core.fail(Either.right(e)),
       Either.match((a) => core.fail(Either.left(a)), core.succeed)
     )
@@ -1193,7 +1193,7 @@ export const some = <R, E, A>(self: STM.STM<R, E, Option.Option<A>>): STM.STM<R,
   const trace = getCallTrace()
   return pipe(
     self,
-    core.foldSTM(
+    core.matchSTM(
       (e) => core.fail(Option.some(e)),
       Option.match(() => core.fail(Option.none), core.succeed)
     )
@@ -1240,7 +1240,7 @@ export const someOrFailException = <R, E, A>(
   const trace = getCallTrace()
   return pipe(
     self,
-    core.foldSTM(
+    core.matchSTM(
       core.fail,
       Option.match(() => core.fail(Cause.NoSuchElementException()), core.succeed)
     )
@@ -1367,7 +1367,7 @@ export const tapBoth = <E, R2, E2, A2, A, R3, E3, A3>(
   return <R>(self: STM.STM<R, E, A>): STM.STM<R | R2 | R3, E | E2 | E3, A> =>
     pipe(
       self,
-      core.foldSTM((e) => pipe(f(e), core.zipRight(core.fail(e))), (a) => pipe(g(a), as(a)))
+      core.matchSTM((e) => pipe(f(e), core.zipRight(core.fail(e))), (a) => pipe(g(a), as(a)))
     ).traced(trace)
 }
 
@@ -1378,7 +1378,7 @@ export const tapBoth = <E, R2, E2, A2, A, R3, E3, A3>(
 export const tapError = <E, R2, E2, _>(f: (error: E) => STM.STM<R2, E2, _>) => {
   const trace = getCallTrace()
   return <R, A>(self: STM.STM<R, E, A>): STM.STM<R | R2, E | E2, A> =>
-    pipe(self, core.foldSTM((e) => pipe(f(e), core.zipRight(core.fail(e))), core.succeed)).traced(trace)
+    pipe(self, core.matchSTM((e) => pipe(f(e), core.zipRight(core.fail(e))), core.succeed)).traced(trace)
 }
 
 /**
@@ -1431,7 +1431,7 @@ export const unleft = <R, E, A, A2>(self: STM.STM<R, Either.Either<E, A>, A2>): 
   const trace = getCallTrace()
   return pipe(
     self,
-    core.foldSTM(
+    core.matchSTM(
       Either.match(core.fail, (a) => core.succeed(Either.right(a))),
       (a) => core.succeed(Either.left(a))
     )
@@ -1468,7 +1468,7 @@ export const unright = <R, E, A, A2>(
   const trace = getCallTrace()
   return pipe(
     self,
-    core.foldSTM(
+    core.matchSTM(
       Either.match((a) => core.succeed(Either.left(a)), core.fail),
       (a) => core.succeed(Either.right(a))
     )
@@ -1483,7 +1483,7 @@ export const unsome = <R, E, A>(self: STM.STM<R, Option.Option<E>, A>): STM.STM<
   const trace = getCallTrace()
   return pipe(
     self,
-    core.foldSTM(
+    core.matchSTM(
       Option.match(() => core.succeed(Option.none), core.fail),
       (a) => core.succeed(Option.some(a))
     )

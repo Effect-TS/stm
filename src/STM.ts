@@ -592,10 +592,10 @@ export const flipWith: <R, A, E, R2, A2, E2>(
  * @since 1.0.0
  * @category folding
  */
-export const fold: <E, A2, A, A3>(
+export const match: <E, A2, A, A3>(
   f: (error: E) => A2,
   g: (value: A) => A3
-) => <R>(self: STM<R, E, A>) => STM<R, E, A2 | A3> = stm.fold
+) => <R>(self: STM<R, E, A>) => STM<R, E, A2 | A3> = stm.match
 
 /**
  * Effectfully folds over the `STM` effect, handling both failure and success.
@@ -604,10 +604,10 @@ export const fold: <E, A2, A, A3>(
  * @since 1.0.0
  * @category folding
  */
-export const foldSTM: <E, R1, E1, A1, A, R2, E2, A2>(
+export const matchSTM: <E, R1, E1, A1, A, R2, E2, A2>(
   onFailure: (e: E) => STM<R1, E1, A1>,
   onSuccess: (a: A) => STM<R2, E2, A2>
-) => <R>(self: STM<R, E, A>) => STM<R1 | R2 | R, E1 | E2, A1 | A2> = core.foldSTM
+) => <R>(self: STM<R, E, A>) => STM<R1 | R2 | R, E1 | E2, A1 | A2> = core.matchSTM
 
 /**
  * Applies the function `f` to each element of the `Iterable<A>` and returns

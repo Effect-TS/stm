@@ -133,7 +133,7 @@ export const findSTM = <K, V, R, E, A>(f: (key: K, value: V) => STM.STM<R, Optio
           Option.isNone(acc) ?
             pipe(
               f(key, value),
-              core.foldSTM(
+              core.matchSTM(
                 Option.match(
                   () => stm.succeedNone(),
                   core.fail
@@ -177,7 +177,7 @@ export const findAllSTM = <K, V, R, E, A>(pf: (key: K, value: V) => STM.STM<R, O
       reduceWithIndexSTM(Chunk.empty<A>(), (acc, value, key) =>
         pipe(
           pf(key, value),
-          core.foldSTM(
+          core.matchSTM(
             Option.match(
               () => core.succeed(acc),
               core.fail
