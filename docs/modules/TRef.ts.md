@@ -1,6 +1,6 @@
 ---
 title: TRef.ts
-nav_order: 9
+nav_order: 10
 parent: Modules
 ---
 
@@ -35,6 +35,8 @@ Added in v1.0.0
 - [unsafe](#unsafe)
   - [unsafeGet](#unsafeget)
   - [unsafeSet](#unsafeset)
+- [utils](#utils)
+  - [TRef (interface)](#tref-interface-1)
 
 ---
 
@@ -70,10 +72,6 @@ export interface TRef<A> extends TRef.Variance<A> {
    * Note: the method is unbound, exposed only for potential extensions.
    */
   modify<B>(f: (a: A) => readonly [B, A]): STM.STM<never, never, B>
-  /** @internal */
-  todos: Map<TxnId.TxnId, Journal.Todo>
-  /** @internal */
-  versioned: Versioned.Versioned<A>
 }
 ```
 
@@ -244,6 +242,23 @@ Added in v1.0.0
 
 ```ts
 export declare const unsafeSet: <A>(value: A, journal: Journal.Journal) => (self: TRef<A>) => void
+```
+
+Added in v1.0.0
+
+# utils
+
+## TRef (interface)
+
+**Signature**
+
+```ts
+export interface TRef<A> {
+  /** @internal */
+  todos: Map<TxnId.TxnId, Journal.Todo>
+  /** @internal */
+  versioned: Versioned.Versioned<A>
+}
 ```
 
 Added in v1.0.0

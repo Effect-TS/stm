@@ -1,6 +1,6 @@
 ---
 title: TSemaphore.ts
-nav_order: 10
+nav_order: 11
 parent: Modules
 ---
 
@@ -32,6 +32,8 @@ Added in v1.0.0
   - [TSemaphoreTypeId (type alias)](#tsemaphoretypeid-type-alias)
 - [unsafe](#unsafe)
   - [unsafeMake](#unsafemake)
+- [utils](#utils)
+  - [TSemaphore (interface)](#tsemaphore-interface-1)
 
 ---
 
@@ -66,11 +68,7 @@ Added in v1.0.0
 **Signature**
 
 ```ts
-export interface TSemaphore {
-  readonly [TSemaphoreTypeId]: TSemaphoreTypeId
-  /** @internal */
-  readonly permits: TRef.TRef<number>
-}
+export interface TSemaphore extends TSemaphore.Proto {}
 ```
 
 Added in v1.0.0
@@ -193,6 +191,21 @@ Added in v1.0.0
 
 ```ts
 export declare const unsafeMake: (permits: number) => TSemaphore
+```
+
+Added in v1.0.0
+
+# utils
+
+## TSemaphore (interface)
+
+**Signature**
+
+```ts
+export interface TSemaphore {
+  /** @internal */
+  readonly permits: TRef.TRef<number>
+}
 ```
 
 Added in v1.0.0

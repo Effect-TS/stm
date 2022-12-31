@@ -58,6 +58,8 @@ Added in v1.0.0
 - [symbols](#symbols)
   - [TArrayTypeId](#tarraytypeid)
   - [TArrayTypeId (type alias)](#tarraytypeid-type-alias)
+- [utils](#utils)
+  - [TArray (interface)](#tarray-interface-1)
 
 ---
 
@@ -573,10 +575,7 @@ Added in v1.0.0
 **Signature**
 
 ```ts
-export interface TArray<A> extends TArray.Variance<A> {
-  /** @internal */
-  readonly chunk: Chunk.Chunk<TRef.TRef<A>>
-}
+export interface TArray<A> extends TArray.Variance<A> {}
 ```
 
 Added in v1.0.0
@@ -599,6 +598,21 @@ Added in v1.0.0
 
 ```ts
 export type TArrayTypeId = typeof TArrayTypeId
+```
+
+Added in v1.0.0
+
+# utils
+
+## TArray (interface)
+
+**Signature**
+
+```ts
+export interface TArray<A> {
+  /** @internal */
+  readonly chunk: Chunk.Chunk<TRef.TRef<A>>
+}
 ```
 
 Added in v1.0.0

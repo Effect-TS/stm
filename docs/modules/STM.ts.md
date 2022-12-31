@@ -67,6 +67,8 @@ Added in v1.0.0
   - [commitEither](#commiteither)
 - [environment](#environment-1)
   - [provideEnvironment](#provideenvironment)
+  - [provideService](#provideservice)
+  - [provideServiceSTM](#provideservicestm)
   - [provideSomeEnvironment](#providesomeenvironment)
 - [error handling](#error-handling)
   - [catchAll](#catchall)
@@ -89,8 +91,8 @@ Added in v1.0.0
 - [finalization](#finalization)
   - [ensuring](#ensuring)
 - [folding](#folding)
-  - [fold](#fold)
-  - [foldSTM](#foldstm)
+  - [match](#match)
+  - [matchSTM](#matchstm)
 - [getters](#getters)
   - [head](#head)
   - [isFailure](#isfailure)
@@ -163,6 +165,8 @@ Added in v1.0.0
   - [forEach](#foreach)
   - [forEachDiscard](#foreachdiscard)
   - [partition](#partition)
+- [utils](#utils)
+  - [STM (interface)](#stm-interface-1)
 - [zipping](#zipping)
   - [zip](#zip)
   - [zipLeft](#zipleft)
@@ -921,6 +925,36 @@ export declare const provideEnvironment: <R>(env: Context.Context<R>) => <E, A>(
 
 Added in v1.0.0
 
+## provideService
+
+Provides the effect with the single service it requires. If the transactional
+effect requires more than one service use `provideEnvironment` instead.
+
+**Signature**
+
+```ts
+export declare const provideService: <T>(
+  tag: Context.Tag<T>
+) => (resource: T) => <R, E, A>(self: STM<R, E, A>) => STM<Exclude<R, T>, E, A>
+```
+
+Added in v1.0.0
+
+## provideServiceSTM
+
+Provides the effect with the single service it requires. If the transactional
+effect requires more than one service use `provideEnvironment` instead.
+
+**Signature**
+
+```ts
+export declare const provideServiceSTM: <T>(
+  tag: Context.Tag<T>
+) => <R1, E1>(stm: STM<R1, E1, T>) => <R, E, A>(self: STM<R, E, A>) => STM<R1 | Exclude<R, T>, E1 | E, A>
+```
+
+Added in v1.0.0
+
 ## provideSomeEnvironment
 
 Transforms the environment being provided to this effect with the specified
@@ -1191,7 +1225,7 @@ Added in v1.0.0
 
 # folding
 
-## fold
+## match
 
 Folds over the `STM` effect, handling both failure and success, but not
 retry.
@@ -1199,7 +1233,7 @@ retry.
 **Signature**
 
 ```ts
-export declare const fold: <E, A2, A, A3>(
+export declare const match: <E, A2, A, A3>(
   f: (error: E) => A2,
   g: (value: A) => A3
 ) => <R>(self: STM<R, E, A>) => STM<R, E, A2 | A3>
@@ -1207,14 +1241,14 @@ export declare const fold: <E, A2, A, A3>(
 
 Added in v1.0.0
 
-## foldSTM
+## matchSTM
 
 Effectfully folds over the `STM` effect, handling both failure and success.
 
 **Signature**
 
 ```ts
-export declare const foldSTM: <E, R1, E1, A1, A, R2, E2, A2>(
+export declare const matchSTM: <E, R1, E1, A1, A, R2, E2, A2>(
   onFailure: (e: E) => STM<R1, E1, A1>,
   onSuccess: (a: A) => STM<R2, E2, A2>
 ) => <R>(self: STM<R, E, A>) => STM<R1 | R2 | R, E1 | E2, A1 | A2>
@@ -1540,14 +1574,7 @@ synchronization of Fibers and transactional data-types can be quite useful.
 **Signature**
 
 ```ts
-export interface STM<R, E, A> extends STM.Variance<R, E, A>, Effect.Effect<R, E, A> {
-  /** @internal */
-  trace: string | undefined
-  /** @internal */
-  traced(trace: string | undefined): STM<R, E, A>
-  /** @internal */
-  commit(): Effect.Effect<R, E, A>
-}
+export interface STM<R, E, A> extends STM.Variance<R, E, A>, Effect.Effect<R, E, A> {}
 ```
 
 Added in v1.0.0
@@ -2173,6 +2200,25 @@ Collects all successes and failures in a tupled fashion.
 export declare const partition: <R, E, A, A2>(
   f: (a: A) => STM<R, E, A2>
 ) => (elements: Iterable<A>) => STM<R, E, readonly [Chunk.Chunk<E>, Chunk.Chunk<A2>]>
+```
+
+Added in v1.0.0
+
+# utils
+
+## STM (interface)
+
+**Signature**
+
+```ts
+export interface STM<R, E, A> {
+  /** @internal */
+  trace: string | undefined
+  /** @internal */
+  traced(trace: string | undefined): STM<R, E, A>
+  /** @internal */
+  commit(): Effect.Effect<R, E, A>
+}
 ```
 
 Added in v1.0.0

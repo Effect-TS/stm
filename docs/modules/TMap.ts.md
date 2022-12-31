@@ -18,6 +18,7 @@ Added in v1.0.0
   - [make](#make)
 - [destructors](#destructors)
   - [toChunk](#tochunk)
+  - [toHashMap](#tohashmap)
   - [toReadonlyArray](#toreadonlyarray)
   - [toReadonlyMap](#toreadonlymap)
 - [elements](#elements)
@@ -42,17 +43,19 @@ Added in v1.0.0
 - [models](#models)
   - [TMap (interface)](#tmap-interface)
 - [mutations](#mutations)
-  - [delete](#delete)
-  - [deleteAll](#deleteall)
-  - [deleteIf](#deleteif)
-  - [deleteIfDiscard](#deleteifdiscard)
   - [merge](#merge)
+  - [remove](#remove)
+  - [removeAll](#removeall)
+  - [removeIf](#removeif)
+  - [removeIfDiscard](#removeifdiscard)
   - [retainIf](#retainif)
   - [retainIfDiscard](#retainifdiscard)
   - [set](#set)
   - [setIfAbsent](#setifabsent)
   - [takeFirst](#takefirst)
   - [takeFirstSTM](#takefirststm)
+  - [takeSome](#takesome)
+  - [takeSomeSTM](#takesomestm)
   - [transform](#transform)
   - [transformSTM](#transformstm)
   - [transformValues](#transformvalues)
@@ -61,6 +64,8 @@ Added in v1.0.0
 - [symbols](#symbols)
   - [TMapTypeId](#tmaptypeid)
   - [TMapTypeId (type alias)](#tmaptypeid-type-alias)
+- [utils](#utils)
+  - [TMap (interface)](#tmap-interface-1)
 
 ---
 
@@ -106,7 +111,7 @@ Added in v1.0.0
 
 ## toChunk
 
-Collects all bindings into a chunk.
+Collects all bindings into a `Chunk`.
 
 **Signature**
 
@@ -116,9 +121,21 @@ export declare const toChunk: <K, V>(self: TMap<K, V>) => STM.STM<never, never, 
 
 Added in v1.0.0
 
+## toHashMap
+
+Collects all bindings into a `HashMap`.
+
+**Signature**
+
+```ts
+export declare const toHashMap: <K, V>(self: TMap<K, V>) => STM.STM<never, never, HashMap.HashMap<K, V>>
+```
+
+Added in v1.0.0
+
 ## toReadonlyArray
 
-Collects all bindings into a list.
+Collects all bindings into a `ReadonlyArray`.
 
 **Signature**
 
@@ -130,7 +147,7 @@ Added in v1.0.0
 
 ## toReadonlyMap
 
-Collects all bindings into a map.
+Collects all bindings into a `ReadonlyMap`.
 
 **Signature**
 
@@ -375,69 +392,12 @@ conflicts via chaining.
 **Signature**
 
 ```ts
-export interface TMap<K, V> extends TMap.Variance<K, V> {
-  /** @internal */
-  readonly tBuckets: TRef.TRef<TArray.TArray<Chunk.Chunk<readonly [K, V]>>>
-  /** @internal */
-  readonly tSize: TRef.TRef<number>
-}
+export interface TMap<K, V> extends TMap.Variance<K, V> {}
 ```
 
 Added in v1.0.0
 
 # mutations
-
-## delete
-
-Removes binding for given key.
-
-**Signature**
-
-```ts
-export declare const delete: <K>(key: K) => <V>(self: TMap<K, V>) => STM.STM<never, never, void>
-```
-
-Added in v1.0.0
-
-## deleteAll
-
-Deletes all entries associated with the specified keys.
-
-**Signature**
-
-```ts
-export declare const deleteAll: <K>(keys: Iterable<K>) => <V>(self: TMap<K, V>) => STM.STM<never, never, void>
-```
-
-Added in v1.0.0
-
-## deleteIf
-
-Removes bindings matching predicate and returns the removed entries.
-
-**Signature**
-
-```ts
-export declare const deleteIf: <K, V>(
-  predicate: (key: K, value: V) => boolean
-) => (self: TMap<K, V>) => STM.STM<never, never, Chunk.Chunk<readonly [K, V]>>
-```
-
-Added in v1.0.0
-
-## deleteIfDiscard
-
-Removes bindings matching predicate.
-
-**Signature**
-
-```ts
-export declare const deleteIfDiscard: <K, V>(
-  predicate: (key: K, value: V) => boolean
-) => (self: TMap<K, V>) => STM.STM<never, never, void>
-```
-
-Added in v1.0.0
 
 ## merge
 
@@ -453,6 +413,58 @@ export declare const merge: <K, V>(
   value: V,
   f: (x: V, y: V) => V
 ) => (self: TMap<K, V>) => STM.STM<never, never, V>
+```
+
+Added in v1.0.0
+
+## remove
+
+Removes binding for given key.
+
+**Signature**
+
+```ts
+export declare const remove: <K>(key: K) => <V>(self: TMap<K, V>) => STM.STM<never, never, void>
+```
+
+Added in v1.0.0
+
+## removeAll
+
+Deletes all entries associated with the specified keys.
+
+**Signature**
+
+```ts
+export declare const removeAll: <K>(keys: Iterable<K>) => <V>(self: TMap<K, V>) => STM.STM<never, never, void>
+```
+
+Added in v1.0.0
+
+## removeIf
+
+Removes bindings matching predicate and returns the removed entries.
+
+**Signature**
+
+```ts
+export declare const removeIf: <K, V>(
+  predicate: (key: K, value: V) => boolean
+) => (self: TMap<K, V>) => STM.STM<never, never, Chunk.Chunk<readonly [K, V]>>
+```
+
+Added in v1.0.0
+
+## removeIfDiscard
+
+Removes bindings matching predicate.
+
+**Signature**
+
+```ts
+export declare const removeIfDiscard: <K, V>(
+  predicate: (key: K, value: V) => boolean
+) => (self: TMap<K, V>) => STM.STM<never, never, void>
 ```
 
 Added in v1.0.0
@@ -533,6 +545,34 @@ Takes the first matching value, or retries until there is one.
 export declare const takeFirstSTM: <K, V, R, E, A>(
   pf: (key: K, value: V) => STM.STM<R, Option.Option<E>, A>
 ) => (self: TMap<K, V>) => STM.STM<R, E, A>
+```
+
+Added in v1.0.0
+
+## takeSome
+
+Takes all matching values, or retries until there is at least one.
+
+**Signature**
+
+```ts
+export declare const takeSome: <K, V, A>(
+  pf: (key: K, value: V) => Option.Option<A>
+) => (self: TMap<K, V>) => STM.STM<never, never, Chunk.NonEmptyChunk<A>>
+```
+
+Added in v1.0.0
+
+## takeSomeSTM
+
+Takes all matching values, or retries until there is at least one.
+
+**Signature**
+
+```ts
+export declare const takeSomeSTM: <K, V, R, E, A>(
+  pf: (key: K, value: V) => STM.STM<R, Option.Option<E>, A>
+) => (self: TMap<K, V>) => STM.STM<R, E, Chunk.NonEmptyChunk<A>>
 ```
 
 Added in v1.0.0
@@ -628,6 +668,23 @@ Added in v1.0.0
 
 ```ts
 export type TMapTypeId = typeof TMapTypeId
+```
+
+Added in v1.0.0
+
+# utils
+
+## TMap (interface)
+
+**Signature**
+
+```ts
+export interface TMap<K, V> {
+  /** @internal */
+  readonly tBuckets: TRef.TRef<TArray.TArray<Chunk.Chunk<readonly [K, V]>>>
+  /** @internal */
+  readonly tSize: TRef.TRef<number>
+}
 ```
 
 Added in v1.0.0
