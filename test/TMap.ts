@@ -27,56 +27,6 @@ const mapEntriesArb: fc.Arbitrary<Array<readonly [string, number]>> = fc.uniqueA
   )
 
 describe.concurrent("TMap", () => {
-  it.effect("delete - remove an existing element", () =>
-    Effect.gen(function*($) {
-      const transaction = pipe(
-        TMap.make(["a", 1], ["b", 2]),
-        STM.tap(TMap.delete("a")),
-        STM.flatMap(TMap.get("a"))
-      )
-      const result = yield* $(STM.commit(transaction))
-      assert.deepStrictEqual(result, Option.none)
-    }))
-
-  it.effect("delete - remove an non-existing element", () =>
-    Effect.gen(function*($) {
-      const transaction = pipe(
-        TMap.empty<string, number>(),
-        STM.tap(TMap.delete("a")),
-        STM.flatMap(TMap.get("a"))
-      )
-      const result = yield* $(STM.commit(transaction))
-      assert.deepStrictEqual(result, Option.none)
-    }))
-
-  it.effect("deleteIf", () =>
-    Effect.gen(function*($) {
-      const transaction = STM.gen(function*($) {
-        const map = yield* $(TMap.make(["a", 1], ["aa", 2], ["aaa", 3]))
-        const removed = yield* $(pipe(map, TMap.deleteIf((_, value) => value > 1)))
-        const a = yield* $(pipe(map, TMap.has("a")))
-        const aa = yield* $(pipe(map, TMap.has("aa")))
-        const aaa = yield* $(pipe(map, TMap.has("aaa")))
-        return [Array.from(removed), a, aa, aaa] as const
-      })
-      const result = yield* $(STM.commit(transaction))
-      assert.deepStrictEqual(result, [[["aaa", 3], ["aa", 2]], true, false, false])
-    }))
-
-  it.effect("deleteIfDiscard", () =>
-    Effect.gen(function*($) {
-      const transaction = STM.gen(function*($) {
-        const map = yield* $(TMap.make(["a", 1], ["aa", 2], ["aaa", 3]))
-        yield* $(pipe(map, TMap.deleteIfDiscard((key) => key === "aa")))
-        const a = yield* $(pipe(map, TMap.has("a")))
-        const aa = yield* $(pipe(map, TMap.has("aa")))
-        const aaa = yield* $(pipe(map, TMap.has("aaa")))
-        return [a, aa, aaa] as const
-      })
-      const result = yield* $(STM.commit(transaction))
-      assert.deepStrictEqual(result, [true, false, true])
-    }))
-
   it.effect("empty", () =>
     Effect.gen(function*($) {
       const transaction = pipe(
@@ -223,6 +173,56 @@ describe.concurrent("TMap", () => {
       )
       const result = yield* $(STM.commit(transaction))
       assert.strictEqual(result, 0)
+    }))
+
+  it.effect("remove - remove an existing element", () =>
+    Effect.gen(function*($) {
+      const transaction = pipe(
+        TMap.make(["a", 1], ["b", 2]),
+        STM.tap(TMap.remove("a")),
+        STM.flatMap(TMap.get("a"))
+      )
+      const result = yield* $(STM.commit(transaction))
+      assert.deepStrictEqual(result, Option.none)
+    }))
+
+  it.effect("remove - remove an non-existing element", () =>
+    Effect.gen(function*($) {
+      const transaction = pipe(
+        TMap.empty<string, number>(),
+        STM.tap(TMap.remove("a")),
+        STM.flatMap(TMap.get("a"))
+      )
+      const result = yield* $(STM.commit(transaction))
+      assert.deepStrictEqual(result, Option.none)
+    }))
+
+  it.effect("removeIf", () =>
+    Effect.gen(function*($) {
+      const transaction = STM.gen(function*($) {
+        const map = yield* $(TMap.make(["a", 1], ["aa", 2], ["aaa", 3]))
+        const removed = yield* $(pipe(map, TMap.removeIf((_, value) => value > 1)))
+        const a = yield* $(pipe(map, TMap.has("a")))
+        const aa = yield* $(pipe(map, TMap.has("aa")))
+        const aaa = yield* $(pipe(map, TMap.has("aaa")))
+        return [Array.from(removed), a, aa, aaa] as const
+      })
+      const result = yield* $(STM.commit(transaction))
+      assert.deepStrictEqual(result, [[["aaa", 3], ["aa", 2]], true, false, false])
+    }))
+
+  it.effect("removeIfDiscard", () =>
+    Effect.gen(function*($) {
+      const transaction = STM.gen(function*($) {
+        const map = yield* $(TMap.make(["a", 1], ["aa", 2], ["aaa", 3]))
+        yield* $(pipe(map, TMap.removeIfDiscard((key) => key === "aa")))
+        const a = yield* $(pipe(map, TMap.has("a")))
+        const aa = yield* $(pipe(map, TMap.has("aa")))
+        const aaa = yield* $(pipe(map, TMap.has("aaa")))
+        return [a, aa, aaa] as const
+      })
+      const result = yield* $(STM.commit(transaction))
+      assert.deepStrictEqual(result, [true, false, true])
     }))
 
   it.effect("retainIf", () =>
@@ -482,7 +482,7 @@ describe.concurrent("TMap", () => {
         Effect.forEachDiscard((key) =>
           pipe(
             map,
-            TMap.delete(key),
+            TMap.remove(key),
             STM.commit,
             Effect.fork,
             Effect.zipRight(pipe(TMap.toChunk(map))),
