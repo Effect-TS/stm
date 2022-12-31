@@ -12,6 +12,7 @@ import * as Chunk from "@fp-ts/data/Chunk"
 import * as Equal from "@fp-ts/data/Equal"
 import type { LazyArg } from "@fp-ts/data/Function"
 import { pipe } from "@fp-ts/data/Function"
+import * as HashMap from "@fp-ts/data/HashMap"
 import * as Option from "@fp-ts/data/Option"
 
 /** @internal */
@@ -87,117 +88,6 @@ const allocate = <K, V>(
       )
     )
   ).traced(trace)
-}
-
-/**
- * @macro traced
- * @internal
- */
-export const _delete = <K>(key: K) => {
-  const trace = getCallTrace()
-  return <V>(self: TMap.TMap<K, V>): STM.STM<never, never, void> =>
-    core.effect<never, void>((journal) => {
-      const buckets = pipe(self.tBuckets, tRef.unsafeGet(journal))
-      const index = indexOf(key, buckets.chunk.length)
-      const bucket = pipe(buckets.chunk, Chunk.unsafeGet(index), tRef.unsafeGet(journal))
-      const [toRemove, toRetain] = pipe(bucket, Chunk.partition((entry) => Equal.equals(entry[1], key)))
-      if (Chunk.isNonEmpty(toRemove)) {
-        const currentSize = pipe(self.tSize, tRef.unsafeGet(journal))
-        pipe(buckets.chunk, Chunk.unsafeGet(index), tRef.unsafeSet(toRetain, journal))
-        pipe(self.tSize, tRef.unsafeSet(currentSize - 1, journal))
-      }
-    }).traced(trace)
-}
-
-/**
- * @macro traced
- * @internal
- */
-export const deleteAll = <K>(keys: Iterable<K>) => {
-  const trace = getCallTrace()
-  return <V>(self: TMap.TMap<K, V>): STM.STM<never, never, void> =>
-    core.effect<never, void>((journal) => {
-      const iterator = keys[Symbol.iterator]()
-      let next: IteratorResult<K, any>
-      while ((next = iterator.next()) && !next.done) {
-        const buckets = pipe(self.tBuckets, tRef.unsafeGet(journal))
-        const index = indexOf(next.value, buckets.chunk.length)
-        const bucket = pipe(buckets.chunk, Chunk.unsafeGet(index), tRef.unsafeGet(journal))
-        const [toRemove, toRetain] = pipe(
-          bucket,
-          Chunk.partition((entry) => Equal.equals(next.value)(entry[0]))
-        )
-        if (Chunk.isNonEmpty(toRemove)) {
-          const currentSize = pipe(self.tSize, tRef.unsafeGet(journal))
-          pipe(buckets.chunk, Chunk.unsafeGet(index), tRef.unsafeSet(toRetain, journal))
-          pipe(self.tSize, tRef.unsafeSet(currentSize - 1, journal))
-        }
-      }
-    }).traced(trace)
-}
-
-/**
- * @macro traced
- * @internal
- */
-export const deleteIf = <K, V>(predicate: (key: K, value: V) => boolean) => {
-  const trace = getCallTrace()
-  return (self: TMap.TMap<K, V>): STM.STM<never, never, Chunk.Chunk<readonly [K, V]>> =>
-    core.effect<never, Chunk.Chunk<readonly [K, V]>>((journal) => {
-      const buckets = pipe(self.tBuckets, tRef.unsafeGet(journal))
-      const capacity = buckets.chunk.length
-      const removed: Array<readonly [K, V]> = []
-      let index = 0
-      let newSize = 0
-      while (index < capacity) {
-        const bucket = pipe(buckets.chunk, Chunk.unsafeGet(index), tRef.unsafeGet(journal))
-        const iterator = bucket[Symbol.iterator]()
-        let next: IteratorResult<readonly [K, V], any>
-        let newBucket = Chunk.empty<readonly [K, V]>()
-        while ((next = iterator.next()) && !next.done) {
-          if (!predicate(next.value[0], next.value[1])) {
-            newBucket = pipe(newBucket, Chunk.prepend(next.value))
-            newSize = newSize + 1
-          } else {
-            removed.push(next.value)
-          }
-        }
-        pipe(buckets.chunk, Chunk.unsafeGet(index), tRef.unsafeSet(newBucket, journal))
-        index = index + 1
-      }
-      pipe(self.tSize, tRef.unsafeSet(newSize, journal))
-      return Chunk.unsafeFromArray(removed)
-    }).traced(trace)
-}
-
-/**
- * @macro traced
- * @internal
- */
-export const deleteIfDiscard = <K, V>(predicate: (key: K, value: V) => boolean) => {
-  const trace = getCallTrace()
-  return (self: TMap.TMap<K, V>): STM.STM<never, never, void> =>
-    core.effect<never, void>((journal) => {
-      const buckets = pipe(self.tBuckets, tRef.unsafeGet(journal))
-      const capacity = buckets.chunk.length
-      let index = 0
-      let newSize = 0
-      while (index < capacity) {
-        const bucket = pipe(buckets.chunk, Chunk.unsafeGet(index), tRef.unsafeGet(journal))
-        const iterator = bucket[Symbol.iterator]()
-        let next: IteratorResult<readonly [K, V], any>
-        let newBucket = Chunk.empty<readonly [K, V]>()
-        while ((next = iterator.next()) && !next.done) {
-          if (!predicate(next.value[0], next.value[1])) {
-            newBucket = pipe(newBucket, Chunk.prepend(next.value))
-            newSize = newSize + 1
-          }
-        }
-        pipe(buckets.chunk, Chunk.unsafeGet(index), tRef.unsafeSet(newBucket, journal))
-        index = index + 1
-      }
-      pipe(self.tSize, tRef.unsafeSet(newSize, journal))
-    }).traced(trace)
 }
 
 /**
@@ -468,10 +358,121 @@ export const reduceWithIndexSTM = <Z, V, K, R, E>(zero: Z, f: (acc: Z, value: V,
  * @macro traced
  * @internal
  */
+export const remove = <K>(key: K) => {
+  const trace = getCallTrace()
+  return <V>(self: TMap.TMap<K, V>): STM.STM<never, never, void> =>
+    core.effect<never, void>((journal) => {
+      const buckets = pipe(self.tBuckets, tRef.unsafeGet(journal))
+      const index = indexOf(key, buckets.chunk.length)
+      const bucket = pipe(buckets.chunk, Chunk.unsafeGet(index), tRef.unsafeGet(journal))
+      const [toRemove, toRetain] = pipe(bucket, Chunk.partition((entry) => Equal.equals(entry[1], key)))
+      if (Chunk.isNonEmpty(toRemove)) {
+        const currentSize = pipe(self.tSize, tRef.unsafeGet(journal))
+        pipe(buckets.chunk, Chunk.unsafeGet(index), tRef.unsafeSet(toRetain, journal))
+        pipe(self.tSize, tRef.unsafeSet(currentSize - 1, journal))
+      }
+    }).traced(trace)
+}
+
+/**
+ * @macro traced
+ * @internal
+ */
+export const removeAll = <K>(keys: Iterable<K>) => {
+  const trace = getCallTrace()
+  return <V>(self: TMap.TMap<K, V>): STM.STM<never, never, void> =>
+    core.effect<never, void>((journal) => {
+      const iterator = keys[Symbol.iterator]()
+      let next: IteratorResult<K, any>
+      while ((next = iterator.next()) && !next.done) {
+        const buckets = pipe(self.tBuckets, tRef.unsafeGet(journal))
+        const index = indexOf(next.value, buckets.chunk.length)
+        const bucket = pipe(buckets.chunk, Chunk.unsafeGet(index), tRef.unsafeGet(journal))
+        const [toRemove, toRetain] = pipe(
+          bucket,
+          Chunk.partition((entry) => Equal.equals(next.value)(entry[0]))
+        )
+        if (Chunk.isNonEmpty(toRemove)) {
+          const currentSize = pipe(self.tSize, tRef.unsafeGet(journal))
+          pipe(buckets.chunk, Chunk.unsafeGet(index), tRef.unsafeSet(toRetain, journal))
+          pipe(self.tSize, tRef.unsafeSet(currentSize - 1, journal))
+        }
+      }
+    }).traced(trace)
+}
+
+/**
+ * @macro traced
+ * @internal
+ */
+export const removeIf = <K, V>(predicate: (key: K, value: V) => boolean) => {
+  const trace = getCallTrace()
+  return (self: TMap.TMap<K, V>): STM.STM<never, never, Chunk.Chunk<readonly [K, V]>> =>
+    core.effect<never, Chunk.Chunk<readonly [K, V]>>((journal) => {
+      const buckets = pipe(self.tBuckets, tRef.unsafeGet(journal))
+      const capacity = buckets.chunk.length
+      const removed: Array<readonly [K, V]> = []
+      let index = 0
+      let newSize = 0
+      while (index < capacity) {
+        const bucket = pipe(buckets.chunk, Chunk.unsafeGet(index), tRef.unsafeGet(journal))
+        const iterator = bucket[Symbol.iterator]()
+        let next: IteratorResult<readonly [K, V], any>
+        let newBucket = Chunk.empty<readonly [K, V]>()
+        while ((next = iterator.next()) && !next.done) {
+          if (!predicate(next.value[0], next.value[1])) {
+            newBucket = pipe(newBucket, Chunk.prepend(next.value))
+            newSize = newSize + 1
+          } else {
+            removed.push(next.value)
+          }
+        }
+        pipe(buckets.chunk, Chunk.unsafeGet(index), tRef.unsafeSet(newBucket, journal))
+        index = index + 1
+      }
+      pipe(self.tSize, tRef.unsafeSet(newSize, journal))
+      return Chunk.unsafeFromArray(removed)
+    }).traced(trace)
+}
+
+/**
+ * @macro traced
+ * @internal
+ */
+export const removeIfDiscard = <K, V>(predicate: (key: K, value: V) => boolean) => {
+  const trace = getCallTrace()
+  return (self: TMap.TMap<K, V>): STM.STM<never, never, void> =>
+    core.effect<never, void>((journal) => {
+      const buckets = pipe(self.tBuckets, tRef.unsafeGet(journal))
+      const capacity = buckets.chunk.length
+      let index = 0
+      let newSize = 0
+      while (index < capacity) {
+        const bucket = pipe(buckets.chunk, Chunk.unsafeGet(index), tRef.unsafeGet(journal))
+        const iterator = bucket[Symbol.iterator]()
+        let next: IteratorResult<readonly [K, V], any>
+        let newBucket = Chunk.empty<readonly [K, V]>()
+        while ((next = iterator.next()) && !next.done) {
+          if (!predicate(next.value[0], next.value[1])) {
+            newBucket = pipe(newBucket, Chunk.prepend(next.value))
+            newSize = newSize + 1
+          }
+        }
+        pipe(buckets.chunk, Chunk.unsafeGet(index), tRef.unsafeSet(newBucket, journal))
+        index = index + 1
+      }
+      pipe(self.tSize, tRef.unsafeSet(newSize, journal))
+    }).traced(trace)
+}
+
+/**
+ * @macro traced
+ * @internal
+ */
 export const retainIf = <K, V>(predicate: (key: K, value: V) => boolean) => {
   const trace = getCallTrace()
   return (self: TMap.TMap<K, V>): STM.STM<never, never, Chunk.Chunk<readonly [K, V]>> =>
-    pipe(self, deleteIf((key, value) => !predicate(key, value))).traced(trace)
+    pipe(self, removeIf((key, value) => !predicate(key, value))).traced(trace)
 }
 
 /**
@@ -481,7 +482,7 @@ export const retainIf = <K, V>(predicate: (key: K, value: V) => boolean) => {
 export const retainIfDiscard = <K, V>(predicate: (key: K, value: V) => boolean) => {
   const trace = getCallTrace()
   return (self: TMap.TMap<K, V>): STM.STM<never, never, void> =>
-    pipe(self, deleteIfDiscard((key, value) => !predicate(key, value))).traced(trace)
+    pipe(self, removeIfDiscard((key, value) => !predicate(key, value))).traced(trace)
 }
 
 /**
@@ -627,7 +628,87 @@ export const takeFirstSTM = <K, V, R, E, A>(pf: (key: K, value: V) => STM.STM<R,
       self,
       findSTM((key, value) => pipe(pf(key, value), core.map((a) => [key, a] as const))),
       stm.collect((option) => Option.isSome(option) ? Option.some(option.value) : Option.none),
-      core.flatMap((entry) => pipe(self, _delete(entry[0]), stm.as(entry[1])))
+      core.flatMap((entry) => pipe(self, remove(entry[0]), stm.as(entry[1])))
+    ).traced(trace)
+}
+
+/**
+ * @macro traced
+ * @internal
+ */
+export const takeSome = <K, V, A>(pf: (key: K, value: V) => Option.Option<A>) => {
+  const trace = getCallTrace()
+  return (self: TMap.TMap<K, V>): STM.STM<never, never, Chunk.NonEmptyChunk<A>> =>
+    pipe(
+      core.effect<never, Option.Option<Chunk.NonEmptyChunk<A>>>((journal) => {
+        const buckets = pipe(self.tBuckets, tRef.unsafeGet(journal))
+        const capacity = buckets.chunk.length
+        const builder: Array<A> = []
+        let newSize = 0
+        let index = 0
+        while (index < capacity) {
+          const bucket = pipe(buckets.chunk, Chunk.unsafeGet(index), tRef.unsafeGet(journal))
+          const recreate = pipe(bucket, Chunk.some((entry) => Option.isSome(pf(entry[0], entry[1]))))
+          if (recreate) {
+            const iterator = bucket[Symbol.iterator]()
+            let newBucket = Chunk.empty<readonly [K, V]>()
+            let next: IteratorResult<readonly [K, V], any>
+            while ((next = iterator.next()) && !next.done) {
+              const option = pf(next.value[0], next.value[1])
+              if (Option.isSome(option)) {
+                builder.push(option.value)
+              } else {
+                newBucket = pipe(newBucket, Chunk.prepend(next.value))
+                newSize = newSize + 1
+              }
+            }
+            pipe(buckets.chunk, Chunk.unsafeGet(index), tRef.unsafeSet(newBucket, journal))
+          } else {
+            newSize = newSize + bucket.length
+          }
+          index = index + 1
+        }
+        pipe(self.tSize, tRef.unsafeSet(newSize, journal))
+        if (builder.length > 0) {
+          return Option.some(Chunk.unsafeFromArray(builder) as Chunk.NonEmptyChunk<A>)
+        }
+        return Option.none
+      }),
+      stm.collect((option) =>
+        Option.isSome(option) ?
+          Option.some(option.value) :
+          Option.none
+      )
+    ).traced(trace)
+}
+
+/**
+ * @macro traced
+ * @internal
+ */
+export const takeSomeSTM = <K, V, R, E, A>(pf: (key: K, value: V) => STM.STM<R, Option.Option<E>, A>) => {
+  const trace = getCallTrace()
+  return (self: TMap.TMap<K, V>): STM.STM<R, E, Chunk.NonEmptyChunk<A>> =>
+    pipe(
+      self,
+      findAllSTM((key, value) => pipe(pf(key, value), core.map((a) => [key, a] as const))),
+      core.map((chunk) =>
+        Chunk.isNonEmpty(chunk) ?
+          Option.some(chunk) :
+          Option.none
+      ),
+      stm.collect((option) =>
+        Option.isSome(option) ?
+          Option.some(option.value) :
+          Option.none
+      ),
+      core.flatMap((entries) =>
+        pipe(
+          self,
+          removeAll(pipe(entries, Chunk.map((entry) => entry[0]))),
+          stm.as(pipe(entries, Chunk.map((entry) => entry[1])) as Chunk.NonEmptyChunk<A>)
+        )
+      )
     ).traced(trace)
 }
 
@@ -649,6 +730,18 @@ export const toChunk = <K, V>(self: TMap.TMap<K, V>): STM.STM<never, never, Chun
     }
     return Chunk.unsafeFromArray(builder)
   }).traced(trace)
+}
+
+/**
+ * @macro traced
+ * @internal
+ */
+export const toHashMap = <K, V>(self: TMap.TMap<K, V>): STM.STM<never, never, HashMap.HashMap<K, V>> => {
+  const trace = getCallTrace()
+  return pipe(
+    self,
+    reduceWithIndex(HashMap.empty<K, V>(), (acc, value, key) => pipe(acc, HashMap.set(key, value)))
+  ).traced(trace)
 }
 
 /**
@@ -784,7 +877,7 @@ export const updateWith = <K, V>(key: K, f: (value: Option.Option<V>) => Option.
         pipe(
           f(option),
           Option.match(
-            () => pipe(self, _delete(key), stm.as(Option.none)),
+            () => pipe(self, remove(key), stm.as(Option.none)),
             (value) => pipe(self, set(key, value), stm.as(Option.some(value)))
           )
         )

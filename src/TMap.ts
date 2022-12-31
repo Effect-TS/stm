@@ -7,6 +7,7 @@ import type * as TArray from "@effect/stm/TArray"
 import type * as TRef from "@effect/stm/TRef"
 import type * as Chunk from "@fp-ts/data/Chunk"
 import type { LazyArg } from "@fp-ts/data/Function"
+import type * as HashMap from "@fp-ts/data/HashMap"
 import type * as Option from "@fp-ts/data/Option"
 
 /**
@@ -50,50 +51,6 @@ export declare namespace TMap {
     }
   }
 }
-
-const _delete: <K>(key: K) => <V>(self: TMap<K, V>) => STM.STM<never, never, void> = internal._delete
-export {
-  /**
-   * Removes binding for given key.
-   *
-   * @macro traced
-   * @since 1.0.0
-   * @category mutations
-   */
-  _delete as delete
-}
-
-/**
- * Deletes all entries associated with the specified keys.
- *
- * @macro traced
- * @since 1.0.0
- * @category mutations
- */
-export const deleteAll: <K>(keys: Iterable<K>) => <V>(self: TMap<K, V>) => STM.STM<never, never, void> =
-  internal.deleteAll
-
-/**
- * Removes bindings matching predicate and returns the removed entries.
- *
- * @macro traced
- * @since 1.0.0
- * @category mutations
- */
-export const deleteIf: <K, V>(
-  predicate: (key: K, value: V) => boolean
-) => (self: TMap<K, V>) => STM.STM<never, never, Chunk.Chunk<readonly [K, V]>> = internal.deleteIf
-
-/**
- * Removes bindings matching predicate.
- *
- * @macro traced
- * @since 1.0.0
- * @category mutations
- */
-export const deleteIfDiscard: <K, V>(
-  predicate: (key: K, value: V) => boolean
-) => (self: TMap<K, V>) => STM.STM<never, never, void> = internal.deleteIfDiscard
 
 /**
  * Makes an empty `TMap`.
@@ -291,6 +248,47 @@ export const reduceWithIndexSTM: <Z, V, K, R, E>(
 ) => (self: TMap<K, V>) => STM.STM<R, E, Z> = internal.reduceWithIndexSTM
 
 /**
+ * Removes binding for given key.
+ *
+ * @macro traced
+ * @since 1.0.0
+ * @category mutations
+ */
+export const remove: <K>(key: K) => <V>(self: TMap<K, V>) => STM.STM<never, never, void> = internal.remove
+
+/**
+ * Deletes all entries associated with the specified keys.
+ *
+ * @macro traced
+ * @since 1.0.0
+ * @category mutations
+ */
+export const removeAll: <K>(keys: Iterable<K>) => <V>(self: TMap<K, V>) => STM.STM<never, never, void> =
+  internal.removeAll
+
+/**
+ * Removes bindings matching predicate and returns the removed entries.
+ *
+ * @macro traced
+ * @since 1.0.0
+ * @category mutations
+ */
+export const removeIf: <K, V>(
+  predicate: (key: K, value: V) => boolean
+) => (self: TMap<K, V>) => STM.STM<never, never, Chunk.Chunk<readonly [K, V]>> = internal.removeIf
+
+/**
+ * Removes bindings matching predicate.
+ *
+ * @macro traced
+ * @since 1.0.0
+ * @category mutations
+ */
+export const removeIfDiscard: <K, V>(
+  predicate: (key: K, value: V) => boolean
+) => (self: TMap<K, V>) => STM.STM<never, never, void> = internal.removeIfDiscard
+
+/**
  * Retains bindings matching predicate and returns removed bindings.
  *
  * @macro traced
@@ -363,7 +361,29 @@ export const takeFirstSTM: <K, V, R, E, A>(
 ) => (self: TMap<K, V>) => STM.STM<R, E, A> = internal.takeFirstSTM
 
 /**
- * Collects all bindings into a chunk.
+ * Takes all matching values, or retries until there is at least one.
+ *
+ * @macro traced
+ * @since 1.0.0
+ * @category mutations
+ */
+export const takeSome: <K, V, A>(
+  pf: (key: K, value: V) => Option.Option<A>
+) => (self: TMap<K, V>) => STM.STM<never, never, Chunk.NonEmptyChunk<A>> = internal.takeSome
+
+/**
+ * Takes all matching values, or retries until there is at least one.
+ *
+ * @macro traced
+ * @since 1.0.0
+ * @category mutations
+ */
+export const takeSomeSTM: <K, V, R, E, A>(
+  pf: (key: K, value: V) => STM.STM<R, Option.Option<E>, A>
+) => (self: TMap<K, V>) => STM.STM<R, E, Chunk.NonEmptyChunk<A>> = internal.takeSomeSTM
+
+/**
+ * Collects all bindings into a `Chunk`.
  *
  * @macro traced
  * @since 1.0.0
@@ -372,7 +392,16 @@ export const takeFirstSTM: <K, V, R, E, A>(
 export const toChunk: <K, V>(self: TMap<K, V>) => STM.STM<never, never, Chunk.Chunk<readonly [K, V]>> = internal.toChunk
 
 /**
- * Collects all bindings into a list.
+ * Collects all bindings into a `HashMap`.
+ *
+ * @macro traced
+ * @since 1.0.0
+ * @category destructors
+ */
+export const toHashMap: <K, V>(self: TMap<K, V>) => STM.STM<never, never, HashMap.HashMap<K, V>> = internal.toHashMap
+
+/**
+ * Collects all bindings into a `ReadonlyArray`.
  *
  * @macro traced
  * @since 1.0.0
@@ -382,7 +411,7 @@ export const toReadonlyArray: <K, V>(self: TMap<K, V>) => STM.STM<never, never, 
   internal.toReadonlyArray
 
 /**
- * Collects all bindings into a map.
+ * Collects all bindings into a `ReadonlyMap`.
  *
  * @macro traced
  * @since 1.0.0
