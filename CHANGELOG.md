@@ -1,5 +1,21 @@
 # @effect/stm
 
+## 0.0.9
+
+### Patch Changes
+
+- [#31](https://github.com/Effect-TS/stm/pull/31) [`c3393db`](https://github.com/Effect-TS/stm/commit/c3393dbc2dfe1884889dec6911eb061c7878afa9) Thanks [@IMax153](https://github.com/IMax153)! - cleanup external model definitions
+
+- [#30](https://github.com/Effect-TS/stm/pull/30) [`de5fff9`](https://github.com/Effect-TS/stm/commit/de5fff9b555dbd6ddbf24ff5ff9082ae16cfa106) Thanks [@IMax153](https://github.com/IMax153)! - add TRandom
+
+- [#29](https://github.com/Effect-TS/stm/pull/29) [`36c311f`](https://github.com/Effect-TS/stm/commit/36c311f8ad83368c79067c918bebbee47aaa368d) Thanks [@IMax153](https://github.com/IMax153)! - add TSet
+
+- [#31](https://github.com/Effect-TS/stm/pull/31) [`9f67f1b`](https://github.com/Effect-TS/stm/commit/9f67f1bdc834f6d7819cdb758f65f70ff10eecac) Thanks [@IMax153](https://github.com/IMax153)! - unify fold combinators to match
+
+- [#28](https://github.com/Effect-TS/stm/pull/28) [`c61df7a`](https://github.com/Effect-TS/stm/commit/c61df7ab6fd9573286ee82a3c014116bb37093f6) Thanks [@IMax153](https://github.com/IMax153)! - add TReentrantLock
+
+- [#26](https://github.com/Effect-TS/stm/pull/26) [`b1ffce4`](https://github.com/Effect-TS/stm/commit/b1ffce4872f990d1d7cf4747336b705bc379fdd0) Thanks [@IMax153](https://github.com/IMax153)! - add TMap
+
 ## 0.0.8
 
 ### Patch Changes
