@@ -676,7 +676,7 @@ export const ensuring = <R1, B>(finalizer: STM.STM<R1, never, B>) => {
   return <R, E, A>(self: STM.STM<R, E, A>): STM.STM<R | R1, E, A> =>
     pipe(
       self,
-      foldSTM(
+      matchSTM(
         (e) => pipe(finalizer, zipRight(fail(e))),
         (a) => pipe(finalizer, zipRight(succeed(a)))
       )
@@ -725,7 +725,7 @@ export const flatMap = <A, R1, E1, A2>(f: (a: A) => STM.STM<R1, E1, A2>) => {
  * @macro traced
  * @internal
  */
-export const foldSTM = <E, R1, E1, A1, A, R2, E2, A2>(
+export const matchSTM = <E, R1, E1, A1, A, R2, E2, A2>(
   onFailure: (e: E) => STM.STM<R1, E1, A1>,
   onSuccess: (a: A) => STM.STM<R2, E2, A2>
 ) => {
