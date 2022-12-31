@@ -929,6 +929,37 @@ export const provideEnvironment = <R>(env: Context.Context<R>) => {
  * @macro traced
  * @internal
  */
+export const provideService = <T>(tag: Context.Tag<T>) =>
+  (resource: T) => {
+    const trace = getCallTrace()
+    return <R, E, A>(self: STM.STM<R, E, A>): STM.STM<Exclude<R, T>, E, A> => {
+      return pipe(self, provideServiceSTM(tag)(core.succeed(resource))).traced(trace)
+    }
+  }
+
+/**
+ * @macro traced
+ * @internal
+ */
+export const provideServiceSTM = <T>(tag: Context.Tag<T>) =>
+  <R1, E1>(stm: STM.STM<R1, E1, T>) => {
+    const trace = getCallTrace()
+    return <R, E, A>(self: STM.STM<R, E, A>): STM.STM<R1 | Exclude<R, T>, E | E1, A> => {
+      return environmentWithSTM((env: Context.Context<R1 | Exclude<R, T>>) =>
+        pipe(
+          stm,
+          core.flatMap((service) =>
+            pipe(self, provideEnvironment(pipe(env, Context.add(tag)(service)) as Context.Context<R | R1>))
+          )
+        )
+      ).traced(trace)
+    }
+  }
+
+/**
+ * @macro traced
+ * @internal
+ */
 export const reduce = <S, A, R, E>(zero: S, f: (s: S, a: A) => STM.STM<R, E, S>) => {
   const trace = getCallTrace()
   return (iterable: Iterable<A>): STM.STM<R, E, S> =>

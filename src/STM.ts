@@ -1021,6 +1021,31 @@ export const provideEnvironment: <R>(env: Context.Context<R>) => <E, A>(self: ST
   stm.provideEnvironment
 
 /**
+ * Provides the effect with the single service it requires. If the transactional
+ * effect requires more than one service use `provideEnvironment` instead.
+ *
+ * @macro traced
+ * @since 1.0.0
+ * @category environment
+ */
+export const provideService: <T>(
+  tag: Context.Tag<T>
+) => (resource: T) => <R, E, A>(self: STM<R, E, A>) => STM<Exclude<R, T>, E, A> = stm.provideService
+
+/**
+ * Provides the effect with the single service it requires. If the transactional
+ * effect requires more than one service use `provideEnvironment` instead.
+ *
+ * @macro traced
+ * @since 1.0.0
+ * @category environment
+ */
+export const provideServiceSTM: <T>(
+  tag: Context.Tag<T>
+) => <R1, E1>(stm: STM<R1, E1, T>) => <R, E, A>(self: STM<R, E, A>) => STM<R1 | Exclude<R, T>, E1 | E, A> =
+  stm.provideServiceSTM
+
+/**
  * Transforms the environment being provided to this effect with the specified
  * function.
  *
