@@ -25,7 +25,12 @@ export type TArrayTypeId = typeof TArrayTypeId
  * @since 1.0.0
  * @category models
  */
-export interface TArray<A> extends TArray.Variance<A> {
+export interface TArray<A> extends TArray.Variance<A> {}
+/**
+ * @internal
+ * @since 1.0.0
+ */
+export interface TArray<A> {
   /** @internal */
   readonly chunk: Chunk.Chunk<TRef.TRef<A>>
 }

@@ -7,16 +7,13 @@ import * as fc from "fast-check"
 import { assert, describe } from "vitest"
 
 const floatsArb: fc.Arbitrary<readonly [number, number]> = fc.tuple(
-  fc.float(),
-  fc.float()
+  fc.float({ noDefaultInfinity: true, noNaN: true }),
+  fc.float({ noDefaultInfinity: true, noNaN: true })
 )
   .filter(([a, b]) => a !== b)
   .map(([a, b]) => b > a ? [a, b] : [b, a])
 
-const intsArb: fc.Arbitrary<readonly [number, number]> = fc.tuple(
-  fc.integer(),
-  fc.integer()
-)
+const intsArb: fc.Arbitrary<readonly [number, number]> = fc.tuple(fc.integer(), fc.integer())
   .filter(([a, b]) => a !== b)
   .map(([a, b]) => b > a ? [a, b] : [b, a])
 

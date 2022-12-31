@@ -26,7 +26,12 @@ export type THubTypeId = typeof THubTypeId
  * @since 1.0.0
  * @category models
  */
-export interface THub<A> extends TQueue.TEnqueue<A> {
+export interface THub<A> extends TQueue.TEnqueue<A> {}
+/**
+ * @internal
+ * @since 1.0.0
+ */
+export interface THub<A> {
   readonly [THubTypeId]: THubTypeId
   /** @internal */
   readonly hubSize: TRef.TRef<number>

@@ -39,7 +39,6 @@ export type TReentrantLockTypeId = typeof TReentrantLockTypeId
  * @category models
  */
 export interface TReentrantLock extends TReentrantLock.Proto {}
-// TODO(Mike/Max): determine if this @since tag is really necessary
 /**
  * @internal
  * @since 1.0.0

@@ -64,7 +64,12 @@ export type STMTypeId = typeof STMTypeId
  * @since 1.0.0
  * @category models
  */
-export interface STM<R, E, A> extends STM.Variance<R, E, A>, Effect.Effect<R, E, A> {
+export interface STM<R, E, A> extends STM.Variance<R, E, A>, Effect.Effect<R, E, A> {}
+/**
+ * @internal
+ * @since 1.0.0
+ */
+export interface STM<R, E, A> {
   /** @internal */
   trace: string | undefined
   /** @internal */
