@@ -39,6 +39,8 @@ Added in v1.0.0
 - [symbols](#symbols)
   - [TPriorityQueueTypeId](#tpriorityqueuetypeid)
   - [TPriorityQueueTypeId (type alias)](#tpriorityqueuetypeid-type-alias)
+- [utils](#utils)
+  - [TPriorityQueue (interface)](#tpriorityqueue-interface-1)
 
 ---
 
@@ -209,10 +211,7 @@ be taken from the queue is not guaranteed.
 **Signature**
 
 ```ts
-export interface TPriorityQueue<A> extends TPriorityQueue.Variance<A> {
-  /** @internal */
-  readonly ref: TRef.TRef<SortedMap.SortedMap<A, [A, ...Array<A>]>>
-}
+export interface TPriorityQueue<A> extends TPriorityQueue.Variance<A> {}
 ```
 
 Added in v1.0.0
@@ -310,6 +309,21 @@ Added in v1.0.0
 
 ```ts
 export type TPriorityQueueTypeId = typeof TPriorityQueueTypeId
+```
+
+Added in v1.0.0
+
+# utils
+
+## TPriorityQueue (interface)
+
+**Signature**
+
+```ts
+export interface TPriorityQueue<A> {
+  /** @internal */
+  readonly ref: TRef.TRef<SortedMap.SortedMap<A, [A, ...Array<A>]>>
+}
 ```
 
 Added in v1.0.0
