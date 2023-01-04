@@ -48,7 +48,7 @@ export type Primitive =
 
 /** @internal */
 type Op<OpCode extends number, Body = {}> = STM.STM<never, never, never> & Body & {
-  readonly op: EffectOpCodes.OP_COMMIT
+  readonly _tag: EffectOpCodes.OP_COMMIT
   readonly opSTM: OpCode
 }
 
@@ -138,7 +138,7 @@ const stmVariance = {
 const proto = Object.assign({}, {
   ...effectCore.proto,
   [STMTypeId]: stmVariance,
-  op: EffectOpCodes.OP_COMMIT,
+  _tag: EffectOpCodes.OP_COMMIT,
   commit(this: STM.STM<any, any, any>): Effect.Effect<any, any, any> {
     return commit(this)
   },
