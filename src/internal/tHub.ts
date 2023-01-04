@@ -127,7 +127,7 @@ class THubImpl<A> implements THub.THub<A> {
         pipe(this.hubSize, tRef.unsafeSet(currentHubSize + 1, runtime.journal))
         return core.succeed(true)
       }
-      switch (this.strategy.op) {
+      switch (this.strategy._tag) {
         case OpCodes.OP_BACKPRESSURE_STRATEGY: {
           return core.retry()
         }
