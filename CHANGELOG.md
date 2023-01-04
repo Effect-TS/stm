@@ -1,5 +1,11 @@
 # @effect/stm
 
+## 0.0.10
+
+### Patch Changes
+
+- [#33](https://github.com/Effect-TS/stm/pull/33) [`77ab873`](https://github.com/Effect-TS/stm/commit/77ab8738aa81d84f81a36e642d152c84f8cd534a) Thanks [@mikearnaldi](https://github.com/mikearnaldi)! - Update dependencies
+
 ## 0.0.9
 
 ### Patch Changes
