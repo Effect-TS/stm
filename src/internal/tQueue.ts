@@ -37,7 +37,7 @@ export type TQueueStrategy = BackPressure | Dropping | Sliding
  * @internal
  */
 export interface BackPressure {
-  readonly op: OpCodes.OP_BACKPRESSURE_STRATEGY
+  readonly _tag: OpCodes.OP_BACKPRESSURE_STRATEGY
 }
 
 /**
@@ -46,7 +46,7 @@ export interface BackPressure {
  * @internal
  */
 export interface Dropping {
-  readonly op: OpCodes.OP_DROPPING_STRATEGY
+  readonly _tag: OpCodes.OP_DROPPING_STRATEGY
 }
 
 /**
@@ -55,22 +55,22 @@ export interface Dropping {
  * @internal
  */
 export interface Sliding {
-  readonly op: OpCodes.OP_SLIDING_STRATEGY
+  readonly _tag: OpCodes.OP_SLIDING_STRATEGY
 }
 
 /** @internal */
 export const BackPressure: TQueueStrategy = {
-  op: OpCodes.OP_BACKPRESSURE_STRATEGY
+  _tag: OpCodes.OP_BACKPRESSURE_STRATEGY
 }
 
 /** @internal */
 export const Dropping: TQueueStrategy = {
-  op: OpCodes.OP_DROPPING_STRATEGY
+  _tag: OpCodes.OP_DROPPING_STRATEGY
 }
 
 /** @internal */
 export const Sliding: TQueueStrategy = {
-  op: OpCodes.OP_SLIDING_STRATEGY
+  _tag: OpCodes.OP_SLIDING_STRATEGY
 }
 
 /** @internal */
@@ -154,7 +154,7 @@ class TQueueImpl<A> implements TQueue.TQueue<A> {
         pipe(this.ref, tRef.unsafeSet<Array<A> | undefined>(queue, runtime.journal))
         return core.succeed(true)
       }
-      switch (this.strategy.op) {
+      switch (this.strategy._tag) {
         case OpCodes.OP_BACKPRESSURE_STRATEGY: {
           return core.retry()
         }
@@ -186,7 +186,7 @@ class TQueueImpl<A> implements TQueue.TQueue<A> {
         pipe(this.ref, tRef.unsafeSet<Array<A> | undefined>([...queue, ...as], runtime.journal))
         return core.succeed(true)
       }
-      switch (this.strategy.op) {
+      switch (this.strategy._tag) {
         case OpCodes.OP_BACKPRESSURE_STRATEGY: {
           return core.retry()
         }

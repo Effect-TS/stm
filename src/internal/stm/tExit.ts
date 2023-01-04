@@ -35,34 +35,34 @@ const variance = {
 
 /** @internal */
 export interface Fail<E> extends TExit.Variance<E, never>, Equal.Equal {
-  readonly op: OpCodes.OP_FAIL
+  readonly _tag: OpCodes.OP_FAIL
   readonly error: E
   readonly annotation: StackAnnotation
 }
 
 /** @internal */
 export interface Die extends TExit.Variance<never, never>, Equal.Equal {
-  readonly op: OpCodes.OP_DIE
+  readonly _tag: OpCodes.OP_DIE
   readonly defect: unknown
   readonly annotation: StackAnnotation
 }
 
 /** @internal */
 export interface Interrupt extends TExit.Variance<never, never>, Equal.Equal {
-  readonly op: OpCodes.OP_INTERRUPT
+  readonly _tag: OpCodes.OP_INTERRUPT
   readonly fiberId: FiberId.FiberId
   readonly annotation: StackAnnotation
 }
 
 /** @internal */
 export interface Succeed<A> extends TExit.Variance<never, A>, Equal.Equal {
-  readonly op: OpCodes.OP_SUCCEED
+  readonly _tag: OpCodes.OP_SUCCEED
   readonly value: A
 }
 
 /** @internal */
 export interface Retry extends TExit.Variance<never, never>, Equal.Equal {
-  readonly op: OpCodes.OP_RETRY
+  readonly _tag: OpCodes.OP_RETRY
 }
 
 /** @internal */
@@ -72,33 +72,33 @@ export const isExit = (u: unknown): u is TExit<unknown, unknown> => {
 
 /** @internal */
 export const isFail = <E, A>(self: TExit<E, A>): self is Fail<E> => {
-  return self.op === OpCodes.OP_FAIL
+  return self._tag === OpCodes.OP_FAIL
 }
 
 /** @internal */
 export const isDie = <E, A>(self: TExit<E, A>): self is Die => {
-  return self.op === OpCodes.OP_DIE
+  return self._tag === OpCodes.OP_DIE
 }
 
 /** @internal */
 export const isInterrupt = <E, A>(self: TExit<E, A>): self is Interrupt => {
-  return self.op === OpCodes.OP_INTERRUPT
+  return self._tag === OpCodes.OP_INTERRUPT
 }
 
 /** @internal */
 export const isSuccess = <E, A>(self: TExit<E, A>): self is Succeed<A> => {
-  return self.op === OpCodes.OP_SUCCEED
+  return self._tag === OpCodes.OP_SUCCEED
 }
 
 /** @internal */
 export const isRetry = <E, A>(self: TExit<E, A>): self is Retry => {
-  return self.op === OpCodes.OP_RETRY
+  return self._tag === OpCodes.OP_RETRY
 }
 
 /** @internal */
 export const fail = <E>(error: E, annotation: StackAnnotation): TExit<E, never> => ({
   [TExitTypeId]: variance,
-  op: OpCodes.OP_FAIL,
+  _tag: OpCodes.OP_FAIL,
   error,
   annotation,
   [Equal.symbolHash](): number {
@@ -109,14 +109,14 @@ export const fail = <E>(error: E, annotation: StackAnnotation): TExit<E, never> 
     )
   },
   [Equal.symbolEqual](that: unknown): boolean {
-    return isExit(that) && that.op === OpCodes.OP_FAIL && Equal.equals(error, that.error)
+    return isExit(that) && that._tag === OpCodes.OP_FAIL && Equal.equals(error, that.error)
   }
 })
 
 /** @internal */
 export const die = (defect: unknown, annotation: StackAnnotation): TExit<never, never> => ({
   [TExitTypeId]: variance,
-  op: OpCodes.OP_DIE,
+  _tag: OpCodes.OP_DIE,
   defect,
   annotation,
   [Equal.symbolHash](): number {
@@ -127,14 +127,14 @@ export const die = (defect: unknown, annotation: StackAnnotation): TExit<never, 
     )
   },
   [Equal.symbolEqual](that: unknown): boolean {
-    return isExit(that) && that.op === OpCodes.OP_DIE && Equal.equals(defect, that.defect)
+    return isExit(that) && that._tag === OpCodes.OP_DIE && Equal.equals(defect, that.defect)
   }
 })
 
 /** @internal */
 export const interrupt = (fiberId: FiberId.FiberId, annotation: StackAnnotation): TExit<never, never> => ({
   [TExitTypeId]: variance,
-  op: OpCodes.OP_INTERRUPT,
+  _tag: OpCodes.OP_INTERRUPT,
   fiberId,
   annotation,
   [Equal.symbolHash](): number {
@@ -145,14 +145,14 @@ export const interrupt = (fiberId: FiberId.FiberId, annotation: StackAnnotation)
     )
   },
   [Equal.symbolEqual](that: unknown): boolean {
-    return isExit(that) && that.op === OpCodes.OP_INTERRUPT && Equal.equals(fiberId, that.fiberId)
+    return isExit(that) && that._tag === OpCodes.OP_INTERRUPT && Equal.equals(fiberId, that.fiberId)
   }
 })
 
 /** @internal */
 export const succeed = <A>(value: A): TExit<never, A> => ({
   [TExitTypeId]: variance,
-  op: OpCodes.OP_SUCCEED,
+  _tag: OpCodes.OP_SUCCEED,
   value,
   [Equal.symbolHash](): number {
     return pipe(
@@ -162,7 +162,7 @@ export const succeed = <A>(value: A): TExit<never, A> => ({
     )
   },
   [Equal.symbolEqual](that: unknown): boolean {
-    return isExit(that) && that.op === OpCodes.OP_SUCCEED && Equal.equals(value, that.value)
+    return isExit(that) && that._tag === OpCodes.OP_SUCCEED && Equal.equals(value, that.value)
   }
 })
 
@@ -172,7 +172,7 @@ const retryHash = Equal.hashRandom({ op: OpCodes.OP_RETRY })
 /** @internal */
 export const retry: TExit<never, never> = ({
   [TExitTypeId]: variance,
-  op: OpCodes.OP_RETRY,
+  _tag: OpCodes.OP_RETRY,
   [Equal.symbolHash](): number {
     return pipe(
       Equal.hash(TExitSymbolKey),

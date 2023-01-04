@@ -20,20 +20,20 @@ export type STMState<E, A> = Done<E, A> | Interrupted | Running
 /** @internal */
 export interface Done<E, A> extends Equal.Equal {
   readonly [STMStateTypeId]: STMStateTypeId
-  readonly op: OpCodes.OP_DONE
+  readonly _tag: OpCodes.OP_DONE
   readonly exit: Exit.Exit<E, A>
 }
 
 /** @internal */
 export interface Interrupted extends Equal.Equal {
   readonly [STMStateTypeId]: STMStateTypeId
-  readonly op: OpCodes.OP_INTERRUPTED
+  readonly _tag: OpCodes.OP_INTERRUPTED
 }
 
 /** @internal */
 export interface Running extends Equal.Equal {
   readonly [STMStateTypeId]: STMStateTypeId
-  readonly op: OpCodes.OP_RUNNING
+  readonly _tag: OpCodes.OP_RUNNING
 }
 
 /** @internal */
@@ -43,24 +43,24 @@ export const isSTMState = (u: unknown): u is STMState<unknown, unknown> => {
 
 /** @internal */
 export const isRunning = <E, A>(self: STMState<E, A>): self is Running => {
-  return self.op === OpCodes.OP_RUNNING
+  return self._tag === OpCodes.OP_RUNNING
 }
 
 /** @internal */
 export const isDone = <E, A>(self: STMState<E, A>): self is Done<E, A> => {
-  return self.op === OpCodes.OP_DONE
+  return self._tag === OpCodes.OP_DONE
 }
 
 /** @internal */
 export const isInterrupted = <E, A>(self: STMState<E, A>): self is Interrupted => {
-  return self.op === OpCodes.OP_INTERRUPTED
+  return self._tag === OpCodes.OP_INTERRUPTED
 }
 
 /** @internal */
 export const done = <E, A>(exit: Exit.Exit<E, A>): STMState<E, A> => {
   return {
     [STMStateTypeId]: STMStateTypeId,
-    op: OpCodes.OP_DONE,
+    _tag: OpCodes.OP_DONE,
     exit,
     [Equal.symbolHash](): number {
       return pipe(
@@ -70,18 +70,18 @@ export const done = <E, A>(exit: Exit.Exit<E, A>): STMState<E, A> => {
       )
     },
     [Equal.symbolEqual](that: unknown): boolean {
-      return isSTMState(that) && that.op === OpCodes.OP_DONE && Equal.equals(exit, that.exit)
+      return isSTMState(that) && that._tag === OpCodes.OP_DONE && Equal.equals(exit, that.exit)
     }
   }
 }
 
 /** @internal */
-const interruptedHash = Equal.hashRandom({ op: OpCodes.OP_INTERRUPTED })
+const interruptedHash = Equal.hashRandom({ _tag: OpCodes.OP_INTERRUPTED })
 
 /** @internal */
 export const interrupted: STMState<never, never> = {
   [STMStateTypeId]: STMStateTypeId,
-  op: OpCodes.OP_INTERRUPTED,
+  _tag: OpCodes.OP_INTERRUPTED,
   [Equal.symbolHash](): number {
     return pipe(
       Equal.hash(STMStateSymbolKey),
@@ -90,17 +90,17 @@ export const interrupted: STMState<never, never> = {
     )
   },
   [Equal.symbolEqual](that: unknown): boolean {
-    return isSTMState(that) && that.op === OpCodes.OP_INTERRUPTED
+    return isSTMState(that) && that._tag === OpCodes.OP_INTERRUPTED
   }
 }
 
 /** @internal */
-const runningHash = Equal.hashRandom({ op: OpCodes.OP_RUNNING })
+const runningHash = Equal.hashRandom({ _tag: OpCodes.OP_RUNNING })
 
 /** @internal */
 export const running: STMState<never, never> = {
   [STMStateTypeId]: STMStateTypeId,
-  op: OpCodes.OP_RUNNING,
+  _tag: OpCodes.OP_RUNNING,
   [Equal.symbolHash](): number {
     return pipe(
       Equal.hash(STMStateSymbolKey),
@@ -109,13 +109,13 @@ export const running: STMState<never, never> = {
     )
   },
   [Equal.symbolEqual](that: unknown): boolean {
-    return isSTMState(that) && that.op === OpCodes.OP_RUNNING
+    return isSTMState(that) && that._tag === OpCodes.OP_RUNNING
   }
 }
 
 /** @internal */
 export const fromTExit = <E, A>(tExit: TExit.TExit<E, A>): STMState<E, A> => {
-  switch (tExit.op) {
+  switch (tExit._tag) {
     case TExitOpCodes.OP_FAIL: {
       return done(Exit.fail(tExit.error))
     }

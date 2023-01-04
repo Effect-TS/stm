@@ -12,19 +12,19 @@ export type Todo = () => unknown
 export type JournalAnalysis = JournalAnalysisInvalid | JournalAnalysisReadWrite | JournalAnalysisReadOnly
 
 /** @internal */
-export const JournalAnalysisInvalid = 0 as const
+export const JournalAnalysisInvalid = "Invalid" as const
 
 /** @internal */
 export type JournalAnalysisInvalid = typeof JournalAnalysisInvalid
 
 /** @internal */
-export const JournalAnalysisReadWrite = 1 as const
+export const JournalAnalysisReadWrite = "ReadWrite" as const
 
 /** @internal */
 export type JournalAnalysisReadWrite = typeof JournalAnalysisReadWrite
 
 /** @internal */
-export const JournalAnalysisReadOnly = 2 as const
+export const JournalAnalysisReadOnly = "ReadOnly" as const
 
 /** @internal */
 export type JournalAnalysisReadOnly = typeof JournalAnalysisReadOnly
