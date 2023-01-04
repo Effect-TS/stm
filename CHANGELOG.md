@@ -1,5 +1,11 @@
 # @effect/stm
 
+## 0.0.11
+
+### Patch Changes
+
+- [#35](https://github.com/Effect-TS/stm/pull/35) [`91bee00`](https://github.com/Effect-TS/stm/commit/91bee003677d99127388d021105479ad85b82b4f) Thanks [@IMax153](https://github.com/IMax153)! - use \_tag over op
+
 ## 0.0.10
 
 ### Patch Changes
