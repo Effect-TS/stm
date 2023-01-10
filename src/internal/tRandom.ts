@@ -144,7 +144,7 @@ class TRandomImpl implements TRandom.TRandom {
 
 /** @internal */
 export const live = (): Layer.Layer<never, never, TRandom.TRandom> =>
-  Layer.fromEffect(Tag)(pipe(
+  Layer.effect(Tag)(pipe(
     tRef.make(new Random.PCGRandom((Math.random() * 4294967296) >>> 0).getState()),
     core.map((seed) => new TRandomImpl(seed)),
     core.commit
