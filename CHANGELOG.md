@@ -1,5 +1,11 @@
 # @effect/stm
 
+## 0.0.15
+
+### Patch Changes
+
+- [#43](https://github.com/Effect-TS/stm/pull/43) [`f19678b`](https://github.com/Effect-TS/stm/commit/f19678b677df4a7cdceb7b32b7bf487fb69d0539) Thanks [@mikearnaldi](https://github.com/mikearnaldi)! - Update build scripts
+
 ## 0.0.14
 
 ### Patch Changes
