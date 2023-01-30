@@ -2,7 +2,7 @@ import * as Effect from "@effect/io/Effect"
 import * as STM from "@effect/stm/STM"
 import * as it from "@effect/stm/test/utils/extend"
 import * as TRandom from "@effect/stm/TRandom"
-import { pipe } from "@fp-ts/data/Function"
+import { pipe } from "@fp-ts/core/Function"
 import * as fc from "fast-check"
 import { assert, describe } from "vitest"
 
@@ -23,7 +23,7 @@ describe.concurrent("TRandom", () => {
       const result = await pipe(
         STM.commit(TRandom.nextRange(min, max)),
         Effect.provideLayer(TRandom.live()),
-        Effect.unsafeRunPromise
+        Effect.runPromise
       )
       assert.isAtLeast(result, min)
       assert.isBelow(result, max)
@@ -34,7 +34,7 @@ describe.concurrent("TRandom", () => {
       const result = await pipe(
         STM.commit(TRandom.nextRange(min, max)),
         Effect.provideLayer(TRandom.live()),
-        Effect.unsafeRunPromise
+        Effect.runPromise
       )
       assert.isAtLeast(result, min)
       assert.isBelow(result, max)

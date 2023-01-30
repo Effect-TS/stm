@@ -1,5 +1,5 @@
-import * as Entry from "@effect/stm/internal/stm/entry"
-import type * as TxnId from "@effect/stm/internal/stm/txnId"
+import * as Entry from "@effect/stm/internal_effect_untraced/stm/entry"
+import type * as TxnId from "@effect/stm/internal_effect_untraced/stm/txnId"
 import type * as TRef from "@effect/stm/TRef"
 
 /** @internal */

@@ -63,3 +63,9 @@ export const OP_INTERRUPT = "Interrupt" as const
 
 /** @internal */
 export type OP_INTERRUPT = typeof OP_INTERRUPT
+
+/** @internal */
+export const OP_TRACED = "Traced" as const
+
+/** @internal */
+export type OP_TRACED = typeof OP_TRACED

@@ -1,11 +1,11 @@
 /**
  * @since 1.0.0
  */
-import * as internal from "@effect/stm/internal/tQueue"
+import * as internal from "@effect/stm/internal_effect_untraced/tQueue"
 import type * as STM from "@effect/stm/STM"
+import type * as Option from "@fp-ts/core/Option"
+import type { Predicate } from "@fp-ts/core/Predicate"
 import type * as Chunk from "@fp-ts/data/Chunk"
-import type * as Option from "@fp-ts/data/Option"
-import type { Predicate } from "@fp-ts/data/Predicate"
 
 /**
  * @since 1.0.0
@@ -44,8 +44,6 @@ export interface TQueue<A> extends TEnqueue<A>, TDequeue<A> {}
 export interface TEnqueue<A> extends TQueue.TEnqueueVariance<A>, BaseTQueue {
   /**
    * Places one value in the queue.
-   *
-   * @macro traced
    */
   offer(value: A): STM.STM<never, never, boolean>
 
@@ -63,8 +61,6 @@ export interface TEnqueue<A> extends TQueue.TEnqueueVariance<A>, BaseTQueue {
    *
    * For Dropping TQueue: uses `Dropping` Strategy, It places the values in the
    * queue but if there is no room it will not enqueue them and return false.
-   *
-   * @macro traced
    */
   offerAll(iterable: Iterable<A>): STM.STM<never, never, boolean>
 }
@@ -77,39 +73,29 @@ export interface TDequeue<A> extends TQueue.TDequeueVariance<A>, BaseTQueue {
   /**
    * Views the next element in the queue without removing it, retrying if the
    * queue is empty.
-   *
-   * @macro traced
    */
   peek(): STM.STM<never, never, A>
 
   /**
    * Views the next element in the queue without removing it, returning `None`
    * if the queue is empty.
-   *
-   * @macro traced
    */
   peekOption(): STM.STM<never, never, Option.Option<A>>
 
   /**
    * Takes the oldest value in the queue. If the queue is empty, this will return
    * a computation that resumes when an item has been added to the queue.
-   *
-   * @macro traced
    */
   take(): STM.STM<never, never, A>
 
   /**
    * Takes all the values in the queue and returns the values. If the queue is
    * empty returns an empty collection.
-   *
-   * @macro traced
    */
   takeAll(): STM.STM<never, never, Chunk.Chunk<A>>
 
   /**
    * Takes up to max number of values from the queue.
-   *
-   * @macro traced
    */
   takeUpTo(max: number): STM.STM<never, never, Chunk.Chunk<A>>
 }
@@ -130,38 +116,28 @@ export interface BaseTQueue {
    * Retrieves the size of the queue, which is equal to the number of elements
    * in the queue. This may be negative if fibers are suspended waiting for
    * elements to be added to the queue.
-   *
-   * @macro traced
    */
   size(): STM.STM<never, never, number>
 
   /**
    * Returns `true` if the `TQueue` contains at least one element, `false`
    * otherwise.
-   *
-   * @macro traced
    */
   isFull(): STM.STM<never, never, boolean>
 
   /**
    * Returns `true` if the `TQueue` contains zero elements, `false` otherwise.
-   *
-   * @macro traced
    */
   isEmpty(): STM.STM<never, never, boolean>
 
   /**
    * Interrupts any fibers that are suspended on `offer` or `take`. Future calls
    * to `offer*` and `take*` will be interrupted immediately.
-   *
-   * @macro traced
    */
   shutdown(): STM.STM<never, never, void>
 
   /**
    * Returns `true` if `shutdown` has been called, otherwise returns `false`.
-   *
-   * @macro traced
    */
   isShutdown(): STM.STM<never, never, boolean>
 
@@ -169,8 +145,6 @@ export interface BaseTQueue {
    * Waits until the queue is shutdown. The `STM` returned by this method will
    * not resume until the queue has been shutdown. If the queue is already
    * shutdown, the `STM` will resume right away.
-   *
-   * @macro traced
    */
   awaitShutdown(): STM.STM<never, never, void>
 }
@@ -229,7 +203,6 @@ export const isTEnqueue: (u: unknown) => u is TEnqueue<unknown> = internal.isTEn
  * not resume until the queue has been shutdown. If the queue is already
  * shutdown, the `STM` will resume right away.
  *
- * @macro traced
  * @since 1.0.0
  * @category mutations
  */
@@ -242,7 +215,6 @@ export const awaitShutdown: <A>(self: TQueue<A>) => STM.STM<never, never, void> 
  *
  * For best performance use capacities that are powers of two.
  *
- * @macro traced
  * @since 1.0.0
  * @category constructors
  */
@@ -262,7 +234,6 @@ export const capacity: <A>(self: TQueue<A>) => number = internal.capacity
  *
  * For best performance use capacities that are powers of two.
  *
- * @macro traced
  * @since 1.0.0
  * @category constructors
  */
@@ -271,7 +242,6 @@ export const dropping: <A>(requestedCapacity: number) => STM.STM<never, never, T
 /**
  * Returns `true` if the `TQueue` contains zero elements, `false` otherwise.
  *
- * @macro traced
  * @since 1.0.0
  * @category getters
  */
@@ -281,7 +251,6 @@ export const isEmpty: <A>(self: TQueue<A>) => STM.STM<never, never, boolean> = i
  * Returns `true` if the `TQueue` contains at least one element, `false`
  * otherwise.
  *
- * @macro traced
  * @since 1.0.0
  * @category getters
  */
@@ -290,7 +259,6 @@ export const isFull: <A>(self: TQueue<A>) => STM.STM<never, never, boolean> = in
 /**
  * Returns `true` if `shutdown` has been called, otherwise returns `false`.
  *
- * @macro traced
  * @since 1.0.0
  * @category getters
  */
@@ -299,11 +267,13 @@ export const isShutdown: <A>(self: TQueue<A>) => STM.STM<never, never, boolean> 
 /**
  * Places one value in the queue.
  *
- * @macro traced
  * @since 1.0.0
  * @category mutations
  */
-export const offer: <A>(value: A) => (self: TEnqueue<A>) => STM.STM<never, never, void> = internal.offer
+export const offer: {
+  <A>(self: TEnqueue<A>, value: A): STM.STM<never, never, void>
+  <A>(value: A): (self: TEnqueue<A>) => STM.STM<never, never, void>
+} = internal.offer
 
 /**
  * For Bounded TQueue: uses the `BackPressure` Strategy, places the values in
@@ -320,18 +290,18 @@ export const offer: <A>(value: A) => (self: TEnqueue<A>) => STM.STM<never, never
  * For Dropping TQueue: uses `Dropping` Strategy, It places the values in the
  * queue but if there is no room it will not enqueue them and return false.
  *
- * @macro traced
  * @since 1.0.0
  * @category mutations
  */
-export const offerAll: <A>(iterable: Iterable<A>) => (self: TEnqueue<A>) => STM.STM<never, never, boolean> =
-  internal.offerAll
+export const offerAll: {
+  <A>(self: TEnqueue<A>, iterable: Iterable<A>): STM.STM<never, never, boolean>
+  <A>(iterable: Iterable<A>): (self: TEnqueue<A>) => STM.STM<never, never, boolean>
+} = internal.offerAll
 
 /**
  * Views the next element in the queue without removing it, retrying if the
  * queue is empty.
  *
- * @macro traced
  * @since 1.0.0
  * @category getters
  */
@@ -341,7 +311,6 @@ export const peek: <A>(self: TDequeue<A>) => STM.STM<never, never, A> = internal
  * Views the next element in the queue without removing it, returning `None`
  * if the queue is empty.
  *
- * @macro traced
  * @since 1.0.0
  * @category getters
  */
@@ -351,7 +320,6 @@ export const peekOption: <A>(self: TDequeue<A>) => STM.STM<never, never, Option.
  * Takes a single element from the queue, returning `None` if the queue is
  * empty.
  *
- * @macro traced
  * @since 1.0.0
  * @category getters
  */
@@ -362,17 +330,18 @@ export const poll: <A>(self: TDequeue<A>) => STM.STM<never, never, Option.Option
  * taking and returning the first element that does satisfy the predicate.
  * Retries if no elements satisfy the predicate.
  *
- * @macro traced
  * @since 1.0.0
  * @category mutations
  */
-export const seek: <A>(predicate: Predicate<A>) => (self: TDequeue<A>) => STM.STM<never, never, A> = internal.seek
+export const seek: {
+  <A>(self: TDequeue<A>, predicate: Predicate<A>): STM.STM<never, never, A>
+  <A>(predicate: Predicate<A>): (self: TDequeue<A>) => STM.STM<never, never, A>
+} = internal.seek
 
 /**
  * Interrupts any fibers that are suspended on `offer` or `take`. Future calls
  * to `offer*` and `take*` will be interrupted immediately.
  *
- * @macro traced
  * @since 1.0.0
  * @category mutations
  */
@@ -383,7 +352,6 @@ export const shutdown: <A>(self: TQueue<A>) => STM.STM<never, never, void> = int
  * in the queue. This may be negative if fibers are suspended waiting for
  * elements to be added to the queue.
  *
- * @macro traced
  * @since 1.0.0
  * @category getters
  */
@@ -395,7 +363,6 @@ export const size: <A>(self: TQueue<A>) => STM.STM<never, never, number> = inter
  *
  * For best performance use capacities that are powers of two.
  *
- * @macro traced
  * @since 1.0.0
  * @category constructors
  */
@@ -405,7 +372,6 @@ export const sliding: <A>(requestedCapacity: number) => STM.STM<never, never, TQ
  * Takes the oldest value in the queue. If the queue is empty, this will return
  * a computation that resumes when an item has been added to the queue.
  *
- * @macro traced
  * @since 1.0.0
  * @category mutations
  */
@@ -415,7 +381,6 @@ export const take: <A>(self: TDequeue<A>) => STM.STM<never, never, A> = internal
  * Takes all the values in the queue and returns the values. If the queue is
  * empty returns an empty collection.
  *
- * @macro traced
  * @since 1.0.0
  * @category mutations
  */
@@ -426,40 +391,41 @@ export const takeAll: <A>(self: TDequeue<A>) => STM.STM<never, never, Chunk.Chun
  * maximum. If there are fewer than the minimum number of elements available,
  * retries until at least the minimum number of elements have been collected.
  *
- * @macro traced
  * @since 1.0.0
  * @category mutations
  */
-export const takeBetween: (
-  min: number,
-  max: number
-) => <A>(self: TDequeue<A>) => STM.STM<never, never, Chunk.Chunk<A>> = internal.takeBetween
+export const takeBetween: {
+  <A>(self: TDequeue<A>, min: number, max: number): STM.STM<never, never, Chunk.Chunk<A>>
+  (min: number, max: number): <A>(self: TDequeue<A>) => STM.STM<never, never, Chunk.Chunk<A>>
+} = internal.takeBetween
 
 /**
  * Takes the specified number of elements from the queue. If there are fewer
  * than the specified number of elements available, it retries until they
  * become available.
  *
- * @macro traced
  * @since 1.0.0
  * @category mutations
  */
-export const takeN: (n: number) => <A>(self: TDequeue<A>) => STM.STM<never, never, Chunk.Chunk<A>> = internal.takeN
+export const takeN: {
+  <A>(self: TDequeue<A>, n: number): STM.STM<never, never, Chunk.Chunk<A>>
+  (n: number): <A>(self: TDequeue<A>) => STM.STM<never, never, Chunk.Chunk<A>>
+} = internal.takeN
 
 /**
  * Takes up to max number of values from the queue.
  *
- * @macro traced
  * @since 1.0.0
  * @category mutations
  */
-export const takeUpTo: (max: number) => <A>(self: TDequeue<A>) => STM.STM<never, never, Chunk.Chunk<A>> =
-  internal.takeUpTo
+export const takeUpTo: {
+  <A>(self: TDequeue<A>, max: number): STM.STM<never, never, Chunk.Chunk<A>>
+  (max: number): <A>(self: TDequeue<A>) => STM.STM<never, never, Chunk.Chunk<A>>
+} = internal.takeUpTo
 
 /**
  * Creates an unbounded queue.
  *
- * @macro traced
  * @since 1.0.0
  * @category constructors
  */

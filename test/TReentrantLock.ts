@@ -7,8 +7,8 @@ import * as Schedule from "@effect/io/Schedule"
 import * as STM from "@effect/stm/STM"
 import * as it from "@effect/stm/test/utils/extend"
 import * as TReentrantLock from "@effect/stm/TReentrantLock"
-import { pipe } from "@fp-ts/data/Function"
-import * as Option from "@fp-ts/data/Option"
+import { pipe } from "@fp-ts/core/Function"
+import * as Option from "@fp-ts/core/Option"
 import { assert, describe } from "vitest"
 
 const pollSchedule = <E, A>(): Schedule.Schedule<
@@ -131,7 +131,7 @@ describe.concurrent("TReentrantLock", () => {
       yield* $(pipe(wLatch, Deferred.succeed<void>(void 0)))
       const readerCount = yield* $(Fiber.join(fiber))
       assert.strictEqual(locks, 1)
-      assert.deepStrictEqual(option, Option.none)
+      assert.deepStrictEqual(option, Option.none())
       assert.strictEqual(readerCount, 1)
     }))
 
@@ -229,7 +229,7 @@ describe.concurrent("TReentrantLock", () => {
       const option = yield* $(pipe(Fiber.poll(fiber), Effect.repeat(pollSchedule())))
       yield* $(pipe(rLatch, Deferred.succeed<void>(void 0)))
       const count = yield* $(Fiber.join(fiber))
-      assert.deepStrictEqual(option, Option.none)
+      assert.deepStrictEqual(option, Option.none())
       assert.strictEqual(count, 1)
     }))
 })

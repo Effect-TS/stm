@@ -1,28 +1,27 @@
 import * as Cause from "@effect/io/Cause"
-import { getCallTrace, isTraceEnabled, runtimeDebug } from "@effect/io/Debug"
-import type * as Effect from "@effect/io/Effect"
+import * as Debug from "@effect/io/Debug"
+import * as Effect from "@effect/io/Effect"
 import * as Exit from "@effect/io/Exit"
 import type * as FiberId from "@effect/io/Fiber/Id"
-import { StackAnnotation } from "@effect/io/internal/cause"
-import * as effectCore from "@effect/io/internal/core"
-import * as EffectOpCodes from "@effect/io/internal/opCodes/effect"
-import { RingBuffer } from "@effect/io/internal/support"
+import * as FiberRef from "@effect/io/FiberRef"
+import * as internalCause from "@effect/io/internal_effect_untraced/cause"
+import { proto as effectProto, withFiberRuntime } from "@effect/io/internal_effect_untraced/core"
+import { OP_COMMIT } from "@effect/io/internal_effect_untraced/opCodes/effect"
 import type * as Scheduler from "@effect/io/Scheduler"
-import * as OpCodes from "@effect/stm/internal/opCodes/stm"
-import * as TExitOpCodes from "@effect/stm/internal/opCodes/tExit"
-import * as TryCommitOpCodes from "@effect/stm/internal/opCodes/tryCommit"
-import * as Journal from "@effect/stm/internal/stm/journal"
-import * as STMState from "@effect/stm/internal/stm/stmState"
-import * as TExit from "@effect/stm/internal/stm/tExit"
-import * as TryCommit from "@effect/stm/internal/stm/tryCommit"
-import * as TxnId from "@effect/stm/internal/stm/txnId"
+import * as OpCodes from "@effect/stm/internal_effect_untraced/opCodes/stm"
+import * as TExitOpCodes from "@effect/stm/internal_effect_untraced/opCodes/tExit"
+import * as TryCommitOpCodes from "@effect/stm/internal_effect_untraced/opCodes/tryCommit"
+import * as Journal from "@effect/stm/internal_effect_untraced/stm/journal"
+import * as STMState from "@effect/stm/internal_effect_untraced/stm/stmState"
+import * as TExit from "@effect/stm/internal_effect_untraced/stm/tExit"
+import * as TryCommit from "@effect/stm/internal_effect_untraced/stm/tryCommit"
+import * as TxnId from "@effect/stm/internal_effect_untraced/stm/txnId"
 import type * as STM from "@effect/stm/STM"
+import * as Either from "@fp-ts/core/Either"
+import type { LazyArg } from "@fp-ts/core/Function"
+import { constVoid, pipe } from "@fp-ts/core/Function"
 import * as Chunk from "@fp-ts/data/Chunk"
 import type * as Context from "@fp-ts/data/Context"
-import * as Either from "@fp-ts/data/Either"
-import * as Equal from "@fp-ts/data/Equal"
-import type { LazyArg } from "@fp-ts/data/Function"
-import { constVoid, pipe } from "@fp-ts/data/Function"
 
 /** @internal */
 const STMSymbolKey = "@effect/stm/STM"
@@ -44,11 +43,12 @@ export type Primitive =
   | STMRetry
   | STMFail
   | STMDie
+  | STMTraced
   | STMInterrupt
 
 /** @internal */
 type Op<Tag extends string, Body = {}> = STM.STM<never, never, never> & Body & {
-  readonly _tag: EffectOpCodes.OP_COMMIT
+  readonly _tag: OP_COMMIT
   readonly _stmTag: Tag
 }
 
@@ -125,6 +125,14 @@ interface STMDie extends
 {}
 
 /** @internal */
+interface STMTraced extends
+  Op<OpCodes.OP_TRACED, {
+    readonly stm: STM.STM<unknown, unknown, unknown>
+    readonly trace: Debug.Trace
+  }>
+{}
+
+/** @internal */
 interface STMInterrupt extends Op<OpCodes.OP_INTERRUPT, {}> {}
 
 /** @internal */
@@ -136,81 +144,80 @@ const stmVariance = {
 
 /** @internal */
 const proto = Object.assign({}, {
-  ...effectCore.proto,
+  ...effectProto,
   [STMTypeId]: stmVariance,
-  _tag: EffectOpCodes.OP_COMMIT,
+  _tag: OP_COMMIT,
   commit(this: STM.STM<any, any, any>): Effect.Effect<any, any, any> {
-    return commit(this)
+    return Debug.untraced(() => commit(this))
   },
   traced(this: STM.STM<any, any, any>, trace: string | undefined): STM.STM<any, any, any> {
-    if (!isTraceEnabled() || trace === this["trace"]) {
+    if (!trace) {
       return this
     }
-    const fresh = Object.create(proto)
-    Object.assign(fresh, this)
-    fresh.trace = trace
-    return fresh
+    const stm = Object.create(proto)
+    stm._stmTag = OpCodes.OP_TRACED
+    stm.stm = this
+    stm.trace = trace
+    return stm
   }
 })
 
 /**
- * @macro traced
  * @internal
  */
-export const commit = <R, E, A>(self: STM.STM<R, E, A>): Effect.Effect<R, E, A> => {
-  const trace = getCallTrace()
-  return unsafeAtomically(self, constVoid, constVoid).traced(trace)
-}
+export const commit = Debug.methodWithTrace((trace) =>
+  <R, E, A>(self: STM.STM<R, E, A>): Effect.Effect<R, E, A> =>
+    unsafeAtomically(self, constVoid, constVoid).traced(trace)
+)
 
 /**
- * @macro traced
  * @internal
  */
-export const unsafeAtomically = <R, E, A>(
-  self: STM.STM<R, E, A>,
-  onDone: (exit: Exit.Exit<E, A>) => unknown,
-  onInterrupt: LazyArg<unknown>
-): Effect.Effect<R, E, A> => {
-  const trace = getCallTrace()
-  return effectCore.withFiberRuntime<R, E, A>((state) => {
-    const fiberId = state.id()
-    const env = state.getFiberRef(effectCore.currentEnvironment) as Context.Context<R>
-    const scheduler = state.getFiberRef(effectCore.currentScheduler)
-    const commitResult = tryCommitSync(fiberId, self, env, scheduler)
-    switch (commitResult._tag) {
-      case TryCommitOpCodes.OP_DONE: {
-        onDone(commitResult.exit)
-        return effectCore.done(commitResult.exit)
-      }
-      case TryCommitOpCodes.OP_SUSPEND: {
-        const txnId = TxnId.make()
-        const state: { value: STMState.STMState<E, A> } = { value: STMState.running }
-        const effect = effectCore.async(
-          (k: (effect: Effect.Effect<R, E, A>) => unknown): void =>
-            tryCommitAsync(fiberId, self, txnId, state, env, scheduler, k)
-        )
-        return effectCore.uninterruptibleMask((restore) =>
-          pipe(
-            restore(effect),
-            effectCore.catchAllCause((cause) => {
-              let currentState = state.value
-              if (STMState.isRunning(currentState)) {
-                state.value = STMState.interrupted
-              }
-              currentState = state.value
-              if (STMState.isDone(currentState)) {
-                onDone(currentState.exit)
-                return effectCore.done(currentState.exit)
-              }
-              onInterrupt()
-              return effectCore.failCause(cause)
-            })
+export const unsafeAtomically = Debug.methodWithTrace((trace) =>
+  <R, E, A>(
+    self: STM.STM<R, E, A>,
+    onDone: (exit: Exit.Exit<E, A>) => unknown,
+    onInterrupt: LazyArg<unknown>
+  ): Effect.Effect<R, E, A> =>
+    withFiberRuntime<R, E, A>((state) => {
+      const fiberId = state.id()
+      const env = state.getFiberRef(FiberRef.currentContext) as Context.Context<R>
+      const scheduler = state.getFiberRef(FiberRef.currentScheduler)
+      const commitResult = tryCommitSync(fiberId, self, env, scheduler)
+      switch (commitResult._tag) {
+        case TryCommitOpCodes.OP_DONE: {
+          onDone(commitResult.exit)
+          return Effect.done(commitResult.exit)
+        }
+        case TryCommitOpCodes.OP_SUSPEND: {
+          const txnId = TxnId.make()
+          const state: { value: STMState.STMState<E, A> } = { value: STMState.running }
+          const effect = Effect.async(
+            (k: (effect: Effect.Effect<R, E, A>) => unknown): void =>
+              tryCommitAsync(fiberId, self, txnId, state, env, scheduler, k)
           )
-        )
+          return Effect.uninterruptibleMask((restore) =>
+            pipe(
+              restore(effect),
+              Effect.catchAllCause((cause) => {
+                let currentState = state.value
+                if (STMState.isRunning(currentState)) {
+                  state.value = STMState.interrupted
+                }
+                currentState = state.value
+                if (STMState.isDone(currentState)) {
+                  onDone(currentState.exit)
+                  return Effect.done(currentState.exit)
+                }
+                onInterrupt()
+                return Effect.failCause(cause)
+              })
+            )
+          )
+        }
       }
-    }
-  }).traced(trace)
-}
+    }).traced(trace)
+)
 
 /** @internal */
 const tryCommit = <R, E, A>(
@@ -240,7 +247,7 @@ const tryCommit = <R, E, A>(
       const cause = Cause.fail(tExit.error)
       return completeTodos(
         Exit.failCause(
-          tExit.annotation.stack.length > 0 || tExit.annotation.execution.length > 0 ?
+          tExit.annotation.stack.length > 0 ?
             Cause.annotated(cause, tExit.annotation) :
             cause
         ),
@@ -253,7 +260,7 @@ const tryCommit = <R, E, A>(
       const cause = Cause.die(tExit.defect)
       return completeTodos(
         Exit.failCause(
-          tExit.annotation.stack.length > 0 || tExit.annotation.execution.length > 0 ?
+          tExit.annotation.stack.length > 0 ?
             Cause.annotated(cause, tExit.annotation) :
             cause
         ),
@@ -266,7 +273,7 @@ const tryCommit = <R, E, A>(
       const cause = Cause.interrupt(fiberId)
       return completeTodos(
         Exit.failCause(
-          tExit.annotation.stack.length > 0 || tExit.annotation.execution.length > 0 ?
+          tExit.annotation.stack.length > 0 ?
             Cause.annotated(cause, tExit.annotation) :
             cause
         ),
@@ -307,7 +314,7 @@ const tryCommitSync = <R, E, A>(
       const cause = Cause.fail(tExit.error)
       return completeTodos(
         Exit.failCause(
-          tExit.annotation.stack.length > 0 || tExit.annotation.execution.length > 0 ?
+          tExit.annotation.stack.length > 0 ?
             Cause.annotated(cause, tExit.annotation) :
             cause
         ),
@@ -319,7 +326,7 @@ const tryCommitSync = <R, E, A>(
       const cause = Cause.die(tExit.defect)
       return completeTodos(
         Exit.failCause(
-          tExit.annotation.stack.length > 0 || tExit.annotation.execution.length > 0 ?
+          tExit.annotation.stack.length > 0 ?
             Cause.annotated(cause, tExit.annotation) :
             cause
         ),
@@ -331,7 +338,7 @@ const tryCommitSync = <R, E, A>(
       const cause = Cause.interrupt(fiberId)
       return completeTodos(
         Exit.failCause(
-          tExit.annotation.stack.length > 0 || tExit.annotation.execution.length > 0 ?
+          tExit.annotation.stack.length > 0 ?
             Cause.annotated(cause, tExit.annotation) :
             cause
         ),
@@ -392,18 +399,17 @@ const completeTryCommit = <R, E, A>(
   exit: Exit.Exit<E, A>,
   k: (effect: Effect.Effect<R, E, A>) => unknown
 ): void => {
-  k(effectCore.done(exit))
+  k(Effect.done(exit))
 }
 
 /** @internal */
-type Continuation = STMOnFailure | STMOnSuccess | STMOnRetry
+type Continuation = STMOnFailure | STMOnSuccess | STMOnRetry | STMTraced
 
 /** @internal */
 export class STMDriver<R, E, A> {
   private contStack: Array<Continuation> = []
   private env: Context.Context<unknown>
-  private execution: RingBuffer<string> | undefined
-  private tracesInStack = 0
+  private traceStack: Array<NonNullable<Debug.Trace>> = []
 
   constructor(
     readonly self: STM.STM<R, E, A>,
@@ -411,17 +417,7 @@ export class STMDriver<R, E, A> {
     readonly fiberId: FiberId.FiberId,
     r0: Context.Context<R>
   ) {
-    Equal.considerByRef(this)
     this.env = r0 as Context.Context<unknown>
-  }
-
-  private logTrace(trace: string | undefined) {
-    if (trace) {
-      if (!this.execution) {
-        this.execution = new RingBuffer<string>(runtimeDebug.traceExecutionLimit)
-      }
-      this.execution.push(trace)
-    }
   }
 
   getEnv(): Context.Context<R> {
@@ -430,42 +426,34 @@ export class STMDriver<R, E, A> {
 
   pushStack(cont: Continuation) {
     this.contStack.push(cont)
-    if ("trace" in cont) {
-      this.tracesInStack++
+    if ("trace" in cont && cont.trace) {
+      this.traceStack.push(cont.trace)
     }
   }
 
   popStack() {
     const item = this.contStack.pop()
     if (item) {
-      if ("trace" in item) {
-        this.tracesInStack--
+      if ("trace" in item && item.trace) {
+        this.traceStack.pop()
       }
       return item
     }
     return
   }
 
-  stackToLines(): Chunk.Chunk<string> {
-    if (this.tracesInStack === 0) {
+  stackToLines(): Chunk.Chunk<Debug.Trace> {
+    if (this.traceStack.length === 0) {
       return Chunk.empty()
     }
-    const lines: Array<string> = []
+    const lines: Array<Debug.Trace> = []
     let current = this.contStack.length - 1
-    let last: undefined | string = undefined
-    let seen = 0
-    while (current >= 0 && lines.length < runtimeDebug.traceStackLimit && seen < this.tracesInStack) {
+    while (current >= 0 && lines.length < Debug.runtimeDebug.traceStackLimit) {
       const value = this.contStack[current]!
       switch (value._stmTag) {
-        case OpCodes.OP_ON_SUCCESS:
-        case OpCodes.OP_ON_FAILURE:
-        case OpCodes.OP_ON_RETRY: {
+        case OpCodes.OP_TRACED: {
           if (value.trace) {
-            seen++
-            if (value.trace !== last) {
-              last = value.trace
-              lines.push(value.trace)
-            }
+            lines.push(value.trace)
           }
           break
         }
@@ -506,52 +494,41 @@ export class STMDriver<R, E, A> {
       try {
         const current = curr
         switch (current._stmTag) {
+          case OpCodes.OP_TRACED: {
+            this.pushStack(current)
+            curr = current.stm as Primitive
+            break
+          }
           case OpCodes.OP_DIE: {
-            this.logTrace(curr.trace)
-            const annotation = new StackAnnotation(
-              this.stackToLines(),
-              this.execution?.toChunkReversed() || Chunk.empty()
-            )
+            const annotation = new internalCause.StackAnnotation(this.stackToLines())
             exit = TExit.die(current.defect(), annotation)
             break
           }
           case OpCodes.OP_FAIL: {
-            this.logTrace(curr.trace)
-            const annotation = new StackAnnotation(
-              this.stackToLines(),
-              this.execution?.toChunkReversed() || Chunk.empty()
-            )
+            const annotation = new internalCause.StackAnnotation(this.stackToLines())
             const cont = this.nextFailure()
             if (cont === undefined) {
               exit = TExit.fail(current.error(), annotation)
             } else {
-              this.logTrace(cont.trace)
               curr = cont.failK(current.error()) as Primitive
             }
             break
           }
           case OpCodes.OP_RETRY: {
-            this.logTrace(curr.trace)
             const cont = this.nextRetry()
             if (cont === undefined) {
               exit = TExit.retry
             } else {
-              this.logTrace(cont.trace)
               curr = cont.retryK() as Primitive
             }
             break
           }
           case OpCodes.OP_INTERRUPT: {
-            this.logTrace(curr.trace)
-            const annotation = new StackAnnotation(
-              this.stackToLines(),
-              this.execution?.toChunkReversed() || Chunk.empty()
-            )
+            const annotation = new internalCause.StackAnnotation(this.stackToLines())
             exit = TExit.interrupt(this.fiberId, annotation)
             break
           }
           case OpCodes.OP_WITH_STM_RUNTIME: {
-            this.logTrace(current.trace)
             curr = current.evaluate(this as STMDriver<unknown, unknown, unknown>) as Primitive
             break
           }
@@ -563,7 +540,6 @@ export class STMDriver<R, E, A> {
             break
           }
           case OpCodes.OP_PROVIDE: {
-            this.logTrace(current.trace)
             const env = this.env
             this.env = current.provide(env)
             curr = pipe(
@@ -573,25 +549,21 @@ export class STMDriver<R, E, A> {
             break
           }
           case OpCodes.OP_SUCCEED: {
-            this.logTrace(current.trace)
             const value = current.value
             const cont = this.nextSuccess()
             if (cont === undefined) {
               exit = TExit.succeed(value)
             } else {
-              this.logTrace(cont.trace)
               curr = cont.successK(value) as Primitive
             }
             break
           }
           case OpCodes.OP_SYNC: {
-            this.logTrace(current.trace)
             const value = current.evaluate()
             const cont = this.nextSuccess()
             if (cont === undefined) {
               exit = TExit.succeed(value)
             } else {
-              this.logTrace(cont.trace)
               curr = cont.successK(value) as Primitive
             }
             break
@@ -606,313 +578,351 @@ export class STMDriver<R, E, A> {
 }
 
 /**
- * @macro traced
  * @internal
  */
-export const catchAll = <E, R1, E1, B>(f: (e: E) => STM.STM<R1, E1, B>) => {
-  const trace = getCallTrace()
-  return <R, A>(self: STM.STM<R, E, A>): STM.STM<R | R1, E1, A | B> => {
+export const catchAll = Debug.dualWithTrace<
+  <R, A, E, R1, E1, B>(
+    self: STM.STM<R, E, A>,
+    f: (e: E) => STM.STM<R1, E1, B>
+  ) => STM.STM<R1 | R, E1, B | A>,
+  <E, R1, E1, B>(
+    f: (e: E) => STM.STM<R1, E1, B>
+  ) => <R, A>(self: STM.STM<R, E, A>) => STM.STM<R1 | R, E1, B | A>
+>(2, (trace, restore) =>
+  (self, f) => {
     const stm = Object.create(proto)
     stm._stmTag = OpCodes.OP_ON_FAILURE
     stm.first = self
-    stm.failK = f
-    stm.trace = trace
+    stm.failK = restore(f)
+    stm.trace = void 0
+    if (trace) {
+      return stm.traced(trace)
+    }
+    return stm
+  })
+
+/**
+ * @internal
+ */
+export const die = Debug.methodWithTrace((trace) =>
+  (defect: unknown): STM.STM<never, never, never> => dieSync(() => defect).traced(trace)
+)
+
+/**
+ * @internal
+ */
+export const dieMessage = Debug.methodWithTrace((trace) =>
+  (message: string): STM.STM<never, never, never> => dieSync(() => Cause.RuntimeException(message)).traced(trace)
+)
+
+/**
+ * @internal
+ */
+export const dieSync = Debug.methodWithTrace((trace, restore) =>
+  (evaluate: LazyArg<unknown>): STM.STM<never, never, never> => {
+    const stm = Object.create(proto)
+    stm._stmTag = OpCodes.OP_DIE
+    stm.defect = restore(evaluate)
+    stm.trace = void 0
+    if (trace) {
+      return stm.traced(trace)
+    }
     return stm
   }
-}
+)
 
 /**
- * @macro traced
  * @internal
  */
-export const die = (defect: unknown): STM.STM<never, never, never> => {
-  const trace = getCallTrace()
-  return dieSync(() => defect).traced(trace)
-}
+export const effect = Debug.methodWithTrace((trace, restore) =>
+  <R, A>(
+    f: (journal: Journal.Journal, fiberId: FiberId.FiberId, environment: Context.Context<R>) => A
+  ): STM.STM<R, never, A> => withSTMRuntime((_) => succeed(restore(f)(_.journal, _.fiberId, _.getEnv()))).traced(trace)
+)
 
 /**
- * @macro traced
  * @internal
  */
-export const dieMessage = (message: string): STM.STM<never, never, never> => {
-  const trace = getCallTrace()
-  return dieSync(() => Cause.RuntimeException(message)).traced(trace)
-}
-
-/**
- * @macro traced
- * @internal
- */
-export const dieSync = (evaluate: LazyArg<unknown>): STM.STM<never, never, never> => {
-  const trace = getCallTrace()
-  const stm = Object.create(proto)
-  stm._stmTag = OpCodes.OP_DIE
-  stm.defect = evaluate
-  stm.trace = trace
-  return stm
-}
-
-/**
- * @macro traced
- * @internal
- */
-export const effect = <R, A>(
-  f: (
-    journal: Journal.Journal,
-    fiberId: FiberId.FiberId,
-    environment: Context.Context<R>
-  ) => A
-): STM.STM<R, never, A> => {
-  const trace = getCallTrace()
-  return withSTMRuntime((_) => succeed(f(_.journal, _.fiberId, _.getEnv()))).traced(trace)
-}
-
-/**
- * @macro traced
- * @internal
- */
-export const ensuring = <R1, B>(finalizer: STM.STM<R1, never, B>) => {
-  const trace = getCallTrace()
-  return <R, E, A>(self: STM.STM<R, E, A>): STM.STM<R | R1, E, A> =>
+export const ensuring = Debug.dualWithTrace<
+  <R, E, A, R1, B>(self: STM.STM<R, E, A>, finalizer: STM.STM<R1, never, B>) => STM.STM<R1 | R, E, A>,
+  <R1, B>(finalizer: STM.STM<R1, never, B>) => <R, E, A>(self: STM.STM<R, E, A>) => STM.STM<R1 | R, E, A>
+>(2, (trace) =>
+  (self, finalizer) =>
     pipe(
       self,
       matchSTM(
         (e) => pipe(finalizer, zipRight(fail(e))),
         (a) => pipe(finalizer, zipRight(succeed(a)))
       )
-    ).traced(trace)
-}
+    ).traced(trace))
 
 /**
- * @macro traced
  * @internal
  */
-export const fail = <E>(error: E): STM.STM<never, E, never> => {
-  const trace = getCallTrace()
-  return failSync(() => error).traced(trace)
-}
+export const fail = Debug.methodWithTrace((trace) =>
+  <E>(error: E): STM.STM<never, E, never> => failSync(() => error).traced(trace)
+)
 
 /**
- * @macro traced
  * @internal
  */
-export const failSync = <E>(evaluate: LazyArg<E>): STM.STM<never, E, never> => {
-  const trace = getCallTrace()
-  const stm = Object.create(proto)
-  stm._stmTag = OpCodes.OP_FAIL
-  stm.error = evaluate
-  stm.trace = trace
-  return stm
-}
+export const failSync = Debug.methodWithTrace((trace, restore) =>
+  <E>(evaluate: LazyArg<E>): STM.STM<never, E, never> => {
+    const stm = Object.create(proto)
+    stm._stmTag = OpCodes.OP_FAIL
+    stm.error = restore(evaluate)
+    stm.trace = void 0
+    if (trace) {
+      return stm.traced(trace)
+    }
+    return stm
+  }
+)
 
 /**
- * @macro traced
  * @internal
  */
-export const flatMap = <A, R1, E1, A2>(f: (a: A) => STM.STM<R1, E1, A2>) => {
-  const trace = getCallTrace()
-  return <R, E>(self: STM.STM<R, E, A>): STM.STM<R1 | R, E | E1, A2> => {
+export const flatMap = Debug.dualWithTrace<
+  <R, E, A, R1, E1, A2>(self: STM.STM<R, E, A>, f: (a: A) => STM.STM<R1, E1, A2>) => STM.STM<R1 | R, E1 | E, A2>,
+  <A, R1, E1, A2>(f: (a: A) => STM.STM<R1, E1, A2>) => <R, E>(self: STM.STM<R, E, A>) => STM.STM<R1 | R, E1 | E, A2>
+>(2, (trace, restore) =>
+  (self, f) => {
     const stm = Object.create(proto)
     stm._stmTag = OpCodes.OP_ON_SUCCESS
     stm.first = self
-    stm.successK = f
-    stm.trace = trace
+    stm.successK = restore(f)
+    stm.trace = void 0
+    if (trace) {
+      return stm.traced(trace)
+    }
     return stm
-  }
-}
+  })
 
 /**
- * @macro traced
  * @internal
  */
-export const matchSTM = <E, R1, E1, A1, A, R2, E2, A2>(
-  onFailure: (e: E) => STM.STM<R1, E1, A1>,
-  onSuccess: (a: A) => STM.STM<R2, E2, A2>
-) => {
-  const trace = getCallTrace()
-  return <R>(self: STM.STM<R, E, A>): STM.STM<R | R1 | R2, E1 | E2, A1 | A2> => {
-    return pipe(
+export const matchSTM = Debug.dualWithTrace<
+  <R, E, R1, E1, A1, A, R2, E2, A2>(
+    self: STM.STM<R, E, A>,
+    onFailure: (e: E) => STM.STM<R1, E1, A1>,
+    onSuccess: (a: A) => STM.STM<R2, E2, A2>
+  ) => STM.STM<R1 | R2 | R, E1 | E2, A1 | A2>,
+  <E, R1, E1, A1, A, R2, E2, A2>(
+    onFailure: (e: E) => STM.STM<R1, E1, A1>,
+    onSuccess: (a: A) => STM.STM<R2, E2, A2>
+  ) => <R>(self: STM.STM<R, E, A>) => STM.STM<R1 | R2 | R, E1 | E2, A1 | A2>
+>(3, (trace, restore) =>
+  <R, E, R1, E1, A1, A, R2, E2, A2>(
+    self: STM.STM<R, E, A>,
+    onFailure: (e: E) => STM.STM<R1, E1, A1>,
+    onSuccess: (a: A) => STM.STM<R2, E2, A2>
+  ): STM.STM<R1 | R2 | R, E1 | E2, A1 | A2> =>
+    pipe(
       self,
       map(Either.right),
-      catchAll((e) => pipe(onFailure(e), map(Either.left))),
+      catchAll((e) => pipe(restore(onFailure)(e), map(Either.left))),
       flatMap((either): STM.STM<R | R1 | R2, E1 | E2, A1 | A2> => {
         switch (either._tag) {
           case "Left": {
             return succeed(either.left)
           }
           case "Right": {
-            return onSuccess(either.right)
+            return restore(onSuccess)(either.right)
           }
         }
       })
-    ).traced(trace)
-  }
-}
+    ).traced(trace))
 
 /**
- * @macro traced
  * @internal
  */
-export const interrupt = (): STM.STM<never, never, never> => {
-  const trace = getCallTrace()
-  return withSTMRuntime((_) => {
+export const interrupt = Debug.methodWithTrace((trace) =>
+  (): STM.STM<never, never, never> =>
+    withSTMRuntime((_) => {
+      const stm = Object.create(proto)
+      stm._stmTag = OpCodes.OP_INTERRUPT
+      stm.fiberId = _.fiberId
+      stm.trace = void 0
+      if (trace) {
+        return stm.traced(trace)
+      }
+      return stm
+    })
+)
+
+/**
+ * @internal
+ */
+export const interruptWith = Debug.methodWithTrace((trace) =>
+  (fiberId: FiberId.FiberId): STM.STM<never, never, never> => {
     const stm = Object.create(proto)
     stm._stmTag = OpCodes.OP_INTERRUPT
-    stm.trace = trace
-    stm.fiberId = _.fiberId
+    stm.fiberId = fiberId
+    stm.trace = void 0
+    if (trace) {
+      return stm.traced(trace)
+    }
     return stm
-  })
-}
-
-/**
- * @macro traced
- * @internal
- */
-export const interruptWith = (fiberId: FiberId.FiberId): STM.STM<never, never, never> => {
-  const trace = getCallTrace()
-  const stm = Object.create(proto)
-  stm._stmTag = OpCodes.OP_INTERRUPT
-  stm.trace = trace
-  stm.fiberId = fiberId
-  return stm
-}
-
-/**
- * @macro traced
- * @internal
- */
-export const map = <A, B>(f: (a: A) => B) => {
-  const trace = getCallTrace()
-  return <R, E>(self: STM.STM<R, E, A>): STM.STM<R, E, B> => {
-    return pipe(self, flatMap((a) => sync(() => f(a)))).traced(trace)
   }
-}
+)
 
 /**
- * @macro traced
  * @internal
  */
-export const orTry = <R1, E1, A1>(that: () => STM.STM<R1, E1, A1>) => {
-  const trace = getCallTrace()
-  return <R, E, A>(self: STM.STM<R, E, A>): STM.STM<R | R1, E | E1, A | A1> => {
+export const map = Debug.dualWithTrace<
+  <R, E, A, B>(self: STM.STM<R, E, A>, f: (a: A) => B) => STM.STM<R, E, B>,
+  <A, B>(f: (a: A) => B) => <R, E>(self: STM.STM<R, E, A>) => STM.STM<R, E, B>
+>(2, (trace, resume) => (self, f) => pipe(self, flatMap((a) => sync(() => resume(f)(a)))).traced(trace))
+
+/**
+ * @internal
+ */
+export const orTry = Debug.dualWithTrace<
+  <R, E, A, R1, E1, A1>(self: STM.STM<R, E, A>, that: () => STM.STM<R1, E1, A1>) => STM.STM<R1 | R, E1 | E, A1 | A>,
+  <R1, E1, A1>(that: () => STM.STM<R1, E1, A1>) => <R, E, A>(self: STM.STM<R, E, A>) => STM.STM<R1 | R, E1 | E, A1 | A>
+>(2, (trace, restore) =>
+  (self, that) => {
     const stm = Object.create(proto)
     stm._stmTag = OpCodes.OP_ON_RETRY
     stm.first = self
-    stm.retryK = that
-    stm.trace = trace
+    stm.retryK = restore(that)
+    stm.trace = void 0
+    if (trace) {
+      return stm.traced(trace)
+    }
+    return stm
+  })
+
+/**
+ * @internal
+ */
+export const retry = Debug.methodWithTrace((trace) =>
+  (): STM.STM<never, never, never> => {
+    const stm = Object.create(proto)
+    stm._stmTag = OpCodes.OP_RETRY
+    stm.trace = void 0
+    if (trace) {
+      return stm.traced(trace)
+    }
     return stm
   }
-}
+)
 
 /**
- * @macro traced
  * @internal
  */
-export const retry = (): STM.STM<never, never, never> => {
-  const trace = getCallTrace()
-  const stm = Object.create(proto)
-  stm._stmTag = OpCodes.OP_RETRY
-  stm.trace = trace
-  return stm
-}
+export const succeed = Debug.methodWithTrace((trace) =>
+  <A>(value: A): STM.STM<never, never, A> => {
+    const stm = Object.create(proto)
+    stm._stmTag = OpCodes.OP_SUCCEED
+    stm.value = value
+    stm.trace = void 0
+    if (trace) {
+      return stm.traced(trace)
+    }
+    return stm
+  }
+)
 
 /**
- * @macro traced
  * @internal
  */
-export const succeed = <A>(value: A): STM.STM<never, never, A> => {
-  const trace = getCallTrace()
-  const stm = Object.create(proto)
-  stm._stmTag = OpCodes.OP_SUCCEED
-  stm.value = value
-  stm.trace = trace
-  return stm
-}
+export const sync = Debug.methodWithTrace((trace, restore) =>
+  <A>(evaluate: () => A): STM.STM<never, never, A> => {
+    const stm = Object.create(proto)
+    stm._stmTag = OpCodes.OP_SYNC
+    stm.evaluate = restore(evaluate)
+    stm.trace = void 0
+    if (trace) {
+      return stm.traced(trace)
+    }
+    return stm
+  }
+)
 
 /**
- * @macro traced
  * @internal
  */
-export const sync = <A>(evaluate: () => A): STM.STM<never, never, A> => {
-  const trace = getCallTrace()
-  const stm = Object.create(proto)
-  stm._stmTag = OpCodes.OP_SYNC
-  stm.evaluate = evaluate
-  stm.trace = trace
-  return stm
-}
-
-/**
- * @macro traced
- * @internal
- */
-export const provideSomeEnvironment = <R0, R>(f: (context: Context.Context<R0>) => Context.Context<R>) => {
-  const trace = getCallTrace()
-  return <E, A>(self: STM.STM<R, E, A>): STM.STM<R0, E, A> => {
+export const contramapContext = Debug.dualWithTrace<
+  <E, A, R0, R>(self: STM.STM<R, E, A>, f: (context: Context.Context<R0>) => Context.Context<R>) => STM.STM<R0, E, A>,
+  <R0, R>(
+    f: (context: Context.Context<R0>) => Context.Context<R>
+  ) => <E, A>(self: STM.STM<R, E, A>) => STM.STM<R0, E, A>
+>(2, (trace, restore) =>
+  (self, f) => {
     const stm = Object.create(proto)
     stm._stmTag = OpCodes.OP_PROVIDE
     stm.stm = self
-    stm.provide = f
-    stm.trace = trace
+    stm.provide = restore(f)
+    stm.trace = void 0
+    if (trace) {
+      return stm.traced(trace)
+    }
+    return stm
+  })
+
+/**
+ * @internal
+ */
+export const withSTMRuntime = Debug.methodWithTrace((trace, restore) =>
+  <R, E, A>(
+    f: (runtime: STMDriver<unknown, unknown, unknown>) => STM.STM<R, E, A>
+  ): STM.STM<R, E, A> => {
+    const stm = Object.create(proto)
+    stm._stmTag = OpCodes.OP_WITH_STM_RUNTIME
+    stm.evaluate = restore(f)
+    stm.trace = void 0
+    if (trace) {
+      return stm.traced(trace)
+    }
     return stm
   }
-}
+)
 
 /**
- * @macro traced
  * @internal
  */
-export const withSTMRuntime = <R, E, A>(
-  f: (runtime: STMDriver<unknown, unknown, unknown>) => STM.STM<R, E, A>
-): STM.STM<R, E, A> => {
-  const trace = getCallTrace()
-  const stm = Object.create(proto)
-  stm._stmTag = OpCodes.OP_WITH_STM_RUNTIME
-  stm.evaluate = f
-  stm.trace = trace
-  return stm
-}
+export const zip = Debug.dualWithTrace<
+  <R, E, A, R1, E1, A1>(
+    self: STM.STM<R, E, A>,
+    that: STM.STM<R1, E1, A1>
+  ) => STM.STM<R1 | R, E1 | E, readonly [A, A1]>,
+  <R1, E1, A1>(
+    that: STM.STM<R1, E1, A1>
+  ) => <R, E, A>(self: STM.STM<R, E, A>) => STM.STM<R1 | R, E1 | E, readonly [A, A1]>
+>(2, (trace) => (self, that) => pipe(self, zipWith(that, (a, a1) => [a, a1] as const)).traced(trace))
 
 /**
- * @macro traced
  * @internal
  */
-export const zip = <R1, E1, A1>(that: STM.STM<R1, E1, A1>) => {
-  const trace = getCallTrace()
-  return <R, E, A>(self: STM.STM<R, E, A>): STM.STM<R | R1, E | E1, readonly [A, A1]> => {
-    return pipe(self, zipWith(that, (a, a1) => [a, a1] as const)).traced(trace)
-  }
-}
+export const zipLeft = Debug.dualWithTrace<
+  <R, E, A, R1, E1, A1>(self: STM.STM<R, E, A>, that: STM.STM<R1, E1, A1>) => STM.STM<R1 | R, E1 | E, A>,
+  <R1, E1, A1>(that: STM.STM<R1, E1, A1>) => <R, E, A>(self: STM.STM<R, E, A>) => STM.STM<R1 | R, E1 | E, A>
+>(2, (trace) => (self, that) => pipe(self, flatMap((a) => pipe(that, map(() => a)))).traced(trace))
 
 /**
- * @macro traced
  * @internal
  */
-export const zipLeft = <R1, E1, A1>(that: STM.STM<R1, E1, A1>) => {
-  const trace = getCallTrace()
-  return <R, E, A>(self: STM.STM<R, E, A>): STM.STM<R | R1, E | E1, A> => {
-    return pipe(self, flatMap((a) => pipe(that, map(() => a)))).traced(trace)
-  }
-}
+export const zipRight = Debug.dualWithTrace<
+  <R, E, A, R1, E1, A1>(self: STM.STM<R, E, A>, that: STM.STM<R1, E1, A1>) => STM.STM<R1 | R, E1 | E, A1>,
+  <R1, E1, A1>(that: STM.STM<R1, E1, A1>) => <R, E, A>(self: STM.STM<R, E, A>) => STM.STM<R1 | R, E1 | E, A1>
+>(2, (trace) => (self, that) => pipe(self, flatMap(() => that)).traced(trace))
 
 /**
- * @macro traced
  * @internal
  */
-export const zipRight = <R1, E1, A1>(that: STM.STM<R1, E1, A1>) => {
-  const trace = getCallTrace()
-  return <R, E, A>(self: STM.STM<R, E, A>): STM.STM<R | R1, E | E1, A1> => {
-    return pipe(self, flatMap(() => that)).traced(trace)
-  }
-}
-
-/**
- * @macro traced
- * @internal
- */
-export const zipWith = <R1, E1, A1, A, A2>(that: STM.STM<R1, E1, A1>, f: (a: A, b: A1) => A2) => {
-  const trace = getCallTrace()
-  return <R, E>(self: STM.STM<R, E, A>): STM.STM<R1 | R, E | E1, A2> => {
-    return pipe(self, flatMap((a) => pipe(that, map((b) => f(a, b))))).traced(trace)
-  }
-}
+export const zipWith = Debug.dualWithTrace<
+  <R, E, R1, E1, A1, A, A2>(
+    self: STM.STM<R, E, A>,
+    that: STM.STM<R1, E1, A1>,
+    f: (a: A, b: A1) => A2
+  ) => STM.STM<R1 | R, E1 | E, A2>,
+  <R1, E1, A1, A, A2>(
+    that: STM.STM<R1, E1, A1>,
+    f: (a: A, b: A1) => A2
+  ) => <R, E>(self: STM.STM<R, E, A>) => STM.STM<R1 | R, E1 | E, A2>
+>(
+  3,
+  (trace, restore) =>
+    (self, that, f) => pipe(self, flatMap((a) => pipe(that, map((b) => restore(f)(a, b))))).traced(trace)
+)

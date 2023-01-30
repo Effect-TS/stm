@@ -2,8 +2,8 @@ import * as Effect from "@effect/io/Effect"
 import * as STM from "@effect/stm/STM"
 import * as it from "@effect/stm/test/utils/extend"
 import * as TQueue from "@effect/stm/TQueue"
-import { pipe } from "@fp-ts/data/Function"
-import * as Option from "@fp-ts/data/Option"
+import { pipe } from "@fp-ts/core/Function"
+import * as Option from "@fp-ts/core/Option"
 import { assert, describe } from "vitest"
 
 describe.concurrent("TQueue", () => {
@@ -80,7 +80,7 @@ describe.concurrent("TQueue", () => {
     Effect.gen(function*($) {
       const queue = yield* $(TQueue.bounded<number>(5))
       const result = yield* $(TQueue.poll(queue))
-      assert.deepStrictEqual(result, Option.none)
+      assert.deepStrictEqual(result, Option.none())
     }))
 
   it.effect("seek", () =>
@@ -125,7 +125,7 @@ describe.concurrent("TQueue", () => {
     Effect.gen(function*($) {
       const queue = yield* $(TQueue.unbounded<number>())
       const result = yield* $(TQueue.peekOption(queue))
-      assert.deepStrictEqual(result, Option.none)
+      assert.deepStrictEqual(result, Option.none())
     }))
 
   it.effect("isEmpty", () =>

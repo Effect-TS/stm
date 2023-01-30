@@ -1,9 +1,10 @@
 import * as Exit from "@effect/io/Exit"
-import * as OpCodes from "@effect/stm/internal/opCodes/stmState"
-import * as TExitOpCodes from "@effect/stm/internal/opCodes/tExit"
-import type * as TExit from "@effect/stm/internal/stm/tExit"
+import * as OpCodes from "@effect/stm/internal_effect_untraced/opCodes/stmState"
+import * as TExitOpCodes from "@effect/stm/internal_effect_untraced/opCodes/tExit"
+import type * as TExit from "@effect/stm/internal_effect_untraced/stm/tExit"
+import { pipe } from "@fp-ts/core/Function"
 import * as Equal from "@fp-ts/data/Equal"
-import { pipe } from "@fp-ts/data/Function"
+import * as Hash from "@fp-ts/data/Hash"
 
 /** @internal */
 const STMStateSymbolKey = "@effect/io/STM/State"
@@ -62,53 +63,47 @@ export const done = <E, A>(exit: Exit.Exit<E, A>): STMState<E, A> => {
     [STMStateTypeId]: STMStateTypeId,
     _tag: OpCodes.OP_DONE,
     exit,
-    [Equal.symbolHash](): number {
+    [Hash.symbol](): number {
       return pipe(
-        Equal.hash(STMStateSymbolKey),
-        Equal.hashCombine(Equal.hash(OpCodes.OP_DONE)),
-        Equal.hashCombine(Equal.hash(exit))
+        Hash.hash(STMStateSymbolKey),
+        Hash.combine(Hash.hash(OpCodes.OP_DONE)),
+        Hash.combine(Hash.hash(exit))
       )
     },
-    [Equal.symbolEqual](that: unknown): boolean {
+    [Equal.symbol](that: unknown): boolean {
       return isSTMState(that) && that._tag === OpCodes.OP_DONE && Equal.equals(exit, that.exit)
     }
   }
 }
 
 /** @internal */
-const interruptedHash = Equal.hashRandom({ _tag: OpCodes.OP_INTERRUPTED })
-
-/** @internal */
 export const interrupted: STMState<never, never> = {
   [STMStateTypeId]: STMStateTypeId,
   _tag: OpCodes.OP_INTERRUPTED,
-  [Equal.symbolHash](): number {
+  [Hash.symbol](): number {
     return pipe(
-      Equal.hash(STMStateSymbolKey),
-      Equal.hashCombine(Equal.hash(OpCodes.OP_INTERRUPTED)),
-      Equal.hashCombine(Equal.hash(interruptedHash))
+      Hash.hash(STMStateSymbolKey),
+      Hash.combine(Hash.hash(OpCodes.OP_INTERRUPTED)),
+      Hash.combine(Hash.hash("interrupted"))
     )
   },
-  [Equal.symbolEqual](that: unknown): boolean {
+  [Equal.symbol](that: unknown): boolean {
     return isSTMState(that) && that._tag === OpCodes.OP_INTERRUPTED
   }
 }
 
 /** @internal */
-const runningHash = Equal.hashRandom({ _tag: OpCodes.OP_RUNNING })
-
-/** @internal */
 export const running: STMState<never, never> = {
   [STMStateTypeId]: STMStateTypeId,
   _tag: OpCodes.OP_RUNNING,
-  [Equal.symbolHash](): number {
+  [Hash.symbol](): number {
     return pipe(
-      Equal.hash(STMStateSymbolKey),
-      Equal.hashCombine(Equal.hash(OpCodes.OP_RUNNING)),
-      Equal.hashCombine(Equal.hash(runningHash))
+      Hash.hash(STMStateSymbolKey),
+      Hash.combine(Hash.hash(OpCodes.OP_RUNNING)),
+      Hash.combine(Hash.hash("running"))
     )
   },
-  [Equal.symbolEqual](that: unknown): boolean {
+  [Equal.symbol](that: unknown): boolean {
     return isSTMState(that) && that._tag === OpCodes.OP_RUNNING
   }
 }

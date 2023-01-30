@@ -2,7 +2,7 @@ import * as Effect from "@effect/io/Effect"
 import * as STM from "@effect/stm/STM"
 import * as it from "@effect/stm/test/utils/extend"
 import * as TSet from "@effect/stm/TSet"
-import { pipe } from "@fp-ts/data/Function"
+import { pipe } from "@fp-ts/core/Function"
 import { assert, describe } from "vitest"
 
 describe.concurrent("TSet", () => {
