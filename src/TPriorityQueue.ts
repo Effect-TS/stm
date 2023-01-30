@@ -1,13 +1,13 @@
 /**
  * @since 1.0.0
  */
-import * as internal from "@effect/stm/internal/tPriorityQueue"
+import * as internal from "@effect/stm/internal_effect_untraced/tPriorityQueue"
 import type * as STM from "@effect/stm/STM"
 import type * as TRef from "@effect/stm/TRef"
+import type * as Option from "@fp-ts/core/Option"
+import type { Predicate } from "@fp-ts/core/Predicate"
 import type * as Order from "@fp-ts/core/typeclass/Order"
 import type * as Chunk from "@fp-ts/data/Chunk"
-import type * as Option from "@fp-ts/data/Option"
-import type { Predicate } from "@fp-ts/data/Predicate"
 import type * as SortedMap from "@fp-ts/data/SortedMap"
 
 /**
@@ -60,7 +60,6 @@ export declare namespace TPriorityQueue {
 /**
  * Constructs a new empty `TPriorityQueue` with the specified `Order`.
  *
- * @macro traced
  * @since 1.0.0
  * @category constructors
  */
@@ -69,7 +68,6 @@ export const empty: <A>(order: Order.Order<A>) => STM.STM<never, never, TPriorit
 /**
  * Makes a new `TPriorityQueue` initialized with provided iterable.
  *
- * @macro traced
  * @since 1.0.0
  * @category constructors
  */
@@ -80,7 +78,6 @@ export const fromIterable: <A>(
 /**
  * Checks whether the queue is empty.
  *
- * @macro traced
  * @since 1.0.0
  * @category getters
  */
@@ -89,7 +86,6 @@ export const isEmpty: <A>(self: TPriorityQueue<A>) => STM.STM<never, never, bool
 /**
  * Checks whether the queue is not empty.
  *
- * @macro traced
  * @since 1.0.0
  * @category getters
  */
@@ -98,7 +94,6 @@ export const isNonEmpty: <A>(self: TPriorityQueue<A>) => STM.STM<never, never, b
 /**
  * Makes a new `TPriorityQueue` that is initialized with specified values.
  *
- * @macro traced
  * @since 1.0.0
  * @category constructors
  */
@@ -108,27 +103,29 @@ export const make: <A>(order: Order.Order<A>) => (...elements: Array<A>) => STM.
 /**
  * Offers the specified value to the queue.
  *
- * @macro traced
  * @since 1.0.0
  * @category mutations
  */
-export const offer: <A>(value: A) => (self: TPriorityQueue<A>) => STM.STM<never, never, void> = internal.offer
+export const offer: {
+  <A>(self: TPriorityQueue<A>, value: A): STM.STM<never, never, void>
+  <A>(value: A): (self: TPriorityQueue<A>) => STM.STM<never, never, void>
+} = internal.offer
 
 /**
  * Offers all of the elements in the specified collection to the queue.
  *
- * @macro traced
  * @since 1.0.0
  * @category mutations
  */
-export const offerAll: <A>(values: Iterable<A>) => (self: TPriorityQueue<A>) => STM.STM<never, never, void> =
-  internal.offerAll
+export const offerAll: {
+  <A>(self: TPriorityQueue<A>, values: Iterable<A>): STM.STM<never, never, void>
+  <A>(values: Iterable<A>): (self: TPriorityQueue<A>) => STM.STM<never, never, void>
+} = internal.offerAll
 
 /**
  * Peeks at the first value in the queue without removing it, retrying until a
  * value is in the queue.
  *
- * @macro traced
  * @since 1.0.0
  * @category getters
  */
@@ -138,7 +135,6 @@ export const peek: <A>(self: TPriorityQueue<A>) => STM.STM<never, never, A> = in
  * Peeks at the first value in the queue without removing it, returning `None`
  * if there is not a value in the queue.
  *
- * @macro traced
  * @since 1.0.0
  * @category getters
  */
@@ -147,27 +143,28 @@ export const peekOption: <A>(self: TPriorityQueue<A>) => STM.STM<never, never, O
 /**
  * Removes all elements from the queue matching the specified predicate.
  *
- * @macro traced
  * @since 1.0.0
  * @category getters
  */
-export const removeIf: <A>(predicate: Predicate<A>) => (self: TPriorityQueue<A>) => STM.STM<never, never, void> =
-  internal.removeIf
+export const removeIf: {
+  <A>(self: TPriorityQueue<A>, predicate: Predicate<A>): STM.STM<never, never, void>
+  <A>(predicate: Predicate<A>): (self: TPriorityQueue<A>) => STM.STM<never, never, void>
+} = internal.removeIf
 
 /**
  * Retains only elements from the queue matching the specified predicate.
  *
- * @macro traced
  * @since 1.0.0
  * @category getters
  */
-export const retainIf: <A>(predicate: Predicate<A>) => (self: TPriorityQueue<A>) => STM.STM<never, never, void> =
-  internal.retainIf
+export const retainIf: {
+  <A>(self: TPriorityQueue<A>, predicate: Predicate<A>): STM.STM<never, never, void>
+  <A>(predicate: Predicate<A>): (self: TPriorityQueue<A>) => STM.STM<never, never, void>
+} = internal.retainIf
 
 /**
  * Returns the size of the queue.
  *
- * @macro traced
  * @since 1.0.0
  * @category getters
  */
@@ -176,7 +173,6 @@ export const size: <A>(self: TPriorityQueue<A>) => STM.STM<never, never, number>
 /**
  * Takes a value from the queue, retrying until a value is in the queue.
  *
- * @macro traced
  * @since 1.0.0
  * @category mutations
  */
@@ -185,7 +181,6 @@ export const take: <A>(self: TPriorityQueue<A>) => STM.STM<never, never, A> = in
 /**
  * Takes all values from the queue.
  *
- * @macro traced
  * @since 1.0.0
  * @category mutations
  */
@@ -195,7 +190,6 @@ export const takeAll: <A>(self: TPriorityQueue<A>) => STM.STM<never, never, Chun
  * Takes a value from the queue, returning `None` if there is not a value in
  * the queue.
  *
- * @macro traced
  * @since 1.0.0
  * @category mutations
  */
@@ -204,17 +198,17 @@ export const takeOption: <A>(self: TPriorityQueue<A>) => STM.STM<never, never, O
 /**
  * Takes up to the specified maximum number of elements from the queue.
  *
- * @macro traced
  * @since 1.0.0
  * @category mutations
  */
-export const takeUpTo: (n: number) => <A>(self: TPriorityQueue<A>) => STM.STM<never, never, Chunk.Chunk<A>> =
-  internal.takeUpTo
+export const takeUpTo: {
+  <A>(self: TPriorityQueue<A>, n: number): STM.STM<never, never, Chunk.Chunk<A>>
+  (n: number): <A>(self: TPriorityQueue<A>) => STM.STM<never, never, Chunk.Chunk<A>>
+} = internal.takeUpTo
 
 /**
  * Collects all values into a chunk.
  *
- * @macro traced
  * @since 1.0.0
  * @category destructors
  */
@@ -223,7 +217,6 @@ export const toChunk: <A>(self: TPriorityQueue<A>) => STM.STM<never, never, Chun
 /**
  * Collects all values into an array.
  *
- * @macro traced
  * @since 1.0.0
  * @category destructors
  */

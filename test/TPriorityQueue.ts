@@ -1,13 +1,14 @@
 import * as Effect from "@effect/io/Effect"
 import * as STM from "@effect/stm/STM"
+import { equivalentElements } from "@effect/stm/test/utils/equals"
 import * as it from "@effect/stm/test/utils/extend"
 import * as TPriorityQueue from "@effect/stm/TPriorityQueue"
+import { pipe } from "@fp-ts/core/Function"
+import * as number from "@fp-ts/core/Number"
+import * as Option from "@fp-ts/core/Option"
+import * as ReadonlyArray from "@fp-ts/core/ReadonlyArray"
 import * as Order from "@fp-ts/core/typeclass/Order"
 import * as Chunk from "@fp-ts/data/Chunk"
-import { pipe } from "@fp-ts/data/Function"
-import * as number from "@fp-ts/data/Number"
-import * as Option from "@fp-ts/data/Option"
-import * as ReadonlyArray from "@fp-ts/data/ReadonlyArray"
 import * as fc from "fast-check"
 import { assert, describe } from "vitest"
 
@@ -38,7 +39,7 @@ describe.concurrent("TPriorityQueue", () => {
         STM.tap(TPriorityQueue.offerAll(events)),
         STM.flatMap(TPriorityQueue.isEmpty)
       )
-      const result = await Effect.unsafeRunPromise(STM.commit(transaction))
+      const result = await Effect.runPromise(STM.commit(transaction))
       assert.strictEqual(result, events.length === 0)
     })))
 
@@ -49,7 +50,7 @@ describe.concurrent("TPriorityQueue", () => {
         STM.tap(TPriorityQueue.offerAll(events)),
         STM.flatMap(TPriorityQueue.isNonEmpty)
       )
-      const result = await Effect.unsafeRunPromise(STM.commit(transaction))
+      const result = await Effect.runPromise(STM.commit(transaction))
       assert.strictEqual(result, events.length > 0)
     })))
 
@@ -61,9 +62,9 @@ describe.concurrent("TPriorityQueue", () => {
         STM.flatMap(TPriorityQueue.takeAll),
         STM.map((chunk) => Array.from(chunk))
       )
-      const result = await Effect.unsafeRunPromise(STM.commit(transaction))
-      assert.lengthOf(pipe(result, ReadonlyArray.difference(events)), 0)
-      assert.lengthOf(pipe(events, ReadonlyArray.difference(result)), 0)
+      const result = await Effect.runPromise(STM.commit(transaction))
+      assert.lengthOf(pipe(result, ReadonlyArray.difference(equivalentElements())(events)), 0)
+      assert.lengthOf(pipe(events, ReadonlyArray.difference(equivalentElements())(result)), 0)
       assert.deepStrictEqual(result, pipe(result, ReadonlyArray.sort(orderByTime)))
     })))
 
@@ -74,10 +75,10 @@ describe.concurrent("TPriorityQueue", () => {
         STM.tap(TPriorityQueue.removeIf(f)),
         STM.flatMap(TPriorityQueue.toReadonlyArray)
       )
-      const result = await Effect.unsafeRunPromise(STM.commit(transaction))
+      const result = await Effect.runPromise(STM.commit(transaction))
       const filtered = pipe(events, ReadonlyArray.filter((a) => !f(a)))
-      assert.lengthOf(pipe(result, ReadonlyArray.difference(filtered)), 0)
-      assert.lengthOf(pipe(filtered, ReadonlyArray.difference(result)), 0)
+      assert.lengthOf(pipe(result, ReadonlyArray.difference(equivalentElements())(filtered)), 0)
+      assert.lengthOf(pipe(filtered, ReadonlyArray.difference(equivalentElements())(result)), 0)
       assert.deepStrictEqual(result, pipe(result, ReadonlyArray.sort(orderByTime)))
     })))
 
@@ -88,10 +89,10 @@ describe.concurrent("TPriorityQueue", () => {
         STM.tap(TPriorityQueue.retainIf(f)),
         STM.flatMap(TPriorityQueue.toReadonlyArray)
       )
-      const result = await Effect.unsafeRunPromise(STM.commit(transaction))
+      const result = await Effect.runPromise(STM.commit(transaction))
       const filtered = pipe(events, ReadonlyArray.filter(f))
-      assert.lengthOf(pipe(result, ReadonlyArray.difference(filtered)), 0)
-      assert.lengthOf(pipe(filtered, ReadonlyArray.difference(result)), 0)
+      assert.lengthOf(pipe(result, ReadonlyArray.difference(equivalentElements())(filtered)), 0)
+      assert.lengthOf(pipe(filtered, ReadonlyArray.difference(equivalentElements())(result)), 0)
       assert.deepStrictEqual(result, pipe(result, ReadonlyArray.sort(orderByTime)))
     })))
 
@@ -107,9 +108,9 @@ describe.concurrent("TPriorityQueue", () => {
         ),
         STM.map((chunk) => Array.from(chunk))
       )
-      const result = await Effect.unsafeRunPromise(STM.commit(transaction))
-      assert.lengthOf(pipe(result, ReadonlyArray.difference(events)), 0)
-      assert.lengthOf(pipe(events, ReadonlyArray.difference(result)), 0)
+      const result = await Effect.runPromise(STM.commit(transaction))
+      assert.lengthOf(pipe(result, ReadonlyArray.difference(equivalentElements())(events)), 0)
+      assert.lengthOf(pipe(events, ReadonlyArray.difference(equivalentElements())(result)), 0)
       assert.deepStrictEqual(result, pipe(result, ReadonlyArray.sort(orderByTime)))
     })))
 
@@ -131,7 +132,7 @@ describe.concurrent("TPriorityQueue", () => {
             )
           )
         )
-        const result = await Effect.unsafeRunPromise(STM.commit(transaction))
+        const result = await Effect.runPromise(STM.commit(transaction))
         assert.isTrue(Option.isSome(result[0]))
         assert.isTrue(Option.isNone(result[1]))
       })
@@ -157,9 +158,9 @@ describe.concurrent("TPriorityQueue", () => {
               )
             )
           )
-          const result = await Effect.unsafeRunPromise(STM.commit(transaction))
-          assert.lengthOf(pipe(result, ReadonlyArray.difference(events)), 0)
-          assert.lengthOf(pipe(events, ReadonlyArray.difference(result)), 0)
+          const result = await Effect.runPromise(STM.commit(transaction))
+          assert.lengthOf(pipe(result, ReadonlyArray.difference(equivalentElements())(events)), 0)
+          assert.lengthOf(pipe(events, ReadonlyArray.difference(equivalentElements())(result)), 0)
           assert.deepStrictEqual(result, pipe(result, ReadonlyArray.sort(orderByTime)))
         }
       )
@@ -172,9 +173,9 @@ describe.concurrent("TPriorityQueue", () => {
         STM.flatMap(TPriorityQueue.toChunk),
         STM.map((chunk) => Array.from(chunk))
       )
-      const result = await Effect.unsafeRunPromise(STM.commit(transaction))
-      assert.lengthOf(pipe(result, ReadonlyArray.difference(events)), 0)
-      assert.lengthOf(pipe(events, ReadonlyArray.difference(result)), 0)
+      const result = await Effect.runPromise(STM.commit(transaction))
+      assert.lengthOf(pipe(result, ReadonlyArray.difference(equivalentElements())(events)), 0)
+      assert.lengthOf(pipe(events, ReadonlyArray.difference(equivalentElements())(result)), 0)
       assert.deepStrictEqual(result, pipe(result, ReadonlyArray.sort(orderByTime)))
     })))
 
@@ -184,9 +185,9 @@ describe.concurrent("TPriorityQueue", () => {
         TPriorityQueue.fromIterable(orderByTime)(events),
         STM.flatMap(TPriorityQueue.toReadonlyArray)
       )
-      const result = await Effect.unsafeRunPromise(STM.commit(transaction))
-      assert.lengthOf(pipe(result, ReadonlyArray.difference(events)), 0)
-      assert.lengthOf(pipe(events, ReadonlyArray.difference(result)), 0)
+      const result = await Effect.runPromise(STM.commit(transaction))
+      assert.lengthOf(pipe(result, ReadonlyArray.difference(equivalentElements())(events)), 0)
+      assert.lengthOf(pipe(events, ReadonlyArray.difference(equivalentElements())(result)), 0)
       assert.deepStrictEqual(result, pipe(result, ReadonlyArray.sort(orderByTime)))
     })))
 })

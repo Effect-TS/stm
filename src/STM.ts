@@ -2,18 +2,19 @@
  * @since 1.0.0
  */
 import type * as Cause from "@effect/io/Cause"
+import type * as Debug from "@effect/io/Debug"
 import type * as Effect from "@effect/io/Effect"
 import type * as FiberId from "@effect/io/Fiber/Id"
-import type { EnforceNonEmptyRecord } from "@effect/io/src/internal/types"
-import * as core from "@effect/stm/internal/core"
-import * as stm from "@effect/stm/internal/stm"
-import type { NonEmptyArraySTM, TupleSTM } from "@effect/stm/internal/types"
+import type { EnforceNonEmptyRecord } from "@effect/io/internal_effect_untraced/types"
+import * as core from "@effect/stm/internal_effect_untraced/core"
+import * as stm from "@effect/stm/internal_effect_untraced/stm"
+import type { NonEmptyArraySTM, TupleSTM } from "@effect/stm/internal_effect_untraced/types"
+import type * as Either from "@fp-ts/core/Either"
+import type { LazyArg } from "@fp-ts/core/Function"
+import type * as Option from "@fp-ts/core/Option"
+import type { Predicate } from "@fp-ts/core/Predicate"
 import type * as Chunk from "@fp-ts/data/Chunk"
 import type * as Context from "@fp-ts/data/Context"
-import type * as Either from "@fp-ts/data/Either"
-import type { LazyArg } from "@fp-ts/data/Function"
-import type * as Option from "@fp-ts/data/Option"
-import type { Predicate } from "@fp-ts/data/Predicate"
 
 /**
  * @since 1.0.0
@@ -71,9 +72,9 @@ export interface STM<R, E, A> extends STM.Variance<R, E, A>, Effect.Effect<R, E,
  */
 export interface STM<R, E, A> {
   /** @internal */
-  trace: string | undefined
+  trace: Debug.Trace
   /** @internal */
-  traced(trace: string | undefined): STM<R, E, A>
+  traced(trace: Debug.Trace): STM<R, E, A>
   /** @internal */
   commit(): Effect.Effect<R, E, A>
 }
@@ -111,7 +112,6 @@ export interface STMGen<R, E, A> {
  * Returns an effect that submerges the error case of an `Either` into the
  * `STM`. The inverse operation of `STM.either`.
  *
- * @macro traced
  * @since 1.0.0
  * @category mutations
  */
@@ -120,16 +120,17 @@ export const absolve: <R, E, E2, A>(self: STM<R, E, Either.Either<E2, A>>) => ST
 /**
  * Maps the success value of this effect to the specified constant value.
  *
- * @macro traced
  * @since 1.0.0
  * @category mapping
  */
-export const as: <A2>(value: A2) => <R, E, A>(self: STM<R, E, A>) => STM<R, E, A2> = stm.as
+export const as: {
+  <R, E, A, A2>(self: STM<R, E, A>, value: A2): STM<R, E, A2>
+  <A2>(value: A2): <R, E, A>(self: STM<R, E, A>) => STM<R, E, A2>
+} = stm.as
 
 /**
  * Maps the success value of this effect to an optional value.
  *
- * @macro traced
  * @since 1.0.0
  * @category mapping
  */
@@ -138,7 +139,6 @@ export const asSome: <R, E, A>(self: STM<R, E, A>) => STM<R, E, Option.Option<A>
 /**
  * Maps the error value of this effect to an optional value.
  *
- * @macro traced
  * @since 1.0.0
  * @category mapping
  */
@@ -149,7 +149,6 @@ export const asSomeError: <R, E, A>(self: STM<R, E, A>) => STM<R, Option.Option<
  * `STM` succeeds, the returned `STM` will also succeed. If the original `STM`
  * fails, the returned `STM` will fail with the same error.
  *
- * @macro traced
  * @since 1.0.0
  * @category mapping
  */
@@ -161,20 +160,24 @@ export const asUnit: <R, E, A>(self: STM<R, E, A>) => STM<R, E, void> = stm.asUn
  * is a success and is committed the specified `release` workflow will be
  * executed uninterruptibly as soon as the `use` workflow completes execution.
  *
- * @macro traced
  * @since 1.0.0
  * @category constructors
  */
-export const acquireUseRelease: <R, E, A, R2, E2, A2, R3, E3, A3>(
-  acquire: STM<R, E, A>,
-  use: (resource: A) => STM<R2, E2, A2>,
-  release: (resource: A) => STM<R3, E3, A3>
-) => Effect.Effect<R | R2 | R3, E | E2 | E3, A2> = stm.acquireUseRelease
+export const acquireUseRelease: {
+  <R, E, A, R2, E2, A2, R3, E3, A3>(
+    acquire: STM<R, E, A>,
+    use: (resource: A) => STM<R2, E2, A2>,
+    release: (resource: A) => STM<R3, E3, A3>
+  ): Effect.Effect<R | R2 | R3, E | E2 | E3, A2>
+  <A, R2, E2, A2, R3, E3, A3>(
+    use: (resource: A) => STM<R2, E2, A2>,
+    release: (resource: A) => STM<R3, E3, A3>
+  ): <R, E>(acquire: STM<R, E, A>) => Effect.Effect<R2 | R3 | R, E2 | E3 | E, A2>
+} = stm.acquireUseRelease
 
 /**
  * Creates an `STM` value from a partial (but pure) function.
  *
- * @macro traced
  * @since 1.0.0
  * @category constructors
  */
@@ -183,29 +186,33 @@ export const attempt: <A>(evaluate: LazyArg<A>) => STM<never, unknown, A> = stm.
 /**
  * Recovers from all errors.
  *
- * @macro traced
  * @since 1.0.0
  * @category error handling
  */
-export const catchAll: <E, R1, E1, B>(
-  f: (e: E) => STM<R1, E1, B>
-) => <R, A>(self: STM<R, E, A>) => STM<R1 | R, E1, B | A> = core.catchAll
+export const catchAll: {
+  <R, A, E, R1, E1, B>(self: STM<R, E, A>, f: (e: E) => STM<R1, E1, B>): STM<R | R1, E1, A | B>
+  <E, R1, E1, B>(f: (e: E) => STM<R1, E1, B>): <R, A>(self: STM<R, E, A>) => STM<R1 | R, E1, B | A>
+} = core.catchAll
 
 /**
  * Recovers from some or all of the error cases.
  *
- * @macro traced
  * @since 1.0.0
  * @category error handling
  */
-export const catchSome: <E, R2, E2, A2>(
-  pf: (error: E) => Option.Option<STM<R2, E2, A2>>
-) => <R, A>(self: STM<R, E, A>) => STM<R2 | R, E | E2, A2 | A> = stm.catchSome
+export const catchSome: {
+  <R, A, E, R2, E2, A2>(
+    self: STM<R, E, A>,
+    pf: (error: E) => Option.Option<STM<R2, E2, A2>>
+  ): STM<R | R2, E | E2, A | A2>
+  <E, R2, E2, A2>(
+    pf: (error: E) => Option.Option<STM<R2, E2, A2>>
+  ): <R, A>(self: STM<R, E, A>) => STM<R2 | R, E | E2, A2 | A>
+} = stm.catchSome
 
 /**
  * Checks the condition, and if it's true, returns unit, otherwise, retries.
  *
- * @macro traced
  * @since 1.0.0
  * @category constructors
  */
@@ -214,18 +221,18 @@ export const check: (predicate: LazyArg<boolean>) => STM<never, never, void> = s
 /**
  * Simultaneously filters and maps the value produced by this effect.
  *
- * @macro traced
  * @since 1.0.0
  * @category mutations
  */
-export const collect: <A, A2>(pf: (a: A) => Option.Option<A2>) => <R, E>(self: STM<R, E, A>) => STM<R, E, A2> =
-  stm.collect
+export const collect: {
+  <R, E, A, A2>(self: STM<R, E, A>, pf: (a: A) => Option.Option<A2>): STM<R, E, A2>
+  <A, A2>(pf: (a: A) => Option.Option<A2>): <R, E>(self: STM<R, E, A>) => STM<R, E, A2>
+} = stm.collect
 
 /**
  * Collects all the transactional effects in a collection, returning a single
  * transactional effect that produces a collection of values.
  *
- * @macro traced
  * @since 1.0.0
  * @category constructors
  */
@@ -238,7 +245,6 @@ export const collectAll: <R, E, A>(iterable: Iterable<STM<R, E, A>>) => STM<R, E
  * Equivalent to `pipe(icollectAll(iterable), asUnit)`, but without the cost
  * of building the list of results.
  *
- * @macro traced
  * @since 1.0.0
  * @category constructors
  */
@@ -248,29 +254,28 @@ export const collectAllDiscard: <R, E, A>(iterable: Iterable<STM<R, E, A>>) => S
  * Collects the first element of the `Iterable<A>` for which the effectual
  * function `f` returns `Some`.
  *
- * @macro traced
  * @since 1.0.0
  * @category constructors
  */
-export const collectFirst: <A, R, E, A2>(
-  pf: (a: A) => STM<R, E, Option.Option<A2>>
-) => (iterable: Iterable<A>) => STM<R, E, Option.Option<A2>> = stm.collectFirst
+export const collectFirst: {
+  <A, R, E, A2>(iterable: Iterable<A>, pf: (a: A) => STM<R, E, Option.Option<A2>>): STM<R, E, Option.Option<A2>>
+  <A, R, E, A2>(pf: (a: A) => STM<R, E, Option.Option<A2>>): (iterable: Iterable<A>) => STM<R, E, Option.Option<A2>>
+} = stm.collectFirst
 
 /**
  * Simultaneously filters and flatMaps the value produced by this effect.
  *
- * @macro traced
  * @since 1.0.0
  * @category mutations
  */
-export const collectSTM: <A, R2, E2, A2>(
-  pf: (a: A) => Option.Option<STM<R2, E2, A2>>
-) => <R, E>(self: STM<R, E, A>) => STM<R2 | R, E2 | E, A2> = stm.collectSTM
+export const collectSTM: {
+  <R, E, A, R2, E2, A2>(self: STM<R, E, A>, pf: (a: A) => Option.Option<STM<R2, E2, A2>>): STM<R | R2, E | E2, A2>
+  <A, R2, E2, A2>(pf: (a: A) => Option.Option<STM<R2, E2, A2>>): <R, E>(self: STM<R, E, A>) => STM<R2 | R, E2 | E, A2>
+} = stm.collectSTM
 
 /**
  * Commits this transaction atomically.
  *
- * @macro traced
  * @since 1.0.0
  * @category destructors
  */
@@ -280,7 +285,6 @@ export const commit: <R, E, A>(self: STM<R, E, A>) => Effect.Effect<R, E, A> = c
  * Commits this transaction atomically, regardless of whether the transaction
  * is a success or a failure.
  *
- * @macro traced
  * @since 1.0.0
  * @category destructors
  */
@@ -290,7 +294,6 @@ export const commitEither: <R, E, A>(self: STM<R, E, A>) => Effect.Effect<R, E, 
  * Similar to Either.cond, evaluate the predicate, return the given A as
  * success if predicate returns true, and the given E as error otherwise
  *
- * @macro traced
  * @since 1.0.0
  * @category constructors
  */
@@ -300,7 +303,6 @@ export const cond: <E, A>(predicate: LazyArg<boolean>, error: LazyArg<E>, result
 /**
  * Fails the transactional effect with the specified defect.
  *
- * @macro traced
  * @since 1.0.0
  * @category constructors
  */
@@ -310,7 +312,6 @@ export const die: (defect: unknown) => STM<never, never, never> = core.die
  * Kills the fiber running the effect with a `Cause.RuntimeException` that
  * contains the specified message.
  *
- * @macro traced
  * @since 1.0.0
  * @category constructors
  */
@@ -319,7 +320,6 @@ export const dieMessage: (message: string) => STM<never, never, never> = core.di
 /**
  * Fails the transactional effect with the specified lazily evaluated defect.
  *
- * @macro traced
  * @since 1.0.0
  * @category constructors
  */
@@ -328,7 +328,6 @@ export const dieSync: (evaluate: LazyArg<unknown>) => STM<never, never, never> =
 /**
  * Converts the failure channel into an `Either`.
  *
- * @macro traced
  * @since 1.0.0
  * @category mutations
  */
@@ -339,49 +338,44 @@ export const either: <R, E, A>(self: STM<R, E, A>) => STM<R, never, Either.Eithe
  * succeeds. Note that as with all STM transactions, if the full transaction
  * fails, everything will be rolled back.
  *
- * @macro traced
  * @since 1.0.0
  * @category finalization
  */
-export const ensuring: <R1, B>(
-  finalizer: STM<R1, never, B>
-) => <R, E, A>(self: STM<R, E, A>) => STM<R1 | R, E, A> = core.ensuring
+export const ensuring: {
+  <R, E, A, R1, B>(self: STM<R, E, A>, finalizer: STM<R1, never, B>): STM<R | R1, E, A>
+  <R1, B>(finalizer: STM<R1, never, B>): <R, E, A>(self: STM<R, E, A>) => STM<R1 | R, E, A>
+} = core.ensuring
 
 /**
  * Retrieves the environment inside an stm.
  *
- * @macro traced
  * @since 1.0.0
  * @category constructors
  */
-export const environment: <R>() => STM<R, never, Context.Context<R>> = stm.environment
+export const context: <R>() => STM<R, never, Context.Context<R>> = stm.context
 
 /**
  * Accesses the environment of the transaction to perform a transaction.
  *
- * @macro traced
  * @since 1.0.0
  * @category constructors
  */
-export const environmentWith: <R0, R>(f: (environment: Context.Context<R0>) => R) => STM<R0, never, R> =
-  stm.environmentWith
+export const contextWith: <R0, R>(f: (environment: Context.Context<R0>) => R) => STM<R0, never, R> = stm.contextWith
 
 /**
  * Accesses the environment of the transaction to perform a transaction.
  *
- * @macro traced
  * @since 1.0.0
  * @category constructors
  */
-export const environmentWithSTM: <R0, R, E, A>(
+export const contextWithSTM: <R0, R, E, A>(
   f: (environment: Context.Context<R0>) => STM<R, E, A>
-) => STM<R0 | R, E, A> = stm.environmentWithSTM
+) => STM<R0 | R, E, A> = stm.contextWithSTM
 
 /**
  * Returns an effect that ignores errors and runs repeatedly until it
  * eventually succeeds.
  *
- * @macro traced
  * @since 1.0.0
  * @category mutations
  */
@@ -391,30 +385,29 @@ export const eventually: <R, E, A>(self: STM<R, E, A>) => STM<R, E, A> = stm.eve
  * Determines whether all elements of the `Iterable<A>` satisfy the effectual
  * predicate.
  *
- * @macro traced
  * @since 1.0.0
  * @category constructors
  */
-export const every: <A, R, E>(
-  predicate: (a: A) => STM<R, E, boolean>
-) => (iterable: Iterable<A>) => STM<R, E, boolean> = stm.every
+export const every: {
+  <A, R, E>(iterable: Iterable<A>, predicate: (a: A) => STM<R, E, boolean>): STM<R, E, boolean>
+  <A, R, E>(predicate: (a: A) => STM<R, E, boolean>): (iterable: Iterable<A>) => STM<R, E, boolean>
+} = stm.every
 
 /**
  * Determines whether any element of the `Iterable[A]` satisfies the effectual
  * predicate `f`.
  *
- * @macro traced
  * @since 1.0.0
  * @category constructors
  */
-export const exists: <A, R, E>(
-  predicate: (a: A) => STM<R, E, boolean>
-) => (iterable: Iterable<A>) => STM<R, E, boolean> = stm.exists
+export const exists: {
+  <A, R, E>(iterable: Iterable<A>, predicate: (a: A) => STM<R, E, boolean>): STM<R, E, boolean>
+  <A, R, E>(predicate: (a: A) => STM<R, E, boolean>): (iterable: Iterable<A>) => STM<R, E, boolean>
+} = stm.exists
 
 /**
  * Fails the transactional effect with the specified error.
  *
- * @macro traced
  * @since 1.0.0
  * @category constructors
  */
@@ -423,7 +416,6 @@ export const fail: <E>(error: E) => STM<never, E, never> = core.fail
 /**
  * Fails the transactional effect with the specified lazily evaluated error.
  *
- * @macro traced
  * @since 1.0.0
  * @category constructors
  */
@@ -432,7 +424,6 @@ export const failSync: <E>(evaluate: LazyArg<E>) => STM<never, E, never> = core.
 /**
  * Returns the fiber id of the fiber committing the transaction.
  *
- * @macro traced
  * @since 1.0.0
  * @category constructors
  */
@@ -441,115 +432,123 @@ export const fiberId: () => STM<never, never, FiberId.FiberId> = stm.fiberId
 /**
  * Filters the collection using the specified effectual predicate.
  *
- * @macro traced
  * @since 1.0.0
  * @category constructors
  */
-export const filter: <A, R, E>(
-  predicate: (a: A) => STM<R, E, boolean>
-) => (iterable: Iterable<A>) => STM<R, E, Chunk.Chunk<A>> = stm.filter
+export const filter: {
+  <A, R, E>(iterable: Iterable<A>, predicate: (a: A) => STM<R, E, boolean>): STM<R, E, Chunk.Chunk<A>>
+  <A, R, E>(predicate: (a: A) => STM<R, E, boolean>): (iterable: Iterable<A>) => STM<R, E, Chunk.Chunk<A>>
+} = stm.filter
 
 /**
  * Filters the collection using the specified effectual predicate, removing
  * all elements that satisfy the predicate.
  *
- * @macro traced
  * @since 1.0.0
  * @category constructors
  */
-export const filterNot: <A, R, E>(
-  predicate: (a: A) => STM<R, E, boolean>
-) => (iterable: Iterable<A>) => STM<R, E, Chunk.Chunk<A>> = stm.filterNot
+export const filterNot: {
+  <A, R, E>(iterable: Iterable<A>, predicate: (a: A) => STM<R, E, boolean>): STM<R, E, Chunk.Chunk<A>>
+  <A, R, E>(predicate: (a: A) => STM<R, E, boolean>): (iterable: Iterable<A>) => STM<R, E, Chunk.Chunk<A>>
+} = stm.filterNot
 
 /**
  * Dies with specified defect if the predicate fails.
  *
- * @macro traced
  * @since 1.0.0
  * @category filtering
  */
-export const filterOrDie: <A>(
-  predicate: Predicate<A>,
-  defect: LazyArg<unknown>
-) => <R, E>(self: STM<R, E, A>) => STM<R, E, A> = stm.filterOrDie
+export const filterOrDie: {
+  <R, E, A>(self: STM<R, E, A>, predicate: Predicate<A>, defect: LazyArg<unknown>): STM<R, E, A>
+  <A>(predicate: Predicate<A>, defect: LazyArg<unknown>): <R, E>(self: STM<R, E, A>) => STM<R, E, A>
+} = stm.filterOrDie
 
 /**
  * Dies with a `Cause.RuntimeException` having the specified  message if the
  * predicate fails.
  *
- * @macro traced
  * @since 1.0.0
  * @category filtering
  */
-export const filterOrDieMessage: <A>(
-  predicate: Predicate<A>,
-  message: string
-) => <R, E>(self: STM<R, E, A>) => STM<R, E, A> = stm.filterOrDieMessage
+export const filterOrDieMessage: {
+  <R, E, A>(self: STM<R, E, A>, predicate: Predicate<A>, message: string): STM<R, E, A>
+  <A>(predicate: Predicate<A>, message: string): <R, E>(self: STM<R, E, A>) => STM<R, E, A>
+} = stm.filterOrDieMessage
 
 /**
  * Supplies `orElse` if the predicate fails.
  *
- * @macro traced
  * @since 1.0.0
  * @category filtering
  */
-export const filterOrElse: <A, R2, E2, A2>(
-  predicate: Predicate<A>,
-  orElse: LazyArg<STM<R2, E2, A2>>
-) => <R, E>(self: STM<R, E, A>) => STM<R2 | R, E2 | E, A | A2> = stm.filterOrElse
+export const filterOrElse: {
+  <R, E, A, R2, E2, A2>(
+    self: STM<R, E, A>,
+    predicate: Predicate<A>,
+    orElse: LazyArg<STM<R2, E2, A2>>
+  ): STM<R | R2, E | E2, A | A2>
+  <A, R2, E2, A2>(
+    predicate: Predicate<A>,
+    orElse: LazyArg<STM<R2, E2, A2>>
+  ): <R, E>(self: STM<R, E, A>) => STM<R2 | R, E2 | E, A | A2>
+} = stm.filterOrElse
 
 /**
  * Applies `orElse` if the predicate fails.
  *
- * @macro traced
  * @since 1.0.0
  * @category filtering
  */
-export const filterOrElseWith: <A, R2, E2, A2>(
-  predicate: Predicate<A>,
-  orElse: (a: A) => STM<R2, E2, A2>
-) => <R, E>(self: STM<R, E, A>) => STM<R2 | R, E2 | E, A | A2> = stm.filterOrElseWith
+export const filterOrElseWith: {
+  <R, E, A, R2, E2, A2>(
+    self: STM<R, E, A>,
+    predicate: Predicate<A>,
+    orElse: (a: A) => STM<R2, E2, A2>
+  ): STM<R | R2, E | E2, A | A2>
+  <A, R2, E2, A2>(
+    predicate: Predicate<A>,
+    orElse: (a: A) => STM<R2, E2, A2>
+  ): <R, E>(self: STM<R, E, A>) => STM<R2 | R, E2 | E, A | A2>
+} = stm.filterOrElseWith
 
 /**
  * Fails with the specified error if the predicate fails.
  *
- * @macro traced
  * @since 1.0.0
  * @category filtering
  */
-export const filterOrFail: <A, E2>(
-  predicate: Predicate<A>,
-  error: LazyArg<E2>
-) => <R, E>(self: STM<R, E, A>) => STM<R, E2 | E, A> = stm.filterOrFail
+export const filterOrFail: {
+  <R, E, A, E2>(self: STM<R, E, A>, predicate: Predicate<A>, error: LazyArg<E2>): STM<R, E | E2, A>
+  <A, E2>(predicate: Predicate<A>, error: LazyArg<E2>): <R, E>(self: STM<R, E, A>) => STM<R, E2 | E, A>
+} = stm.filterOrFail
 
 /**
  * Feeds the value produced by this effect to the specified function, and then
  * runs the returned effect as well to produce its results.
  *
- * @macro traced
  * @since 1.0.0
  * @category sequencing
  */
-export const flatMap: <A, R1, E1, A2>(
-  f: (a: A) => STM<R1, E1, A2>
-) => <R, E>(self: STM<R, E, A>) => STM<R1 | R, E1 | E, A2> = core.flatMap
+export const flatMap: {
+  <R, E, A, R1, E1, A2>(self: STM<R, E, A>, f: (a: A) => STM<R1, E1, A2>): STM<R | R1, E | E1, A2>
+  <A, R1, E1, A2>(f: (a: A) => STM<R1, E1, A2>): <R, E>(self: STM<R, E, A>) => STM<R1 | R, E1 | E, A2>
+} = core.flatMap
 
 /**
  * Creates a composite effect that represents this effect followed by another
  * one that may depend on the error produced by this one.
  *
- * @macro traced
  * @since 1.0.0
  * @category sequencing
  */
-export const flatMapError: <E, R2, E2>(
-  f: (error: E) => STM<R2, never, E2>
-) => <R, A>(self: STM<R, E, A>) => STM<R2 | R, E2, A> = stm.flatMapError
+export const flatMapError: {
+  <R, A, E, R2, E2>(self: STM<R, E, A>, f: (error: E) => STM<R2, never, E2>): STM<R | R2, E2, A>
+  <E, R2, E2>(f: (error: E) => STM<R2, never, E2>): <R, A>(self: STM<R, E, A>) => STM<R2 | R, E2, A>
+} = stm.flatMapError
 
 /**
  * Flattens out a nested `STM` effect.
  *
- * @macro traced
  * @since 1.0.0
  * @category sequencing
  */
@@ -558,20 +557,19 @@ export const flatten: <R, E, R2, E2, A>(self: STM<R, E, STM<R2, E2, A>>) => STM<
 /**
  * Unwraps the optional error, defaulting to the provided value.
  *
- * @macro traced
  * @since 1.0.0
  * @category sequencing
  */
-export const flattenErrorOption: <E2>(
-  fallback: LazyArg<E2>
-) => <R, E, A>(self: STM<R, Option.Option<E>, A>) => STM<R, E2 | E, A> = stm.flattenErrorOption
+export const flattenErrorOption: {
+  <R, E, A, E2>(self: STM<R, Option.Option<E>, A>, fallback: LazyArg<E2>): STM<R, E | E2, A>
+  <E2>(fallback: LazyArg<E2>): <R, E, A>(self: STM<R, Option.Option<E>, A>) => STM<R, E2 | E, A>
+} = stm.flattenErrorOption
 
 /**
  * Flips the success and failure channels of this transactional effect. This
  * allows you to use all methods on the error channel, possibly before
  * flipping back.
  *
- * @macro traced
  * @since 1.0.0
  * @category mutations
  */
@@ -581,50 +579,55 @@ export const flip: <R, E, A>(self: STM<R, E, A>) => STM<R, A, E> = stm.flip
  * Swaps the error/value parameters, applies the function `f` and flips the
  * parameters back
  *
- * @macro traced
  * @since 1.0.0
  * @category mutations
  */
-export const flipWith: <R, A, E, R2, A2, E2>(
-  f: (stm: STM<R, A, E>) => STM<R2, A2, E2>
-) => (self: STM<R, E, A>) => STM<R | R2, E | E2, A | A2> = stm.flipWith
+export const flipWith: {
+  <R, A, E, R2, A2, E2>(self: STM<R, E, A>, f: (stm: STM<R, A, E>) => STM<R2, A2, E2>): STM<R | R2, E | E2, A | A2>
+  <R, A, E, R2, A2, E2>(f: (stm: STM<R, A, E>) => STM<R2, A2, E2>): (self: STM<R, E, A>) => STM<R | R2, E | E2, A | A2>
+} = stm.flipWith
 
 /**
  * Folds over the `STM` effect, handling both failure and success, but not
  * retry.
  *
- * @macro traced
  * @since 1.0.0
  * @category folding
  */
-export const match: <E, A2, A, A3>(
-  f: (error: E) => A2,
-  g: (value: A) => A3
-) => <R>(self: STM<R, E, A>) => STM<R, E, A2 | A3> = stm.match
+export const match: {
+  <R, E, A2, A, A3>(self: STM<R, E, A>, f: (error: E) => A2, g: (value: A) => A3): STM<R, never, A2 | A3>
+  <E, A2, A, A3>(f: (error: E) => A2, g: (value: A) => A3): <R>(self: STM<R, E, A>) => STM<R, never, A2 | A3>
+} = stm.match
 
 /**
  * Effectfully folds over the `STM` effect, handling both failure and success.
  *
- * @macro traced
  * @since 1.0.0
  * @category folding
  */
-export const matchSTM: <E, R1, E1, A1, A, R2, E2, A2>(
-  onFailure: (e: E) => STM<R1, E1, A1>,
-  onSuccess: (a: A) => STM<R2, E2, A2>
-) => <R>(self: STM<R, E, A>) => STM<R1 | R2 | R, E1 | E2, A1 | A2> = core.matchSTM
+export const matchSTM: {
+  <R, E, R1, E1, A1, A, R2, E2, A2>(
+    self: STM<R, E, A>,
+    onFailure: (e: E) => STM<R1, E1, A1>,
+    onSuccess: (a: A) => STM<R2, E2, A2>
+  ): STM<R | R1 | R2, E1 | E2, A1 | A2>
+  <E, R1, E1, A1, A, R2, E2, A2>(
+    onFailure: (e: E) => STM<R1, E1, A1>,
+    onSuccess: (a: A) => STM<R2, E2, A2>
+  ): <R>(self: STM<R, E, A>) => STM<R1 | R2 | R, E1 | E2, A1 | A2>
+} = core.matchSTM
 
 /**
  * Applies the function `f` to each element of the `Iterable<A>` and returns
  * a transactional effect that produces a new `Chunk<A2>`.
  *
- * @macro traced
  * @since 1.0.0
  * @category traversing
  */
-export const forEach: <A, R, E, A2>(
-  f: (a: A) => STM<R, E, A2>
-) => (elements: Iterable<A>) => STM<R, E, Chunk.Chunk<A2>> = stm.forEach
+export const forEach: {
+  <A, R, E, A2>(elements: Iterable<A>, f: (a: A) => STM<R, E, A2>): STM<R, E, Chunk.Chunk<A2>>
+  <A, R, E, A2>(f: (a: A) => STM<R, E, A2>): (elements: Iterable<A>) => STM<R, E, Chunk.Chunk<A2>>
+} = stm.forEach
 
 /**
  * Applies the function `f` to each element of the `Iterable<A>` and returns a
@@ -633,17 +636,17 @@ export const forEach: <A, R, E, A2>(
  * Equivalent to `pipe(as, forEach(f), asUnit)`, but without the cost of
  * building the list of results.
  *
- * @macro traced
  * @since 1.0.0
  * @category traversing
  */
-export const forEachDiscard: <A, R, E, _>(f: (a: A) => STM<R, E, _>) => (iterable: Iterable<A>) => STM<R, E, void> =
-  stm.forEachDiscard
+export const forEachDiscard: {
+  <A, R, E, _>(iterable: Iterable<A>, f: (a: A) => STM<R, E, _>): STM<R, E, void>
+  <A, R, E, _>(f: (a: A) => STM<R, E, _>): (iterable: Iterable<A>) => STM<R, E, void>
+} = stm.forEachDiscard
 
 /**
  * Lifts an `Either` into a `STM`.
  *
- * @macro traced
  * @since 1.0.0
  * @category constructors
  */
@@ -652,14 +655,12 @@ export const fromEither: <E, A>(either: Either.Either<E, A>) => STM<never, E, A>
 /**
  * Lifts an `Option` into a `STM`.
  *
- * @macro traced
  * @since 1.0.0
  * @category constructors
  */
 export const fromOption: <A>(option: Option.Option<A>) => STM<never, Option.Option<never>, A> = stm.fromOption
 
 /**
- * @macro traced
  * @since 1.0.0
  * @category constructors
  */
@@ -675,7 +676,6 @@ export const gen: <Eff extends STMGen<any, any, any>, AEff>(
  * Returns a successful effect with the head of the list if the list is
  * non-empty or fails with the error `None` if the list is empty.
  *
- * @macro traced
  * @since 1.0.0
  * @category getters
  */
@@ -684,19 +684,24 @@ export const head: <R, E, A>(self: STM<R, E, Iterable<A>>) => STM<R, Option.Opti
 /**
  * Runs `onTrue` if the result of `b` is `true` and `onFalse` otherwise.
  *
- * @macro traced
  * @since 1.0.0
  * @category mutations
  */
-export const ifSTM: <R1, R2, E1, E2, A, A1>(
-  onTrue: STM<R1, E1, A>,
-  onFalse: STM<R2, E2, A1>
-) => <R, E>(self: STM<R, E, boolean>) => STM<R1 | R2 | R, E1 | E2 | E, A | A1> = stm.ifSTM
+export const ifSTM: {
+  <R, E, R1, R2, E1, E2, A, A1>(
+    self: STM<R, E, boolean>,
+    onTrue: STM<R1, E1, A>,
+    onFalse: STM<R2, E2, A1>
+  ): STM<R | R1 | R2, E | E1 | E2, A | A1>
+  <R1, R2, E1, E2, A, A1>(
+    onTrue: STM<R1, E1, A>,
+    onFalse: STM<R2, E2, A1>
+  ): <R, E>(self: STM<R, E, boolean>) => STM<R1 | R2 | R, E1 | E2 | E, A | A1>
+} = stm.ifSTM
 
 /**
  * Returns a new effect that ignores the success or failure of this effect.
  *
- * @macro traced
  * @since 1.0.0
  * @category mutations
  */
@@ -705,7 +710,6 @@ export const ignore: <R, E, A>(self: STM<R, E, A>) => STM<R, never, void> = stm.
 /**
  * Interrupts the fiber running the effect.
  *
- * @macro traced
  * @since 1.0.0
  * @category constructors
  */
@@ -714,7 +718,6 @@ export const interrupt: () => STM<never, never, never> = core.interrupt
 /**
  * Interrupts the fiber running the effect with the specified `FiberId`.
  *
- * @macro traced
  * @since 1.0.0
  * @category constructors
  */
@@ -723,7 +726,6 @@ export const interruptWith: (fiberId: FiberId.FiberId) => STM<never, never, neve
 /**
  * Returns whether this transactional effect is a failure.
  *
- * @macro traced
  * @since 1.0.0
  * @category getters
  */
@@ -732,7 +734,6 @@ export const isFailure: <R, E, A>(self: STM<R, E, A>) => STM<R, never, boolean> 
 /**
  * Returns whether this transactional effect is a success.
  *
- * @macro traced
  * @since 1.0.0
  * @category getters
  */
@@ -752,18 +753,16 @@ export const isSuccess: <R, E, A>(self: STM<R, E, A>) => STM<R, never, boolean> 
  * return s
  * ```
  *
- * @macro traced
  * @since 1.0.0
  * @category constructors
  */
-export const iterate: <Z>(initial: Z, cont: (z: Z) => boolean) => <R, E>(body: (z: Z) => STM<R, E, Z>) => STM<R, E, Z> =
+export const iterate: <R, E, Z>(initial: Z, cont: (z: Z) => boolean, body: (z: Z) => STM<R, E, Z>) => STM<R, E, Z> =
   stm.iterate
 
 /**
  * "Zooms in" on the value in the `Left` side of an `Either`, moving the
  * possibility that the value is a `Right` to the error channel.
  *
- * @macro traced
  * @since 1.0.0
  * @category getters
  */
@@ -785,7 +784,6 @@ export const left: <R, E, A, A2>(self: STM<R, E, Either.Either<A, A2>>) => STM<R
  * return as
  * ```
  *
- * @macro traced
  * @since 1.0.0
  * @category constructors
  */
@@ -809,7 +807,6 @@ export const loop: <Z, R, E, A>(
  * }
  * ```
  *
- * @macro traced
  * @since 1.0.0
  * @category constructors
  */
@@ -823,50 +820,54 @@ export const loopDiscard: <Z, R, E, X>(
 /**
  * Maps the value produced by the effect.
  *
- * @macro traced
  * @since 1.0.0
  * @category mapping
  */
-export const map: <A, B>(f: (a: A) => B) => <R, E>(self: STM<R, E, A>) => STM<R, E, B> = core.map
+export const map: {
+  <R, E, A, B>(self: STM<R, E, A>, f: (a: A) => B): STM<R, E, B>
+  <A, B>(f: (a: A) => B): <R, E>(self: STM<R, E, A>) => STM<R, E, B>
+} = core.map
 
 /**
  * Maps the value produced by the effect with the specified function that may
  * throw exceptions but is otherwise pure, translating any thrown exceptions
  * into typed failed effects.
  *
- * @macro traced
  * @since 1.0.0
  * @category mapping
  */
-export const mapAttempt: <A, B>(f: (a: A) => B) => <R, E>(self: STM<R, E, A>) => STM<R, unknown, B> = stm.mapAttempt
+export const mapAttempt: {
+  <R, E, A, B>(self: STM<R, E, A>, f: (a: A) => B): STM<R, unknown, B>
+  <A, B>(f: (a: A) => B): <R, E>(self: STM<R, E, A>) => STM<R, unknown, B>
+} = stm.mapAttempt
 
 /**
  * Returns an `STM` effect whose failure and success channels have been mapped
  * by the specified pair of functions, `f` and `g`.
  *
- * @macro traced
  * @since 1.0.0
  * @category mapping
  */
-export const mapBoth: <E, E2, A, A2>(
-  f: (error: E) => E2,
-  g: (value: A) => A2
-) => <R>(self: STM<R, E, A>) => STM<R, E2, A2> = stm.mapBoth
+export const mapBoth: {
+  <R, E, E2, A, A2>(self: STM<R, E, A>, f: (error: E) => E2, g: (value: A) => A2): STM<R, E2, A2>
+  <E, E2, A, A2>(f: (error: E) => E2, g: (value: A) => A2): <R>(self: STM<R, E, A>) => STM<R, E2, A2>
+} = stm.mapBoth
 
 /**
  * Maps from one error type to another.
  *
- * @macro traced
  * @since 1.0.0
  * @category mapping
  */
-export const mapError: <E, E2>(f: (error: E) => E2) => <R, A>(self: STM<R, E, A>) => STM<R, E2, A> = stm.mapError
+export const mapError: {
+  <R, A, E, E2>(self: STM<R, E, A>, f: (error: E) => E2): STM<R, E2, A>
+  <E, E2>(f: (error: E) => E2): <R, A>(self: STM<R, E, A>) => STM<R, E2, A>
+} = stm.mapError
 
 /**
  * Returns a new effect where the error channel has been merged into the
  * success channel to their common combined type.
  *
- * @macro traced
  * @since 1.0.0
  * @category mutations
  */
@@ -875,19 +876,17 @@ export const merge: <R, E, A>(self: STM<R, E, A>) => STM<R, never, E | A> = stm.
 /**
  * Merges an `Iterable<STM>` to a single `STM`, working sequentially.
  *
- * @macro traced
  * @since 1.0.0
  * @category constructors
  */
-export const mergeAll: <A2, A>(
-  zero: A2,
-  f: (a2: A2, a: A) => A2
-) => <R, E>(iterable: Iterable<STM<R, E, A>>) => STM<R, E, A2> = stm.mergeAll
+export const mergeAll: {
+  <R, E, A2, A>(iterable: Iterable<STM<R, E, A>>, zero: A2, f: (a2: A2, a: A) => A2): STM<R, E, A2>
+  <A2, A>(zero: A2, f: (a2: A2, a: A) => A2): <R, E>(iterable: Iterable<STM<R, E, A>>) => STM<R, E, A2>
+} = stm.mergeAll
 
 /**
  * Returns a new effect where boolean value of this effect is negated.
  *
- * @macro traced
  * @since 1.0.0
  * @category mutations
  */
@@ -896,7 +895,6 @@ export const negate: <R, E>(self: STM<R, E, boolean>) => STM<R, E, boolean> = st
 /**
  * Requires the option produced by this value to be `None`.
  *
- * @macro traced
  * @since 1.0.0
  * @category mutations
  */
@@ -905,7 +903,6 @@ export const none: <R, E, A>(self: STM<R, E, Option.Option<A>>) => STM<R, Option
 /**
  * Converts the failure channel into an `Option`.
  *
- * @macro traced
  * @since 1.0.0
  * @category mutations
  */
@@ -915,7 +912,6 @@ export const option: <R, E, A>(self: STM<R, E, A>) => STM<R, never, Option.Optio
  * Translates `STM` effect failure into death of the fiber, making all
  * failures unchecked and not a part of the type of the effect.
  *
- * @macro traced
  * @since 1.0.0
  * @category error handling
  */
@@ -925,225 +921,261 @@ export const orDie: <R, E, A>(self: STM<R, E, A>) => STM<R, never, A> = stm.orDi
  * Keeps none of the errors, and terminates the fiber running the `STM` effect
  * with them, using the specified function to convert the `E` into a defect.
  *
- * @macro traced
  * @since 1.0.0
  * @category error handling
  */
-export const orDieWith: <E>(f: (error: E) => unknown) => <R, A>(self: STM<R, E, A>) => STM<R, never, A> = stm.orDieWith
+export const orDieWith: {
+  <R, A, E>(self: STM<R, E, A>, f: (error: E) => unknown): STM<R, never, A>
+  <E>(f: (error: E) => unknown): <R, A>(self: STM<R, E, A>) => STM<R, never, A>
+} = stm.orDieWith
 
 /**
  * Tries this effect first, and if it fails or retries, tries the other
  * effect.
  *
- * @macro traced
  * @since 1.0.0
  * @category error handling
  */
-export const orElse: <R2, E2, A2>(
-  that: LazyArg<STM<R2, E2, A2>>
-) => <R, E, A>(self: STM<R, E, A>) => STM<R2 | R, E2, A2 | A> = stm.orElse
+export const orElse: {
+  <R, E, A, R2, E2, A2>(self: STM<R, E, A>, that: LazyArg<STM<R2, E2, A2>>): STM<R | R2, E2, A | A2>
+  <R2, E2, A2>(that: LazyArg<STM<R2, E2, A2>>): <R, E, A>(self: STM<R, E, A>) => STM<R2 | R, E2, A2 | A>
+} = stm.orElse
 
 /**
  * Returns a transactional effect that will produce the value of this effect
  * in left side, unless it fails or retries, in which case, it will produce
  * the value of the specified effect in right side.
  *
- * @macro traced
  * @since 1.0.0
  * @category error handling
  */
-export const orElseEither: <R2, E2, A2>(
-  that: LazyArg<STM<R2, E2, A2>>
-) => <R, E, A>(self: STM<R, E, A>) => STM<R2 | R, E2, Either.Either<A, A2>> = stm.orElseEither
+export const orElseEither: {
+  <R, E, A, R2, E2, A2>(self: STM<R, E, A>, that: LazyArg<STM<R2, E2, A2>>): STM<R | R2, E2, Either.Either<A, A2>>
+  <R2, E2, A2>(that: LazyArg<STM<R2, E2, A2>>): <R, E, A>(self: STM<R, E, A>) => STM<R2 | R, E2, Either.Either<A, A2>>
+} = stm.orElseEither
 
 /**
  * Tries this effect first, and if it fails or retries, fails with the
  * specified error.
  *
- * @macro traced
  * @since 1.0.0
  * @category error handling
  */
-export const orElseFail: <E2>(error: LazyArg<E2>) => <R, E, A>(self: STM<R, E, A>) => STM<R, E2, A> = stm.orElseFail
+export const orElseFail: {
+  <R, E, A, E2>(self: STM<R, E, A>, error: LazyArg<E2>): STM<R, E2, A>
+  <E2>(error: LazyArg<E2>): <R, E, A>(self: STM<R, E, A>) => STM<R, E2, A>
+} = stm.orElseFail
 
 /**
  * Returns an effect that will produce the value of this effect, unless it
  * fails with the `None` value, in which case it will produce the value of the
  * specified effect.
  *
- * @macro traced
  * @since 1.0.0
  * @category error handling
  */
-export const orElseOptional: <R2, E2, A2>(
-  that: LazyArg<STM<R2, Option.Option<E2>, A2>>
-) => <R, E, A>(self: STM<R, Option.Option<E>, A>) => STM<R2 | R, Option.Option<E2 | E>, A2 | A> = stm.orElseOptional
+export const orElseOptional: {
+  <R, E, A, R2, E2, A2>(
+    self: STM<R, Option.Option<E>, A>,
+    that: LazyArg<STM<R2, Option.Option<E2>, A2>>
+  ): STM<R | R2, Option.Option<E | E2>, A | A2>
+  <R2, E2, A2>(
+    that: LazyArg<STM<R2, Option.Option<E2>, A2>>
+  ): <R, E, A>(self: STM<R, Option.Option<E>, A>) => STM<R2 | R, Option.Option<E2 | E>, A2 | A>
+} = stm.orElseOptional
 
 /**
  * Tries this effect first, and if it fails or retries, succeeds with the
  * specified value.
  *
- * @macro traced
  * @since 1.0.0
  * @category error handling
  */
-export const orElseSucceed: <A2>(value: LazyArg<A2>) => <R, E, A>(self: STM<R, E, A>) => STM<R, never, A2 | A> =
-  stm.orElseSucceed
+export const orElseSucceed: {
+  <R, E, A, A2>(self: STM<R, E, A>, value: LazyArg<A2>): STM<R, never, A | A2>
+  <A2>(value: LazyArg<A2>): <R, E, A>(self: STM<R, E, A>) => STM<R, never, A2 | A>
+} = stm.orElseSucceed
 
 /**
  * Tries this effect first, and if it enters retry, then it tries the other
  * effect. This is an equivalent of Haskell's orElse.
  *
- * @macro traced
  * @since 1.0.0
  * @category error handling
  */
-export const orTry: <R1, E1, A1>(
-  that: () => STM<R1, E1, A1>
-) => <R, E, A>(self: STM<R, E, A>) => STM<R1 | R, E1 | E, A1 | A> = core.orTry
+export const orTry: {
+  <R, E, A, R1, E1, A1>(self: STM<R, E, A>, that: () => STM<R1, E1, A1>): STM<R | R1, E | E1, A | A1>
+  <R1, E1, A1>(that: () => STM<R1, E1, A1>): <R, E, A>(self: STM<R, E, A>) => STM<R1 | R, E1 | E, A1 | A>
+} = core.orTry
 
 /**
  * Feeds elements of type `A` to a function `f` that returns an effect.
  * Collects all successes and failures in a tupled fashion.
  *
- * @macro traced
  * @since 1.0.0
  * @category traversing
  */
-export const partition: <R, E, A, A2>(
-  f: (a: A) => STM<R, E, A2>
-) => (elements: Iterable<A>) => STM<R, E, readonly [Chunk.Chunk<E>, Chunk.Chunk<A2>]> = stm.partition
+export const partition: {
+  <R, E, A, A2>(
+    elements: Iterable<A>,
+    f: (a: A) => STM<R, E, A2>
+  ): STM<R, never, readonly [Chunk.Chunk<E>, Chunk.Chunk<A2>]>
+  <R, E, A, A2>(
+    f: (a: A) => STM<R, E, A2>
+  ): (elements: Iterable<A>) => STM<R, never, readonly [Chunk.Chunk<E>, Chunk.Chunk<A2>]>
+} = stm.partition
 
 /**
  * Provides the transaction its required environment, which eliminates its
  * dependency on `R`.
  *
- * @macro traced
  * @since 1.0.0
  * @category environment
  */
-export const provideEnvironment: <R>(env: Context.Context<R>) => <E, A>(self: STM<R, E, A>) => STM<never, E, A> =
-  stm.provideEnvironment
+export const provideContext: {
+  <E, A, R>(self: STM<R, E, A>, env: Context.Context<R>): STM<never, E, A>
+  <R>(env: Context.Context<R>): <E, A>(self: STM<R, E, A>) => STM<never, E, A>
+} = stm.provideContext
 
 /**
  * Provides the effect with the single service it requires. If the transactional
  * effect requires more than one service use `provideEnvironment` instead.
  *
- * @macro traced
  * @since 1.0.0
  * @category environment
  */
-export const provideService: <T>(
-  tag: Context.Tag<T>
-) => (resource: T) => <R, E, A>(self: STM<R, E, A>) => STM<Exclude<R, T>, E, A> = stm.provideService
+export const provideService: {
+  <R, E, A, T extends Context.Tag<any>>(
+    self: STM<R, E, A>,
+    tag: T,
+    resource: Context.Tag.Service<T>
+  ): STM<Exclude<R, Context.Tag.Service<T>>, E, A>
+  <T extends Context.Tag<any>>(
+    tag: T,
+    resource: Context.Tag.Service<T>
+  ): <R, E, A>(self: STM<R, E, A>) => STM<Exclude<R, Context.Tag.Service<T>>, E, A>
+} = stm.provideService
 
 /**
  * Provides the effect with the single service it requires. If the transactional
  * effect requires more than one service use `provideEnvironment` instead.
  *
- * @macro traced
  * @since 1.0.0
  * @category environment
  */
-export const provideServiceSTM: <T>(
-  tag: Context.Tag<T>
-) => <R1, E1>(stm: STM<R1, E1, T>) => <R, E, A>(self: STM<R, E, A>) => STM<R1 | Exclude<R, T>, E1 | E, A> =
-  stm.provideServiceSTM
+export const provideServiceSTM: {
+  <R, E, A, T extends Context.Tag<T>, R1, E1>(
+    self: STM<R, E, A>,
+    tag: T,
+    stm: STM<R1, E1, Context.Tag.Service<T>>
+  ): STM<R1 | Exclude<R, Context.Tag.Service<T>>, E | E1, A>
+  <T extends Context.Tag<T>, R1, E1>(
+    tag: Context.Tag<T>,
+    stm: STM<R1, E1, Context.Tag.Service<T>>
+  ): <R, E, A>(self: STM<R, E, A>) => STM<R1 | Exclude<R, Context.Tag.Service<T>>, E1 | E, A>
+} = stm.provideServiceSTM
 
 /**
  * Transforms the environment being provided to this effect with the specified
  * function.
  *
- * @macro traced
  * @since 1.0.0
  * @category environment
  */
-export const provideSomeEnvironment: <R0, R>(
-  f: (context: Context.Context<R0>) => Context.Context<R>
-) => <E, A>(self: STM<R, E, A>) => STM<R0, E, A> = core.provideSomeEnvironment
+export const contramapContext: {
+  <E, A, R0, R>(self: STM<R, E, A>, f: (context: Context.Context<R0>) => Context.Context<R>): STM<R0, E, A>
+  <R0, R>(f: (context: Context.Context<R0>) => Context.Context<R>): <E, A>(self: STM<R, E, A>) => STM<R0, E, A>
+} = core.contramapContext
 
 /**
  * Folds an `Iterable<A>` using an effectual function f, working sequentially
  * from left to right.
  *
- * @macro traced
  * @since 1.0.0
  * @category constructors
  */
-export const reduce: <S, A, R, E>(zero: S, f: (s: S, a: A) => STM<R, E, S>) => (iterable: Iterable<A>) => STM<R, E, S> =
-  stm.reduce
+export const reduce: {
+  <S, A, R, E>(iterable: Iterable<A>, zero: S, f: (s: S, a: A) => STM<R, E, S>): STM<R, E, S>
+  <S, A, R, E>(zero: S, f: (s: S, a: A) => STM<R, E, S>): (iterable: Iterable<A>) => STM<R, E, S>
+} = stm.reduce
 
 /**
  * Reduces an `Iterable<STM>` to a single `STM`, working sequentially.
  *
- * @macro traced
  * @since 1.0.0
  * @category constructors
  */
-export const reduceAll: <R2, E2, A>(
-  initial: STM<R2, E2, A>,
-  f: (x: A, y: A) => A
-) => <R, E>(iterable: Iterable<STM<R, E, A>>) => STM<R2 | R, E2 | E, A> = stm.reduceAll
+export const reduceAll: {
+  <R, E, R2, E2, A>(
+    iterable: Iterable<STM<R, E, A>>,
+    initial: STM<R2, E2, A>,
+    f: (x: A, y: A) => A
+  ): STM<R | R2, E | E2, A>
+  <R2, E2, A>(
+    initial: STM<R2, E2, A>,
+    f: (x: A, y: A) => A
+  ): <R, E>(iterable: Iterable<STM<R, E, A>>) => STM<R2 | R, E2 | E, A>
+} = stm.reduceAll
 
 /**
  * Folds an `Iterable<A>` using an effectual function f, working sequentially
  * from right to left.
  *
- * @macro traced
  * @since 1.0.0
  * @category constructors
  */
-export const reduceRight: <S, A, R, E>(
-  zero: S,
-  f: (s: S, a: A) => STM<R, E, S>
-) => (iterable: Iterable<A>) => STM<R, E, S> = stm.reduceRight
+export const reduceRight: {
+  <S, A, R, E>(iterable: Iterable<A>, zero: S, f: (s: S, a: A) => STM<R, E, S>): STM<R, E, S>
+  <S, A, R, E>(zero: S, f: (s: S, a: A) => STM<R, E, S>): (iterable: Iterable<A>) => STM<R, E, S>
+} = stm.reduceRight
 
 /**
  * Keeps some of the errors, and terminates the fiber with the rest.
  *
- * @macro traced
  * @since 1.0.0
  * @category mutations
  */
-export const refineOrDie: <E, E2>(pf: (error: E) => Option.Option<E2>) => <R, A>(self: STM<R, E, A>) => STM<R, E2, A> =
-  stm.refineOrDie
+export const refineOrDie: {
+  <R, A, E, E2>(self: STM<R, E, A>, pf: (error: E) => Option.Option<E2>): STM<R, E2, A>
+  <E, E2>(pf: (error: E) => Option.Option<E2>): <R, A>(self: STM<R, E, A>) => STM<R, E2, A>
+} = stm.refineOrDie
 
 /**
  * Keeps some of the errors, and terminates the fiber with the rest, using the
  * specified function to convert the `E` into a `Throwable`.
  *
- * @macro traced
  * @since 1.0.0
  * @category mutations
  */
-export const refineOrDieWith: <E, E2>(
-  pf: (error: E) => Option.Option<E2>,
-  f: (error: E) => unknown
-) => <R, A>(self: STM<R, E, A>) => STM<R, E2, A> = stm.refineOrDieWith
+export const refineOrDieWith: {
+  <R, A, E, E2>(self: STM<R, E, A>, pf: (error: E) => Option.Option<E2>, f: (error: E) => unknown): STM<R, E2, A>
+  <E, E2>(pf: (error: E) => Option.Option<E2>, f: (error: E) => unknown): <R, A>(self: STM<R, E, A>) => STM<R, E2, A>
+} = stm.refineOrDieWith
 
 /**
  * Fail with the returned value if the `PartialFunction` matches, otherwise
  * continue with our held value.
  *
- * @macro traced
  * @since 1.0.0
  * @category mutations
  */
-export const reject: <A, E2>(pf: (a: A) => Option.Option<E2>) => <R, E>(self: STM<R, E, A>) => STM<R, E2 | E, A> =
-  stm.reject
+export const reject: {
+  <R, E, A, E2>(self: STM<R, E, A>, pf: (a: A) => Option.Option<E2>): STM<R, E | E2, A>
+  <A, E2>(pf: (a: A) => Option.Option<E2>): <R, E>(self: STM<R, E, A>) => STM<R, E2 | E, A>
+} = stm.reject
 
 /**
  * Continue with the returned computation if the specified partial function
  * matches, translating the successful match into a failure, otherwise continue
  * with our held value.
  *
- * @macro traced
  * @since 1.0.0
  * @category mutations
  */
-export const rejectSTM: <A, R2, E2>(
-  pf: (a: A) => Option.Option<STM<R2, E2, E2>>
-) => <R, E>(self: STM<R, E, A>) => STM<R2 | R, E2 | E, A> = stm.rejectSTM
+export const rejectSTM: {
+  <R, E, A, R2, E2>(self: STM<R, E, A>, pf: (a: A) => Option.Option<STM<R2, E2, E2>>): STM<R | R2, E | E2, A>
+  <A, R2, E2>(pf: (a: A) => Option.Option<STM<R2, E2, E2>>): <R, E>(self: STM<R, E, A>) => STM<R2 | R, E2 | E, A>
+} = stm.rejectSTM
 
 /**
  * Repeats this `STM` effect until its result satisfies the specified
@@ -1157,11 +1189,13 @@ export const rejectSTM: <A, R2, E2>(
  *     state for repeats.
  *   - Ensure repeating the STM effect will eventually satisfy the predicate.
  *
- * @macro traced
  * @since 1.0.0
  * @category mutations
  */
-export const repeatUntil: <A>(predicate: Predicate<A>) => <R, E>(self: STM<R, E, A>) => STM<R, E, A> = stm.repeatUntil
+export const repeatUntil: {
+  <R, E, A>(self: STM<R, E, A>, predicate: Predicate<A>): STM<R, E, A>
+  <A>(predicate: Predicate<A>): <R, E>(self: STM<R, E, A>) => STM<R, E, A>
+} = stm.repeatUntil
 
 /**
  * Repeats this `STM` effect while its result satisfies the specified
@@ -1176,11 +1210,13 @@ export const repeatUntil: <A>(predicate: Predicate<A>) => <R, E>(self: STM<R, E,
  *   - Ensure repeating the STM effect will eventually not satisfy the
  *     predicate.
  *
- * @macro traced
  * @since 1.0.0
  * @category mutations
  */
-export const repeatWhile: <A>(predicate: Predicate<A>) => <R, E>(self: STM<R, E, A>) => STM<R, E, A> = stm.repeatWhile
+export const repeatWhile: {
+  <R, E, A>(self: STM<R, E, A>, predicate: Predicate<A>): STM<R, E, A>
+  <A>(predicate: Predicate<A>): <R, E>(self: STM<R, E, A>) => STM<R, E, A>
+} = stm.repeatWhile
 
 /**
  * Replicates the given effect n times. If 0 or negative numbers are given, an
@@ -1189,34 +1225,39 @@ export const repeatWhile: <A>(predicate: Predicate<A>) => <R, E>(self: STM<R, E,
  * @since 1.0.0
  * @category constructors
  */
-export const replicate: (n: number) => <R, E, A>(self: STM<R, E, A>) => Chunk.Chunk<STM<R, E, A>> = stm.replicate
+export const replicate: {
+  <R, E, A>(self: STM<R, E, A>, n: number): Chunk.Chunk<STM<R, E, A>>
+  (n: number): <R, E, A>(self: STM<R, E, A>) => Chunk.Chunk<STM<R, E, A>>
+} = stm.replicate
 
 /**
  * Performs this transaction the specified number of times and collects the
  * results.
  *
- * @macro traced
  * @since 1.0.0
  * @category constructors
  */
-export const replicateSTM: (n: number) => <R, E, A>(self: STM<R, E, A>) => STM<R, E, Chunk.Chunk<A>> = stm.replicateSTM
+export const replicateSTM: {
+  <R, E, A>(self: STM<R, E, A>, n: number): STM<R, E, Chunk.Chunk<A>>
+  (n: number): <R, E, A>(self: STM<R, E, A>) => STM<R, E, Chunk.Chunk<A>>
+} = stm.replicateSTM
 
 /**
  * Performs this transaction the specified number of times, discarding the
  * results.
  *
- * @macro traced
  * @since 1.0.0
  * @category constructors
  */
-export const replicateSTMDiscard: (n: number) => <R, E, A>(self: STM<R, E, A>) => STM<R, E, void> =
-  stm.replicateSTMDiscard
+export const replicateSTMDiscard: {
+  <R, E, A>(self: STM<R, E, A>, n: number): STM<R, E, void>
+  (n: number): <R, E, A>(self: STM<R, E, A>) => STM<R, E, void>
+} = stm.replicateSTMDiscard
 
 /**
  * Abort and retry the whole transaction when any of the underlying
  * transactional variables have changed.
  *
- * @macro traced
  * @since 1.0.0
  * @category error handling
  */
@@ -1226,27 +1267,30 @@ export const retry: () => STM<never, never, never> = core.retry
  * Filters the value produced by this effect, retrying the transaction until
  * the predicate returns `true` for the value.
  *
- * @macro traced
  * @since 1.0.0
  * @category mutations
  */
-export const retryUntil: <A>(predicate: Predicate<A>) => <R, E>(self: STM<R, E, A>) => STM<R, E, A> = stm.retryUntil
+export const retryUntil: {
+  <R, E, A>(self: STM<R, E, A>, predicate: Predicate<A>): STM<R, E, A>
+  <A>(predicate: Predicate<A>): <R, E>(self: STM<R, E, A>) => STM<R, E, A>
+} = stm.retryUntil
 
 /**
  * Filters the value produced by this effect, retrying the transaction while
  * the predicate returns `true` for the value.
  *
- * @macro traced
  * @since 1.0.0
  * @category mutations
  */
-export const retryWhile: <A>(predicate: Predicate<A>) => <R, E>(self: STM<R, E, A>) => STM<R, E, A> = stm.retryWhile
+export const retryWhile: {
+  <R, E, A>(self: STM<R, E, A>, predicate: Predicate<A>): STM<R, E, A>
+  <A>(predicate: Predicate<A>): <R, E>(self: STM<R, E, A>) => STM<R, E, A>
+} = stm.retryWhile
 
 /**
  * "Zooms in" on the value in the `Right` side of an `Either`, moving the
  * possibility that the value is a `Left` to the error channel.
  *
- * @macro traced
  * @since 1.0.0
  * @category getters
  */
@@ -1255,7 +1299,6 @@ export const right: <R, E, A, A2>(self: STM<R, E, Either.Either<A, A2>>) => STM<
 /**
  * Accesses the specified service in the environment of the effect.
  *
- * @macro traced
  * @since 1.0.0
  * @category constructors
  */
@@ -1265,28 +1308,24 @@ export const service: <T>(tag: Context.Tag<T>) => STM<T, never, T> = stm.service
  * Effectfully accesses the specified service in the environment of the
  * effect.
  *
- * @macro traced
  * @since 1.0.0
  * @category constructors
  */
-export const serviceWith: <T>(tag: Context.Tag<T>) => <A>(f: (service: T) => A) => STM<T, never, A> = stm.serviceWith
+export const serviceWith: <T, A>(tag: Context.Tag<T>, f: (service: T) => A) => STM<T, never, A> = stm.serviceWith
 
 /**
  * Effectfully accesses the specified service in the environment of the
  * effect.
  *
- * @macro traced
  * @since 1.0.0
  * @category constructors
  */
-export const serviceWithSTM: <T>(
-  tag: Context.Tag<T>
-) => <R, E, A>(f: (service: T) => STM<R, E, A>) => STM<T | R, E, A> = stm.serviceWithSTM
+export const serviceWithSTM: <T, R, E, A>(tag: Context.Tag<T>, f: (service: T) => STM<R, E, A>) => STM<T | R, E, A> =
+  stm.serviceWithSTM
 
 /**
  * Converts an option on values into an option on errors.
  *
- * @macro traced
  * @since 1.0.0
  * @category getters
  */
@@ -1295,40 +1334,45 @@ export const some: <R, E, A>(self: STM<R, E, Option.Option<A>>) => STM<R, Option
 /**
  * Extracts the optional value, or returns the given 'default'.
  *
- * @macro traced
  * @since 1.0.0
  * @category getters
  */
-export const someOrElse: <A2>(
-  orElse: LazyArg<A2>
-) => <R, E, A>(self: STM<R, E, Option.Option<A>>) => STM<R, E, A2 | A> = stm.someOrElse
+export const someOrElse: {
+  <R, E, A, A2>(self: STM<R, E, Option.Option<A>>, orElse: LazyArg<A2>): STM<R, E, A | A2>
+  <A2>(orElse: LazyArg<A2>): <R, E, A>(self: STM<R, E, Option.Option<A>>) => STM<R, E, A2 | A>
+} = stm.someOrElse
 
 /**
  * Extracts the optional value, or executes the effect 'default'.
  *
- * @macro traced
  * @since 1.0.0
  * @category getters
  */
-export const someOrElseSTM: <R2, E2, A2>(
-  orElse: LazyArg<STM<R2, E2, A2>>
-) => <R, E, A>(self: STM<R, E, Option.Option<A>>) => STM<R2 | R, E2 | E, A2 | A> = stm.someOrElseSTM
+export const someOrElseSTM: {
+  <R, E, A, R2, E2, A2>(
+    self: STM<R, E, Option.Option<A>>,
+    orElse: LazyArg<STM<R2, E2, A2>>
+  ): STM<R | R2, E | E2, A | A2>
+  <R2, E2, A2>(
+    orElse: LazyArg<STM<R2, E2, A2>>
+  ): <R, E, A>(self: STM<R, E, Option.Option<A>>) => STM<R2 | R, E2 | E, A2 | A>
+} = stm.someOrElseSTM
 
 /**
  * Extracts the optional value, or fails with the given error 'e'.
  *
- * @macro traced
  * @since 1.0.0
  * @category getters
  */
-export const someOrFail: <E2>(error: LazyArg<E2>) => <R, E, A>(self: STM<R, E, Option.Option<A>>) => STM<R, E2 | E, A> =
-  stm.someOrFail
+export const someOrFail: {
+  <R, E, A, E2>(self: STM<R, E, Option.Option<A>>, error: LazyArg<E2>): STM<R, E | E2, A>
+  <E2>(error: LazyArg<E2>): <R, E, A>(self: STM<R, E, Option.Option<A>>) => STM<R, E2 | E, A>
+} = stm.someOrFail
 
 /**
  * Extracts the optional value, or fails with a
  * `Cause.NoSuchElementException`.
  *
- * @macro traced
  * @since 1.0.0
  * @category getters
  */
@@ -1337,7 +1381,6 @@ export const someOrFailException: <R, E, A>(
 ) => STM<R, E | Cause.NoSuchElementException, A> = stm.someOrFailException
 
 /**
- * @macro traced
  * @since 1.0.0
  * @category constructors
  */
@@ -1354,7 +1397,6 @@ export const struct: <NER extends Record<string, STM<any, any, any>>>(
 /**
  * Returns an `STM` effect that succeeds with the specified value.
  *
- * @macro traced
  * @since 1.0.0
  * @category constructors
  */
@@ -1363,7 +1405,6 @@ export const succeed: <A>(value: A) => STM<never, never, A> = core.succeed
 /**
  * Returns an effect with the value on the left part.
  *
- * @macro traced
  * @since 1.0.0
  * @category constructors
  */
@@ -1372,7 +1413,6 @@ export const succeedLeft: <A>(value: A) => STM<never, never, Either.Either<A, ne
 /**
  * Returns an effect with the empty value.
  *
- * @macro traced
  * @since 1.0.0
  * @category constructors
  */
@@ -1381,7 +1421,6 @@ export const succeedNone: () => STM<never, never, Option.Option<never>> = stm.su
 /**
  * Returns an effect with the value on the right part.
  *
- * @macro traced
  * @since 1.0.0
  * @category constructors
  */
@@ -1390,7 +1429,6 @@ export const succeedRight: <A>(value: A) => STM<never, never, Either.Either<neve
 /**
  * Returns an effect with the optional value.
  *
- * @macro traced
  * @since 1.0.0
  * @category constructors
  */
@@ -1401,19 +1439,24 @@ export const succeedSome: <A>(value: A) => STM<never, never, Option.Option<A>> =
  * execution, and then combining the values to produce a summary, together
  * with the result of execution.
  *
- * @macro traced
  * @since 1.0.0
  * @category mutations
  */
-export const summarized: <R2, E2, A2, A3>(
-  summary: STM<R2, E2, A2>,
-  f: (before: A2, after: A2) => A3
-) => <R, E, A>(self: STM<R, E, A>) => STM<R2 | R, E2 | E, readonly [A3, A]> = stm.summarized
+export const summarized: {
+  <R, E, A, R2, E2, A2, A3>(
+    self: STM<R, E, A>,
+    summary: STM<R2, E2, A2>,
+    f: (before: A2, after: A2) => A3
+  ): STM<R | R2, E | E2, readonly [A3, A]>
+  <R2, E2, A2, A3>(
+    summary: STM<R2, E2, A2>,
+    f: (before: A2, after: A2) => A3
+  ): <R, E, A>(self: STM<R, E, A>) => STM<R2 | R, E2 | E, readonly [A3, A]>
+} = stm.summarized
 
 /**
  * Suspends creation of the specified transaction lazily.
  *
- * @macro traced
  * @since 1.0.0
  * @category constructors
  */
@@ -1423,7 +1466,6 @@ export const suspend: <R, E, A>(evaluate: LazyArg<STM<R, E, A>>) => STM<R, E, A>
  * Returns an `STM` effect that succeeds with the specified lazily evaluated
  * value.
  *
- * @macro traced
  * @since 1.0.0
  * @category constructors
  */
@@ -1432,41 +1474,47 @@ export const sync: <A>(evaluate: () => A) => STM<never, never, A> = core.sync
 /**
  * "Peeks" at the success of transactional effect.
  *
- * @macro traced
  * @since 1.0.0
  * @category sequencing
  */
-export const tap: <A, R2, E2, _>(f: (a: A) => STM<R2, E2, _>) => <R, E>(self: STM<R, E, A>) => STM<R2 | R, E2 | E, A> =
-  stm.tap
+export const tap: {
+  <R, E, A, R2, E2, _>(self: STM<R, E, A>, f: (a: A) => STM<R2, E2, _>): STM<R | R2, E | E2, A>
+  <A, R2, E2, _>(f: (a: A) => STM<R2, E2, _>): <R, E>(self: STM<R, E, A>) => STM<R2 | R, E2 | E, A>
+} = stm.tap
 
 /**
  * "Peeks" at both sides of an transactional effect.
  *
- * @macro traced
  * @since 1.0.0
  * @category sequencing
  */
-export const tapBoth: <E, R2, E2, A2, A, R3, E3, A3>(
-  f: (error: E) => STM<R2, E2, A2>,
-  g: (value: A) => STM<R3, E3, A3>
-) => <R>(self: STM<R, E, A>) => STM<R2 | R3 | R, E | E2 | E3, A> = stm.tapBoth
+export const tapBoth: {
+  <R, E, R2, E2, A2, A, R3, E3, A3>(
+    self: STM<R, E, A>,
+    f: (error: E) => STM<R2, E2, A2>,
+    g: (value: A) => STM<R3, E3, A3>
+  ): STM<R | R2 | R3, E | E2 | E3, A>
+  <E, R2, E2, A2, A, R3, E3, A3>(
+    f: (error: E) => STM<R2, E2, A2>,
+    g: (value: A) => STM<R3, E3, A3>
+  ): <R>(self: STM<R, E, A>) => STM<R2 | R3 | R, E | E2 | E3, A>
+} = stm.tapBoth
 
 /**
  * "Peeks" at the error of the transactional effect.
  *
- * @macro traced
  * @since 1.0.0
  * @category sequencing
  */
-export const tapError: <E, R2, E2, _>(
-  f: (error: E) => STM<R2, E2, _>
-) => <R, A>(self: STM<R, E, A>) => STM<R2 | R, E | E2, A> = stm.tapError
+export const tapError: {
+  <R, A, E, R2, E2, _>(self: STM<R, E, A>, f: (error: E) => STM<R2, E2, _>): STM<R | R2, E | E2, A>
+  <E, R2, E2, _>(f: (error: E) => STM<R2, E2, _>): <R, A>(self: STM<R, E, A>) => STM<R2 | R, E | E2, A>
+} = stm.tapError
 
 /**
  * Imports a synchronous side-effect into a pure value, translating any thrown
  * exceptions into typed failed effects.
  *
- * @macro traced
  * @since 1.0.0
  * @category constructors
  */
@@ -1475,7 +1523,6 @@ export const tryCatch: <E, A>(attempt: () => A, onThrow: (u: unknown) => E) => E
 /**
  * Like `forEach` + `identity` with a tuple type.
  *
- * @macro traced
  * @since 1.0.0
  * @category constructors
  */
@@ -1491,7 +1538,6 @@ export const tuple: <T extends NonEmptyArraySTM>(
  * Converts a `STM<R, Either<E, A>, A2>` into a `STM<R, E, Either<A2, A>>`.
  * The inverse of `left`.
  *
- * @macro traced
  * @since 1.0.0
  * @category getters
  */
@@ -1501,29 +1547,29 @@ export const unleft: <R, E, A, A2>(self: STM<R, Either.Either<E, A>, A2>) => STM
 /**
  * The moral equivalent of `if (!p) exp`
  *
- * @macro traced
  * @since 1.0.0
  * @category mutations
  */
-export const unless: (predicate: LazyArg<boolean>) => <R, E, A>(self: STM<R, E, A>) => STM<R, E, Option.Option<A>> =
-  stm.unless
+export const unless: {
+  <R, E, A>(self: STM<R, E, A>, predicate: LazyArg<boolean>): STM<R, E, Option.Option<A>>
+  (predicate: LazyArg<boolean>): <R, E, A>(self: STM<R, E, A>) => STM<R, E, Option.Option<A>>
+} = stm.unless
 
 /**
  * The moral equivalent of `if (!p) exp` when `p` has side-effects
  *
- * @macro traced
  * @since 1.0.0
  * @category mutations
  */
-export const unlessSTM: <R2, E2>(
-  predicate: STM<R2, E2, boolean>
-) => <R, E, A>(self: STM<R, E, A>) => STM<R2 | R, E2 | E, Option.Option<A>> = stm.unlessSTM
+export const unlessSTM: {
+  <R, E, A, R2, E2>(self: STM<R, E, A>, predicate: STM<R2, E2, boolean>): STM<R | R2, E | E2, Option.Option<A>>
+  <R2, E2>(predicate: STM<R2, E2, boolean>): <R, E, A>(self: STM<R, E, A>) => STM<R2 | R, E2 | E, Option.Option<A>>
+} = stm.unlessSTM
 
 /**
  * Converts a `STM<R, Either<A, E>, A2>` into a `STM<R, E, Either<A, A2>>`.
  * The inverse of `right`.
  *
- * @macro traced
  * @since 1.0.0
  * @category getters
  */
@@ -1533,7 +1579,6 @@ export const unright: <R, E, A, A2>(self: STM<R, Either.Either<A, E>, A2>) => ST
 /**
  * Converts an option on errors into an option on values.
  *
- * @macro traced
  * @since 1.0.0
  * @category getters
  */
@@ -1542,55 +1587,56 @@ export const unsome: <R, E, A>(self: STM<R, Option.Option<E>, A>) => STM<R, E, O
 /**
  * Sequentially zips this value with the specified one.
  *
- * @macro traced
  * @since 1.0.0
  * @category zipping
  */
-export const zip: <R1, E1, A1>(
-  that: STM<R1, E1, A1>
-) => <R, E, A>(self: STM<R, E, A>) => STM<R1 | R, E1 | E, readonly [A, A1]> = core.zip
+export const zip: {
+  <R, E, A, R1, E1, A1>(self: STM<R, E, A>, that: STM<R1, E1, A1>): STM<R | R1, E | E1, readonly [A, A1]>
+  <R1, E1, A1>(that: STM<R1, E1, A1>): <R, E, A>(self: STM<R, E, A>) => STM<R1 | R, E1 | E, readonly [A, A1]>
+} = core.zip
 
 /**
  * Sequentially zips this value with the specified one, discarding the second
  * element of the tuple.
  *
- * @macro traced
  * @since 1.0.0
  * @category zipping
  */
-export const zipLeft: <R1, E1, A1>(
-  that: STM<R1, E1, A1>
-) => <R, E, A>(self: STM<R, E, A>) => STM<R1 | R, E1 | E, A> = core.zipLeft
+export const zipLeft: {
+  <R, E, A, R1, E1, A1>(self: STM<R, E, A>, that: STM<R1, E1, A1>): STM<R | R1, E | E1, A>
+  <R1, E1, A1>(that: STM<R1, E1, A1>): <R, E, A>(self: STM<R, E, A>) => STM<R1 | R, E1 | E, A>
+} = core.zipLeft
 
 /**
  * Sequentially zips this value with the specified one, discarding the first
  * element of the tuple.
  *
- * @macro traced
  * @since 1.0.0
  * @category zipping
  */
-export const zipRight: <R1, E1, A1>(
-  that: STM<R1, E1, A1>
-) => <R, E, A>(self: STM<R, E, A>) => STM<R1 | R, E1 | E, A1> = core.zipRight
+export const zipRight: {
+  <R, E, A, R1, E1, A1>(self: STM<R, E, A>, that: STM<R1, E1, A1>): STM<R | R1, E | E1, A1>
+  <R1, E1, A1>(that: STM<R1, E1, A1>): <R, E, A>(self: STM<R, E, A>) => STM<R1 | R, E1 | E, A1>
+} = core.zipRight
 
 /**
  * Sequentially zips this value with the specified one, combining the values
  * using the specified combiner function.
  *
- * @macro traced
  * @since 1.0.0
  * @category zipping
  */
-export const zipWith: <R1, E1, A1, A, A2>(
-  that: STM<R1, E1, A1>,
-  f: (a: A, b: A1) => A2
-) => <R, E>(self: STM<R, E, A>) => STM<R1 | R, E1 | E, A2> = core.zipWith
+export const zipWith: {
+  <R, E, R1, E1, A1, A, A2>(self: STM<R, E, A>, that: STM<R1, E1, A1>, f: (a: A, b: A1) => A2): STM<R | R1, E | E1, A2>
+  <R1, E1, A1, A, A2>(
+    that: STM<R1, E1, A1>,
+    f: (a: A, b: A1) => A2
+  ): <R, E>(self: STM<R, E, A>) => STM<R1 | R, E1 | E, A2>
+} = core.zipWith
 
 /**
  * Returns an `STM` effect that succeeds with `Unit`.
  *
- * @macro traced
  * @since 1.0.0
  * @category constructors
  */
@@ -1603,41 +1649,41 @@ export const unit: () => STM<never, never, void> = stm.unit
  * This combinator is lossy meaning that if there are errors all successes
  * will be lost. To retain all information please use `STM.partition`.
  *
- * @macro traced
  * @since 1.0.0
  * @category mutations
  */
-export const validateAll: <R, E, A, B>(
-  f: (a: A) => STM<R, E, B>
-) => (elements: Iterable<A>) => STM<R, Chunk.NonEmptyChunk<E>, Chunk.Chunk<B>> = stm.validateAll
+export const validateAll: {
+  <R, E, A, B>(elements: Iterable<A>, f: (a: A) => STM<R, E, B>): STM<R, Chunk.NonEmptyChunk<E>, Chunk.Chunk<B>>
+  <R, E, A, B>(f: (a: A) => STM<R, E, B>): (elements: Iterable<A>) => STM<R, Chunk.NonEmptyChunk<E>, Chunk.Chunk<B>>
+} = stm.validateAll
 
 /**
  * Feeds elements of type `A` to `f` until it succeeds. Returns first success
  * or the accumulation of all errors.
  *
- * @macro traced
  * @since 1.0.0
  * @category mutations
  */
-export const validateFirst: <R, E, A, B>(
-  f: (a: A) => STM<R, E, B>
-) => (elements: Iterable<A>) => STM<R, Chunk.Chunk<E>, B> = stm.validateFirst
+export const validateFirst: {
+  <R, E, A, B>(elements: Iterable<A>, f: (a: A) => STM<R, E, B>): STM<R, Chunk.Chunk<E>, B>
+  <R, E, A, B>(f: (a: A) => STM<R, E, B>): (elements: Iterable<A>) => STM<R, Chunk.Chunk<E>, B>
+} = stm.validateFirst
 
 /**
  * The moral equivalent of `if (p) exp`.
  *
- * @macro traced
  * @since 1.0.0
  * @category mutations
  */
-export const when: (predicate: LazyArg<boolean>) => <R, E, A>(self: STM<R, E, A>) => STM<R, E, Option.Option<A>> =
-  stm.when
+export const when: {
+  <R, E, A>(self: STM<R, E, A>, predicate: LazyArg<boolean>): STM<R, E, Option.Option<A>>
+  (predicate: LazyArg<boolean>): <R, E, A>(self: STM<R, E, A>) => STM<R, E, Option.Option<A>>
+} = stm.when
 
 /**
  * Runs an effect when the supplied partial function matches for the given
  * value, otherwise does nothing.
  *
- * @macro traced
  * @since 1.0.0
  * @category mutations
  */
@@ -1650,21 +1696,26 @@ export const whenCase: <R, E, A, B>(
  * Runs an effect when the supplied partial function matches for the given
  * effectful value, otherwise does nothing.
  *
- * @macro traced
  * @since 1.0.0
  * @category mutations
  */
-export const whenCaseSTM: <A, R2, E2, A2>(
-  pf: (a: A) => Option.Option<STM<R2, E2, A2>>
-) => <R, E>(self: STM<R, E, A>) => STM<R2 | R, E2 | E, Option.Option<A2>> = stm.whenCaseSTM
+export const whenCaseSTM: {
+  <R, E, A, R2, E2, A2>(
+    self: STM<R, E, A>,
+    pf: (a: A) => Option.Option<STM<R2, E2, A2>>
+  ): STM<R | R2, E | E2, Option.Option<A2>>
+  <A, R2, E2, A2>(
+    pf: (a: A) => Option.Option<STM<R2, E2, A2>>
+  ): <R, E>(self: STM<R, E, A>) => STM<R2 | R, E2 | E, Option.Option<A2>>
+} = stm.whenCaseSTM
 
 /**
  * The moral equivalent of `if (p) exp` when `p` has side-effects.
  *
- * @macro traced
  * @since 1.0.0
  * @category mutations
  */
-export const whenSTM: <R2, E2>(
-  predicate: STM<R2, E2, boolean>
-) => <R, E, A>(self: STM<R, E, A>) => STM<R2 | R, E2 | E, Option.Option<A>> = stm.whenSTM
+export const whenSTM: {
+  <R, E, A, R2, E2>(self: STM<R, E, A>, predicate: STM<R2, E2, boolean>): STM<R | R2, E | E2, Option.Option<A>>
+  <R2, E2>(predicate: STM<R2, E2, boolean>): <R, E, A>(self: STM<R, E, A>) => STM<R2 | R, E2 | E, Option.Option<A>>
+} = stm.whenSTM

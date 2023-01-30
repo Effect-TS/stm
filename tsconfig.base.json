@@ -52,11 +52,7 @@
       }
     ],
     "transformers": [
-      {
-        "name": "./plugins/tsPlugin.ts",
-        "trace": { "exclude": ["src/**/*.ts", "test/**/*.ts"] },
-        "debug": { "include": ["examples/bench.ts"] }
-      }
+      { "name": "./plugins/tsPlugin.ts", "trace": { "exclude": ["**/*.ts"] } }
     ],
     "tsPlusEnabled": false
   },

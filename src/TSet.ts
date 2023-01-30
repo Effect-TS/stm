@@ -1,13 +1,13 @@
 /**
  * @since 1.0.0
  */
-import * as internal from "@effect/stm/internal/tSet"
+import * as internal from "@effect/stm/internal_effect_untraced/tSet"
 import type * as STM from "@effect/stm/STM"
 import type * as TMap from "@effect/stm/TMap"
+import type * as Option from "@fp-ts/core/Option"
+import type { Predicate } from "@fp-ts/core/Predicate"
 import type * as Chunk from "@fp-ts/data/Chunk"
 import type * as HashSet from "@fp-ts/data/HashSet"
-import type * as Option from "@fp-ts/data/Option"
-import type { Predicate } from "@fp-ts/data/Predicate"
 
 /**
  * @since 1.0.0
@@ -55,26 +55,29 @@ export declare namespace TSet {
 /**
  * Stores new element in the set.
  *
- * @macro traced
  * @since 1.0.0
  * @category mutations
  */
-export const add: <A>(value: A) => (self: TSet<A>) => STM.STM<never, never, void> = internal.add
+export const add: {
+  <A>(self: TSet<A>, value: A): STM.STM<never, never, void>
+  <A>(value: A): (self: TSet<A>) => STM.STM<never, never, void>
+} = internal.add
 
 /**
  * Atomically transforms the set into the difference of itself and the
  * provided set.
  *
- * @macro traced
  * @since 1.0.0
  * @category mutations
  */
-export const difference: <A>(other: TSet<A>) => (self: TSet<A>) => STM.STM<never, never, void> = internal.difference
+export const difference: {
+  <A>(self: TSet<A>, other: TSet<A>): STM.STM<never, never, void>
+  <A>(other: TSet<A>): (self: TSet<A>) => STM.STM<never, never, void>
+} = internal.difference
 
 /**
  * Makes an empty `TSet`.
  *
- * @macro traced
  * @since 1.0.0
  * @category constructors
  */
@@ -83,17 +86,17 @@ export const empty: <A>() => STM.STM<never, never, TSet<A>> = internal.empty
 /**
  * Atomically performs transactional-effect for each element in set.
  *
- * @macro traced
  * @since 1.0.0
  * @category elements
  */
-export const forEach: <A, R, E>(f: (value: A) => STM.STM<R, E, void>) => (self: TSet<A>) => STM.STM<R, E, void> =
-  internal.forEach
+export const forEach: {
+  <A, R, E>(self: TSet<A>, f: (value: A) => STM.STM<R, E, void>): STM.STM<R, E, void>
+  <A, R, E>(f: (value: A) => STM.STM<R, E, void>): (self: TSet<A>) => STM.STM<R, E, void>
+} = internal.forEach
 
 /**
  * Makes a new `TSet` initialized with provided iterable.
  *
- * @macro traced
  * @since 1.0.0
  * @category constructors
  */
@@ -102,26 +105,29 @@ export const fromIterable: <A>(iterable: Iterable<A>) => STM.STM<never, never, T
 /**
  * Tests whether or not set contains an element.
  *
- * @macro traced
  * @since 1.0.0
  * @category elements
  */
-export const has: <A>(value: A) => (self: TSet<A>) => STM.STM<never, never, boolean> = internal.has
+export const has: {
+  <A>(self: TSet<A>, value: A): STM.STM<never, never, boolean>
+  <A>(value: A): (self: TSet<A>) => STM.STM<never, never, boolean>
+} = internal.has
 
 /**
  * Atomically transforms the set into the intersection of itself and the
  * provided set.
  *
- * @macro traced
  * @since 1.0.0
  * @category mutations
  */
-export const intersection: <A>(other: TSet<A>) => (self: TSet<A>) => STM.STM<never, never, void> = internal.intersection
+export const intersection: {
+  <A>(self: TSet<A>, other: TSet<A>): STM.STM<never, never, void>
+  <A>(other: TSet<A>): (self: TSet<A>) => STM.STM<never, never, void>
+} = internal.intersection
 
 /**
  * Tests if the set is empty or not
  *
- * @macro traced
  * @since 1.0.0
  * @category getters
  */
@@ -130,7 +136,6 @@ export const isEmpty: <A>(self: TSet<A>) => STM.STM<never, never, boolean> = int
 /**
  * Makes a new `TSet` that is initialized with specified values.
  *
- * @macro traced
  * @since 1.0.0
  * @category constructors
  */
@@ -141,90 +146,94 @@ export const make: <Elements extends Array<any>>(
 /**
  * Atomically folds using a pure function.
  *
- * @macro traced
  * @since 1.0.0
  * @category folding
  */
-export const reduce: <Z, A>(
-  zero: Z,
-  f: (accumulator: Z, value: A) => Z
-) => (self: TSet<A>) => STM.STM<never, never, Z> = internal.reduce
+export const reduce: {
+  <Z, A>(self: TSet<A>, zero: Z, f: (accumulator: Z, value: A) => Z): STM.STM<never, never, Z>
+  <Z, A>(zero: Z, f: (accumulator: Z, value: A) => Z): (self: TSet<A>) => STM.STM<never, never, Z>
+} = internal.reduce
 
 /**
  * Atomically folds using a transactional function.
  *
- * @macro traced
  * @since 1.0.0
  * @category folding
  */
-export const reduceSTM: <Z, A, R, E>(
-  zero: Z,
-  f: (accumulator: Z, value: A) => STM.STM<R, E, Z>
-) => (self: TSet<A>) => STM.STM<R, E, Z> = internal.reduceSTM
+export const reduceSTM: {
+  <Z, A, R, E>(self: TSet<A>, zero: Z, f: (accumulator: Z, value: A) => STM.STM<R, E, Z>): STM.STM<R, E, Z>
+  <Z, A, R, E>(zero: Z, f: (accumulator: Z, value: A) => STM.STM<R, E, Z>): (self: TSet<A>) => STM.STM<R, E, Z>
+} = internal.reduceSTM
 
 /**
  * Removes a single element from the set.
  *
- * @macro traced
  * @since 1.0.0
  * @category mutations
  */
-export const remove: <A>(value: A) => (self: TSet<A>) => STM.STM<never, never, void> = internal.remove
+export const remove: {
+  <A>(self: TSet<A>, value: A): STM.STM<never, never, void>
+  <A>(value: A): (self: TSet<A>) => STM.STM<never, never, void>
+} = internal.remove
 
 /**
  * Removes elements from the set.
  *
- * @macro traced
  * @since 1.0.0
  * @category mutations
  */
-export const removeAll: <A>(iterable: Iterable<A>) => (self: TSet<A>) => STM.STM<never, never, void> =
-  internal.removeAll
+export const removeAll: {
+  <A>(self: TSet<A>, iterable: Iterable<A>): STM.STM<never, never, void>
+  <A>(iterable: Iterable<A>): (self: TSet<A>) => STM.STM<never, never, void>
+} = internal.removeAll
 
 /**
  * Removes bindings matching predicate and returns the removed entries.
  *
- * @macro traced
  * @since 1.0.0
  * @category mutations
  */
-export const removeIf: <A>(predicate: Predicate<A>) => (self: TSet<A>) => STM.STM<never, never, Chunk.Chunk<A>> =
-  internal.removeIf
+export const removeIf: {
+  <A>(self: TSet<A>, predicate: Predicate<A>): STM.STM<never, never, Chunk.Chunk<A>>
+  <A>(predicate: Predicate<A>): (self: TSet<A>) => STM.STM<never, never, Chunk.Chunk<A>>
+} = internal.removeIf
 
 /**
  * Removes elements matching predicate.
  *
- * @macro traced
  * @since 1.0.0
  * @category mutations
  */
-export const removeIfDiscard: <A>(predicate: Predicate<A>) => (self: TSet<A>) => STM.STM<never, never, void> =
-  internal.removeIfDiscard
+export const removeIfDiscard: {
+  <A>(self: TSet<A>, predicate: Predicate<A>): STM.STM<never, never, void>
+  <A>(predicate: Predicate<A>): (self: TSet<A>) => STM.STM<never, never, void>
+} = internal.removeIfDiscard
 
 /**
  * Retains bindings matching predicate and returns removed bindings.
  *
- * @macro traced
  * @since 1.0.0
  * @category mutations
  */
-export const retainIf: <A>(predicate: Predicate<A>) => (self: TSet<A>) => STM.STM<never, never, Chunk.Chunk<A>> =
-  internal.retainIf
+export const retainIf: {
+  <A>(self: TSet<A>, predicate: Predicate<A>): STM.STM<never, never, Chunk.Chunk<A>>
+  <A>(predicate: Predicate<A>): (self: TSet<A>) => STM.STM<never, never, Chunk.Chunk<A>>
+} = internal.retainIf
 
 /**
  * Retains elements matching predicate.
  *
- * @macro traced
  * @since 1.0.0
  * @category mutations
  */
-export const retainIfDiscard: <A>(predicate: Predicate<A>) => (self: TSet<A>) => STM.STM<never, never, void> =
-  internal.retainIfDiscard
+export const retainIfDiscard: {
+  <A>(self: TSet<A>, predicate: Predicate<A>): STM.STM<never, never, void>
+  <A>(predicate: Predicate<A>): (self: TSet<A>) => STM.STM<never, never, void>
+} = internal.retainIfDiscard
 
 /**
  * Returns the set's cardinality.
  *
- * @macro traced
  * @since 1.0.0
  * @category getters
  */
@@ -233,50 +242,50 @@ export const size: <A>(self: TSet<A>) => STM.STM<never, never, number> = interna
 /**
  * Takes the first matching value, or retries until there is one.
  *
- * @macro traced
  * @since 1.0.0
  * @category mutations
  */
-export const takeFirst: <A, B>(pf: (a: A) => Option.Option<B>) => (self: TSet<A>) => STM.STM<never, never, B> =
-  internal.takeFirst
+export const takeFirst: {
+  <A, B>(self: TSet<A>, pf: (a: A) => Option.Option<B>): STM.STM<never, never, B>
+  <A, B>(pf: (a: A) => Option.Option<B>): (self: TSet<A>) => STM.STM<never, never, B>
+} = internal.takeFirst
 
 /**
  * Takes the first matching value, or retries until there is one.
  *
- * @macro traced
  * @since 1.0.0
  * @category mutations
  */
-export const takeFirstSTM: <A, R, E, B>(
-  pf: (a: A) => STM.STM<R, Option.Option<E>, B>
-) => (self: TSet<A>) => STM.STM<R, E, B> = internal.takeFirstSTM
+export const takeFirstSTM: {
+  <A, R, E, B>(self: TSet<A>, pf: (a: A) => STM.STM<R, Option.Option<E>, B>): STM.STM<R, E, B>
+  <A, R, E, B>(pf: (a: A) => STM.STM<R, Option.Option<E>, B>): (self: TSet<A>) => STM.STM<R, E, B>
+} = internal.takeFirstSTM
 
 /**
  * Takes all matching values, or retries until there is at least one.
  *
- * @macro traced
  * @since 1.0.0
  * @category mutations
  */
-export const takeSome: <A, B>(
-  pf: (a: A) => Option.Option<B>
-) => (self: TSet<A>) => STM.STM<never, never, Chunk.NonEmptyChunk<B>> = internal.takeSome
+export const takeSome: {
+  <A, B>(self: TSet<A>, pf: (a: A) => Option.Option<B>): STM.STM<never, never, Chunk.NonEmptyChunk<B>>
+  <A, B>(pf: (a: A) => Option.Option<B>): (self: TSet<A>) => STM.STM<never, never, Chunk.NonEmptyChunk<B>>
+} = internal.takeSome
 
 /**
  * Takes all matching values, or retries until there is at least one.
  *
- * @macro traced
  * @since 1.0.0
  * @category mutations
  */
-export const takeSomeSTM: <A, R, E, B>(
-  pf: (a: A) => STM.STM<R, Option.Option<E>, B>
-) => (self: TSet<A>) => STM.STM<R, E, Chunk.NonEmptyChunk<B>> = internal.takeSomeSTM
+export const takeSomeSTM: {
+  <A, R, E, B>(self: TSet<A>, pf: (a: A) => STM.STM<R, Option.Option<E>, B>): STM.STM<R, E, Chunk.NonEmptyChunk<B>>
+  <A, R, E, B>(pf: (a: A) => STM.STM<R, Option.Option<E>, B>): (self: TSet<A>) => STM.STM<R, E, Chunk.NonEmptyChunk<B>>
+} = internal.takeSomeSTM
 
 /**
  * Collects all elements into a `Chunk`.
  *
- * @macro traced
  * @since 1.0.0
  * @category destructors
  */
@@ -285,7 +294,6 @@ export const toChunk: <A>(self: TSet<A>) => STM.STM<never, never, Chunk.Chunk<A>
 /**
  * Collects all elements into a `HashSet`.
  *
- * @macro traced
  * @since 1.0.0
  * @category destructors
  */
@@ -294,7 +302,6 @@ export const toHashSet: <A>(self: TSet<A>) => STM.STM<never, never, HashSet.Hash
 /**
  * Collects all elements into a `ReadonlyArray`.
  *
- * @macro traced
  * @since 1.0.0
  * @category destructors
  */
@@ -303,7 +310,6 @@ export const toReadonlyArray: <A>(self: TSet<A>) => STM.STM<never, never, Readon
 /**
  * Collects all elements into a `ReadonlySet`.
  *
- * @macro traced
  * @since 1.0.0
  * @category destructors
  */
@@ -312,28 +318,33 @@ export const toReadonlySet: <A>(self: TSet<A>) => STM.STM<never, never, Readonly
 /**
  * Atomically updates all elements using a pure function.
  *
- * @macro traced
  * @since 1.0.0
  * @category mutations
  */
-export const transform: <A>(f: (a: A) => A) => (self: TSet<A>) => STM.STM<never, never, void> = internal.transform
+export const transform: {
+  <A>(self: TSet<A>, f: (a: A) => A): STM.STM<never, never, void>
+  <A>(f: (a: A) => A): (self: TSet<A>) => STM.STM<never, never, void>
+} = internal.transform
 
 /**
  * Atomically updates all elements using a transactional function.
  *
- * @macro traced
  * @since 1.0.0
  * @category mutations
  */
-export const transformSTM: <A, R, E>(f: (a: A) => STM.STM<R, E, A>) => (self: TSet<A>) => STM.STM<R, E, void> =
-  internal.transformSTM
+export const transformSTM: {
+  <A, R, E>(self: TSet<A>, f: (a: A) => STM.STM<R, E, A>): STM.STM<R, E, void>
+  <A, R, E>(f: (a: A) => STM.STM<R, E, A>): (self: TSet<A>) => STM.STM<R, E, void>
+} = internal.transformSTM
 
 /**
  * Atomically transforms the set into the union of itself and the provided
  * set.
  *
- * @macro traced
  * @since 1.0.0
  * @category mutations
  */
-export const union: <A>(other: TSet<A>) => (self: TSet<A>) => STM.STM<never, never, void> = internal.union
+export const union: {
+  <A>(self: TSet<A>, other: TSet<A>): STM.STM<never, never, void>
+  <A>(other: TSet<A>): (self: TSet<A>) => STM.STM<never, never, void>
+} = internal.union

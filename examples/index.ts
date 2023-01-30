@@ -1,7 +1,7 @@
 import * as Effect from "@effect/io/Effect"
 import * as STM from "@effect/stm/STM"
 import * as TRef from "@effect/stm/TRef"
-import { pipe } from "@fp-ts/data/Function"
+import { pipe } from "@fp-ts/core/Function"
 
 const transfer = (
   receiver: TRef.TRef<number>,
@@ -29,4 +29,4 @@ const program = Effect.gen(function*($) {
   console.log({ receiverValue })
 })
 
-Effect.unsafeRun(program, console.log)
+Effect.runCallback(program, console.log)

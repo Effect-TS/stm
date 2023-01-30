@@ -1,21 +1,23 @@
 import * as Effect from "@effect/io/Effect"
 import * as Exit from "@effect/io/Exit"
 import * as STM from "@effect/stm/STM"
+import { equivalentElements } from "@effect/stm/test/utils/equals"
 import * as it from "@effect/stm/test/utils/extend"
 import * as TMap from "@effect/stm/TMap"
+import { pipe } from "@fp-ts/core/Function"
+import * as Option from "@fp-ts/core/Option"
+import * as ReadonlyArray from "@fp-ts/core/ReadonlyArray"
 import * as Equal from "@fp-ts/data/Equal"
-import { pipe } from "@fp-ts/data/Function"
-import * as Option from "@fp-ts/data/Option"
-import * as ReadonlyArray from "@fp-ts/data/ReadonlyArray"
+import * as Hash from "@fp-ts/data/Hash"
 import * as fc from "fast-check"
 import { assert, describe } from "vitest"
 
 class HashContainer implements Equal.Equal {
   constructor(readonly i: number) {}
-  [Equal.symbolHash](): number {
+  [Hash.symbol](): number {
     return this.i
   }
-  [Equal.symbolEqual](that: unknown): boolean {
+  [Equal.symbol](that: unknown): boolean {
     return that instanceof HashContainer && this.i === that.i
   }
 }
@@ -64,7 +66,7 @@ describe.concurrent("TMap", () => {
         STM.flatMap(TMap.get("a"))
       )
       const result = yield* $(STM.commit(transaction))
-      assert.deepStrictEqual(result, Option.none)
+      assert.deepStrictEqual(result, Option.none())
     }))
 
   it.effect("getOrElse - existing element", () =>
@@ -113,10 +115,10 @@ describe.concurrent("TMap", () => {
         TMap.fromIterable(entries),
         STM.flatMap(TMap.keys)
       )
-      const result = await Effect.unsafeRunPromise(STM.commit(transaction))
+      const result = await Effect.runPromise(STM.commit(transaction))
       const keys = entries.map((entry) => entry[0])
-      assert.lengthOf(pipe(Array.from(result), ReadonlyArray.difference(keys)), 0)
-      assert.lengthOf(pipe(keys, ReadonlyArray.difference(result)), 0)
+      assert.lengthOf(pipe(Array.from(result), ReadonlyArray.difference(equivalentElements())(keys)), 0)
+      assert.lengthOf(pipe(keys, ReadonlyArray.difference(equivalentElements())(result)), 0)
     })))
 
   it.effect("merge", () =>
@@ -183,7 +185,7 @@ describe.concurrent("TMap", () => {
         STM.flatMap(TMap.get("a"))
       )
       const result = yield* $(STM.commit(transaction))
-      assert.deepStrictEqual(result, Option.none)
+      assert.deepStrictEqual(result, Option.none())
     }))
 
   it.effect("remove - remove an non-existing element", () =>
@@ -194,7 +196,7 @@ describe.concurrent("TMap", () => {
         STM.flatMap(TMap.get("a"))
       )
       const result = yield* $(STM.commit(transaction))
-      assert.deepStrictEqual(result, Option.none)
+      assert.deepStrictEqual(result, Option.none())
     }))
 
   it.effect("removeIf", () =>
@@ -285,8 +287,8 @@ describe.concurrent("TMap", () => {
         STM.flatMap(TMap.toReadonlyArray)
       )
       const result = yield* $(STM.commit(transaction))
-      assert.lengthOf(pipe(result, ReadonlyArray.difference(entries)), 0)
-      assert.lengthOf(pipe(entries, ReadonlyArray.difference(result)), 0)
+      assert.lengthOf(pipe(result, ReadonlyArray.difference(equivalentElements())(entries)), 0)
+      assert.lengthOf(pipe(entries, ReadonlyArray.difference(equivalentElements())(result)), 0)
     }))
 
   it.effect("setIfAbsent", () =>
@@ -299,8 +301,8 @@ describe.concurrent("TMap", () => {
       )
       const result = yield* $(STM.commit(transaction))
       const expected = [["a", 1], ["b", 2]]
-      assert.lengthOf(pipe(result, ReadonlyArray.difference(expected)), 0)
-      assert.lengthOf(pipe(expected, ReadonlyArray.difference(result)), 0)
+      assert.lengthOf(pipe(result, ReadonlyArray.difference(equivalentElements())(expected)), 0)
+      assert.lengthOf(pipe(expected, ReadonlyArray.difference(equivalentElements())(result)), 0)
     }))
 
   it.effect("size", () =>
@@ -319,9 +321,9 @@ describe.concurrent("TMap", () => {
         TMap.fromIterable(entries),
         STM.flatMap(TMap.toChunk)
       )
-      const result = await Effect.unsafeRunPromise(STM.commit(transaction))
-      assert.lengthOf(pipe(Array.from(result), ReadonlyArray.difference(entries)), 0)
-      assert.lengthOf(pipe(entries, ReadonlyArray.difference(Array.from(result))), 0)
+      const result = await Effect.runPromise(STM.commit(transaction))
+      assert.lengthOf(pipe(Array.from(result), ReadonlyArray.difference(equivalentElements())(entries)), 0)
+      assert.lengthOf(pipe(entries, ReadonlyArray.difference(equivalentElements())(Array.from(result))), 0)
     })))
 
   it.it("toReadonlyArray - collect all elements", () =>
@@ -330,9 +332,9 @@ describe.concurrent("TMap", () => {
         TMap.fromIterable(entries),
         STM.flatMap(TMap.toReadonlyArray)
       )
-      const result = await Effect.unsafeRunPromise(STM.commit(transaction))
-      assert.lengthOf(pipe(result, ReadonlyArray.difference(entries)), 0)
-      assert.lengthOf(pipe(entries, ReadonlyArray.difference(result)), 0)
+      const result = await Effect.runPromise(STM.commit(transaction))
+      assert.lengthOf(pipe(result, ReadonlyArray.difference(equivalentElements())(entries)), 0)
+      assert.lengthOf(pipe(entries, ReadonlyArray.difference(equivalentElements())(result)), 0)
     })))
 
   it.it("toReadonlyMap - collect all elements", () =>
@@ -341,9 +343,9 @@ describe.concurrent("TMap", () => {
         TMap.fromIterable(entries),
         STM.flatMap(TMap.toReadonlyMap)
       )
-      const result = await Effect.unsafeRunPromise(STM.commit(transaction))
-      assert.lengthOf(pipe(Array.from(result), ReadonlyArray.difference(entries)), 0)
-      assert.lengthOf(pipe(entries, ReadonlyArray.difference(Array.from(result))), 0)
+      const result = await Effect.runPromise(STM.commit(transaction))
+      assert.lengthOf(pipe(Array.from(result), ReadonlyArray.difference(equivalentElements())(entries)), 0)
+      assert.lengthOf(pipe(entries, ReadonlyArray.difference(equivalentElements())(Array.from(result))), 0)
     })))
 
   it.effect("transform", () =>
@@ -355,8 +357,8 @@ describe.concurrent("TMap", () => {
       )
       const result = yield* $(STM.commit(transaction))
       const expected = [["b", 2], ["bb", 4], ["bbb", 6]]
-      assert.lengthOf(pipe(result, ReadonlyArray.difference(expected)), 0)
-      assert.lengthOf(pipe(expected, ReadonlyArray.difference(result)), 0)
+      assert.lengthOf(pipe(result, ReadonlyArray.difference(equivalentElements())(expected)), 0)
+      assert.lengthOf(pipe(expected, ReadonlyArray.difference(equivalentElements())(result)), 0)
     }))
 
   it.effect("transform - handles keys with negative hash codes", () =>
@@ -368,8 +370,8 @@ describe.concurrent("TMap", () => {
       )
       const result = yield* $(STM.commit(transaction))
       const expected = [[new HashContainer(2), 2], [new HashContainer(4), 4], [new HashContainer(6), 6]]
-      assert.lengthOf(pipe(result, ReadonlyArray.difference(expected)), 0)
-      assert.lengthOf(pipe(expected, ReadonlyArray.difference(result)), 0)
+      assert.lengthOf(pipe(result, ReadonlyArray.difference(equivalentElements())(expected)), 0)
+      assert.lengthOf(pipe(expected, ReadonlyArray.difference(equivalentElements())(result)), 0)
     }))
 
   it.effect("transform - and shrink", () =>
@@ -392,8 +394,8 @@ describe.concurrent("TMap", () => {
       )
       const result = yield* $(STM.commit(transaction))
       const expected = [["b", 2], ["bb", 4], ["bbb", 6]]
-      assert.lengthOf(pipe(result, ReadonlyArray.difference(expected)), 0)
-      assert.lengthOf(pipe(expected, ReadonlyArray.difference(result)), 0)
+      assert.lengthOf(pipe(result, ReadonlyArray.difference(equivalentElements())(expected)), 0)
+      assert.lengthOf(pipe(expected, ReadonlyArray.difference(equivalentElements())(result)), 0)
     }))
 
   it.effect("transformSTM - and shrink", () =>
@@ -416,8 +418,8 @@ describe.concurrent("TMap", () => {
       )
       const result = yield* $(STM.commit(transaction))
       const expected = [["a", 2], ["aa", 4], ["aaa", 6]]
-      assert.lengthOf(pipe(result, ReadonlyArray.difference(expected)), 0)
-      assert.lengthOf(pipe(expected, ReadonlyArray.difference(result)), 0)
+      assert.lengthOf(pipe(result, ReadonlyArray.difference(equivalentElements())(expected)), 0)
+      assert.lengthOf(pipe(expected, ReadonlyArray.difference(equivalentElements())(result)), 0)
     }))
 
   it.effect("transformValues - parallel", () =>
@@ -443,8 +445,8 @@ describe.concurrent("TMap", () => {
       )
       const result = yield* $(STM.commit(transaction))
       const expected = [["a", 2], ["aa", 4], ["aaa", 6]]
-      assert.lengthOf(pipe(result, ReadonlyArray.difference(expected)), 0)
-      assert.lengthOf(pipe(expected, ReadonlyArray.difference(result)), 0)
+      assert.lengthOf(pipe(result, ReadonlyArray.difference(equivalentElements())(expected)), 0)
+      assert.lengthOf(pipe(expected, ReadonlyArray.difference(equivalentElements())(result)), 0)
     }))
 
   it.effect("updateWith", () =>
@@ -452,9 +454,9 @@ describe.concurrent("TMap", () => {
       const transaction = STM.gen(function*($) {
         const map = yield* $(TMap.make(["a", 1], ["b", 2]))
         yield* $(pipe(map, TMap.updateWith("a", Option.map((n) => n + 1))))
-        yield* $(pipe(map, TMap.updateWith<string, number>("b", () => Option.none)))
+        yield* $(pipe(map, TMap.updateWith<string, number>("b", () => Option.none())))
         yield* $(pipe(map, TMap.updateWith("c", () => Option.some(3))))
-        yield* $(pipe(map, TMap.updateWith<string, number>("d", () => Option.none)))
+        yield* $(pipe(map, TMap.updateWith<string, number>("d", () => Option.none())))
         return yield* $(TMap.toReadonlyArray(map))
       })
       const result = yield* $(STM.commit(transaction))
@@ -467,10 +469,10 @@ describe.concurrent("TMap", () => {
         TMap.fromIterable(entries),
         STM.flatMap(TMap.values)
       )
-      const result = await Effect.unsafeRunPromise(STM.commit(transaction))
+      const result = await Effect.runPromise(STM.commit(transaction))
       const values = entries.map((entry) => entry[1])
-      assert.lengthOf(pipe(Array.from(result), ReadonlyArray.difference(values)), 0)
-      assert.lengthOf(pipe(values, ReadonlyArray.difference(result)), 0)
+      assert.lengthOf(pipe(Array.from(result), ReadonlyArray.difference(equivalentElements())(values)), 0)
+      assert.lengthOf(pipe(values, ReadonlyArray.difference(equivalentElements())(result)), 0)
     })))
 
   it.effect("avoid issues due to race conditions (ZIO Issue #4648)", () =>

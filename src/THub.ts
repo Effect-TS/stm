@@ -3,8 +3,8 @@
  */
 import type * as Effect from "@effect/io/Effect"
 import type * as Scope from "@effect/io/Scope"
-import * as internal from "@effect/stm/internal/tHub"
-import type * as tQueue from "@effect/stm/internal/tQueue"
+import * as internal from "@effect/stm/internal_effect_untraced/tHub"
+import type * as tQueue from "@effect/stm/internal_effect_untraced/tQueue"
 import type * as STM from "@effect/stm/STM"
 import type * as TQueue from "@effect/stm/TQueue"
 import type * as TRef from "@effect/stm/TRef"
@@ -54,7 +54,6 @@ export interface THub<A> {
  * not resume until the queue has been shutdown. If the hub is already
  * shutdown, the `STM` will resume right away.
  *
- * @macro traced
  * @since 1.0.0
  * @category mutations
  */
@@ -65,7 +64,6 @@ export const awaitShutdown: <A>(self: THub<A>) => STM.STM<never, never, void> = 
  * messages until they have been taken by all subscribers, applying back
  * pressure to publishers if the hub is at capacity.
  *
- * @macro traced
  * @since 1.0.0
  * @category constructors
  */
@@ -83,7 +81,6 @@ export const capacity: <A>(self: THub<A>) => number = internal.capacity
  * Creates a bounded hub with the dropping strategy. The hub will drop new
  * messages if the hub is at capacity.
  *
- * @macro traced
  * @since 1.0.0
  * @category constructors
  */
@@ -92,7 +89,6 @@ export const dropping: <A>(requestedCapacity: number) => STM.STM<never, never, T
 /**
  * Returns `true` if the `THub` contains zero elements, `false` otherwise.
  *
- * @macro traced
  * @since 1.0.0
  * @category getters
  */
@@ -102,7 +98,6 @@ export const isEmpty: <A>(self: THub<A>) => STM.STM<never, never, boolean> = int
  * Returns `true` if the `THub` contains at least one element, `false`
  * otherwise.
  *
- * @macro traced
  * @since 1.0.0
  * @category getters
  */
@@ -111,7 +106,6 @@ export const isFull: <A>(self: THub<A>) => STM.STM<never, never, boolean> = inte
 /**
  * Returns `true` if `shutdown` has been called, otherwise returns `false`.
  *
- * @macro traced
  * @since 1.0.0
  * @category getters
  */
@@ -121,29 +115,31 @@ export const isShutdown: <A>(self: THub<A>) => STM.STM<never, never, boolean> = 
  * Publishes a message to the hub, returning whether the message was published
  * to the hub.
  *
- * @macro traced
  * @since 1.0.0
  * @category mutations
  */
-export const publish: <A>(value: A) => (self: THub<A>) => STM.STM<never, never, boolean> = internal.publish
+export const publish: {
+  <A>(self: THub<A>, value: A): STM.STM<never, never, boolean>
+  <A>(value: A): (self: THub<A>) => STM.STM<never, never, boolean>
+} = internal.publish
 
 /**
  * Publishes all of the specified messages to the hub, returning whether they
  * were published to the hub.
  *
- * @macro traced
  * @since 1.0.0
  * @category mutations
  */
-export const publishAll: <A>(iterable: Iterable<A>) => (self: THub<A>) => STM.STM<never, never, boolean> =
-  internal.publishAll
+export const publishAll: {
+  <A>(self: THub<A>, iterable: Iterable<A>): STM.STM<never, never, boolean>
+  <A>(iterable: Iterable<A>): (self: THub<A>) => STM.STM<never, never, boolean>
+} = internal.publishAll
 
 /**
  * Retrieves the size of the hub, which is equal to the number of elements
  * in the hub. This may be negative if fibers are suspended waiting for
  * elements to be added to the hub.
  *
- * @macro traced
  * @since 1.0.0
  * @category getters
  */
@@ -155,7 +151,6 @@ export const size: <A>(self: THub<A>) => STM.STM<never, never, number> = interna
  *
  * For best performance use capacities that are powers of two.
  *
- * @macro traced
  * @since 1.0.0
  * @category constructors
  */
@@ -167,7 +162,6 @@ export const sliding: <A>(requestedCapacity: number) => STM.STM<never, never, TH
  * caller is responsible for unsubscribing from the hub by shutting down the
  * queue.
  *
- * @macro traced
  * @since 1.0.0
  * @category mutations
  */
@@ -178,7 +172,6 @@ export const subscribe: <A>(self: THub<A>) => STM.STM<never, never, TQueue.TDequ
  * be evaluated multiple times within the scope to take a message from the hub
  * each time.
  *
- * @macro traced
  * @since 1.0.0
  * @category mutations
  */
@@ -188,7 +181,6 @@ export const subscribeScoped: <A>(self: THub<A>) => Effect.Effect<Scope.Scope, n
 /**
  * Creates an unbounded hub.
  *
- * @macro traced
  * @since 1.0.0
  * @category constructors
  */

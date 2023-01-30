@@ -1,19 +1,18 @@
-import { getCallTrace } from "@effect/io/Debug"
+import * as Debug from "@effect/io/Debug"
 import * as Layer from "@effect/io/Layer"
-import * as core from "@effect/stm/internal/core"
-import * as stm from "@effect/stm/internal/stm"
-import * as tArray from "@effect/stm/internal/tArray"
-import * as tRef from "@effect/stm/internal/tRef"
+import * as core from "@effect/stm/internal_effect_untraced/core"
+import * as stm from "@effect/stm/internal_effect_untraced/stm"
+import * as tArray from "@effect/stm/internal_effect_untraced/tArray"
+import * as tRef from "@effect/stm/internal_effect_untraced/tRef"
 import type * as STM from "@effect/stm/STM"
 import type * as TArray from "@effect/stm/TArray"
 import type * as TRandom from "@effect/stm/TRandom"
 import type * as TRef from "@effect/stm/TRef"
+import { pipe } from "@fp-ts/core/Function"
 import type * as Chunk from "@fp-ts/data/Chunk"
 import * as Context from "@fp-ts/data/Context"
-import { pipe } from "@fp-ts/data/Function"
 import * as Random from "@fp-ts/data/Random"
 
-/** @internal */
 const TRandomSymbolKey = "@effect/stm/TRandom"
 
 /** @internal */
@@ -21,14 +20,12 @@ export const TRandomTypeId: TRandom.TRandomTypeId = Symbol.for(
   TRandomSymbolKey
 ) as TRandom.TRandomTypeId
 
-/** @internal */
 const randomInteger = (state: Random.PCGRandomState): readonly [number, Random.PCGRandomState] => {
   const prng = new Random.PCGRandom()
   prng.setState(state)
   return [prng.integer(0), prng.getState()]
 }
 
-/** @internal */
 const randomIntegerBetween = (low: number, high: number) => {
   return (state: Random.PCGRandomState): readonly [number, Random.PCGRandomState] => {
     const prng = new Random.PCGRandom()
@@ -37,40 +34,25 @@ const randomIntegerBetween = (low: number, high: number) => {
   }
 }
 
-/** @internal */
 const randomNumber = (state: Random.PCGRandomState): readonly [number, Random.PCGRandomState] => {
   const prng = new Random.PCGRandom()
   prng.setState(state)
   return [prng.number(), prng.getState()]
 }
 
-/**
- * @macro traced
- * @internal
- */
 const withState = <A>(
   state: TRef.TRef<Random.PCGRandomState>,
   f: (state: Random.PCGRandomState) => readonly [A, Random.PCGRandomState]
 ): STM.STM<never, never, A> => {
-  const trace = getCallTrace()
-  return pipe(state, tRef.modify(f)).traced(trace)
+  return pipe(state, tRef.modify(f))
 }
 
-/**
- * @macro traced
- * @internal
- */
 const shuffleWith = <A>(
   iterable: Iterable<A>,
   nextIntBounded: (n: number) => STM.STM<never, never, number>
 ): STM.STM<never, never, Chunk.Chunk<A>> => {
-  const trace = getCallTrace()
-  /**
-   * @macro traced
-   */
-  const swap = (buffer: TArray.TArray<A>, index1: number, index2: number): STM.STM<never, never, void> => {
-    const trace = getCallTrace()
-    return pipe(
+  const swap = (buffer: TArray.TArray<A>, index1: number, index2: number): STM.STM<never, never, void> =>
+    pipe(
       buffer,
       tArray.get(index1),
       core.flatMap((tmp) =>
@@ -85,8 +67,7 @@ const shuffleWith = <A>(
           )
         )
       )
-    ).traced(trace)
-  }
+    )
   return pipe(
     tArray.fromIterable(iterable),
     core.flatMap((buffer) => {
@@ -100,106 +81,92 @@ const shuffleWith = <A>(
         core.zipRight(tArray.toChunk(buffer))
       )
     })
-  ).traced(trace)
+  )
 }
 
 /** @internal */
 export const Tag: Context.Tag<TRandom.TRandom> = Context.Tag<TRandom.TRandom>()
 
-/** @internal */
 class TRandomImpl implements TRandom.TRandom {
   readonly [TRandomTypeId]: TRandom.TRandomTypeId = TRandomTypeId
   constructor(readonly state: TRef.TRef<Random.PCGRandomState>) {}
   next(): STM.STM<never, never, number> {
-    const trace = getCallTrace()
-    return withState(this.state, randomNumber).traced(trace)
+    return Debug.bodyWithTrace((trace) => withState(this.state, randomNumber).traced(trace))
   }
   nextBoolean(): STM.STM<never, never, boolean> {
-    const trace = getCallTrace()
-    return pipe(
-      this.next(),
-      core.flatMap((n) => core.succeed(n > 0.5))
-    ).traced(trace)
+    return Debug.bodyWithTrace((trace) => core.flatMap(this.next(), (n) => core.succeed(n > 0.5)).traced(trace))
   }
   nextInt(): STM.STM<never, never, number> {
-    const trace = getCallTrace()
-    return withState(this.state, randomInteger).traced(trace)
+    return Debug.bodyWithTrace((trace) => withState(this.state, randomInteger).traced(trace))
   }
   nextRange(min: number, max: number): STM.STM<never, never, number> {
-    const trace = getCallTrace()
-    return pipe(
-      this.next(),
-      core.flatMap((n) => core.succeed((max - min) * n + min))
-    ).traced(trace)
+    return Debug.bodyWithTrace((trace) =>
+      core.flatMap(this.next(), (n) => core.succeed((max - min) * n + min)).traced(trace)
+    )
   }
   nextIntBetween(low: number, high: number): STM.STM<never, never, number> {
-    const trace = getCallTrace()
-    return withState(this.state, randomIntegerBetween(low, high)).traced(trace)
+    return Debug.bodyWithTrace((trace) => withState(this.state, randomIntegerBetween(low, high)).traced(trace))
   }
   shuffle<A>(elements: Iterable<A>): STM.STM<never, never, Chunk.Chunk<A>> {
-    const trace = getCallTrace()
-    return shuffleWith(elements, (n) => this.nextIntBetween(0, n)).traced(trace)
+    return Debug.bodyWithTrace((trace) => shuffleWith(elements, (n) => this.nextIntBetween(0, n)).traced(trace))
   }
 }
 
 /** @internal */
-export const live = (): Layer.Layer<never, never, TRandom.TRandom> =>
-  Layer.effect(Tag)(pipe(
-    tRef.make(new Random.PCGRandom((Math.random() * 4294967296) >>> 0).getState()),
-    core.map((seed) => new TRandomImpl(seed)),
-    core.commit
-  ))
+export const live = Debug.methodWithTrace((trace) =>
+  (): Layer.Layer<never, never, TRandom.TRandom> =>
+    Layer.effect(
+      Tag,
+      pipe(
+        tRef.make(new Random.PCGRandom((Math.random() * 4294967296) >>> 0).getState()),
+        core.map((seed) => new TRandomImpl(seed)),
+        core.commit
+      ).traced(trace)
+    )
+)
 
 /**
- * @macro traced
  * @internal
  */
-export const next = (): STM.STM<TRandom.TRandom, never, number> => {
-  const trace = getCallTrace()
-  return stm.serviceWithSTM(Tag)((random) => random.next()).traced(trace)
-}
+export const next = Debug.methodWithTrace((trace) =>
+  (): STM.STM<TRandom.TRandom, never, number> => stm.serviceWithSTM(Tag, (random) => random.next()).traced(trace)
+)
 
 /**
- * @macro traced
  * @internal
  */
-export const nextBoolean = (): STM.STM<TRandom.TRandom, never, boolean> => {
-  const trace = getCallTrace()
-  return stm.serviceWithSTM(Tag)((random) => random.nextBoolean()).traced(trace)
-}
+export const nextBoolean = Debug.methodWithTrace((trace) =>
+  (): STM.STM<TRandom.TRandom, never, boolean> =>
+    stm.serviceWithSTM(Tag, (random) => random.nextBoolean()).traced(trace)
+)
 
 /**
- * @macro traced
  * @internal
  */
-export const nextInt = (): STM.STM<TRandom.TRandom, never, number> => {
-  const trace = getCallTrace()
-  return stm.serviceWithSTM(Tag)((random) => random.nextInt()).traced(trace)
-}
+export const nextInt = Debug.methodWithTrace((trace) =>
+  (): STM.STM<TRandom.TRandom, never, number> => stm.serviceWithSTM(Tag, (random) => random.nextInt()).traced(trace)
+)
 
 /**
- * @macro traced
  * @internal
  */
-export const nextIntBetween = (low: number, high: number): STM.STM<TRandom.TRandom, never, number> => {
-  const trace = getCallTrace()
-  return stm.serviceWithSTM(Tag)((random) => random.nextIntBetween(low, high)).traced(trace)
-}
+export const nextIntBetween = Debug.methodWithTrace((trace) =>
+  (low: number, high: number): STM.STM<TRandom.TRandom, never, number> =>
+    stm.serviceWithSTM(Tag, (random) => random.nextIntBetween(low, high)).traced(trace)
+)
 
 /**
- * @macro traced
  * @internal
  */
-export const nextRange = (min: number, max: number): STM.STM<TRandom.TRandom, never, number> => {
-  const trace = getCallTrace()
-  return stm.serviceWithSTM(Tag)((random) => random.nextRange(min, max)).traced(trace)
-}
+export const nextRange = Debug.methodWithTrace((trace) =>
+  (min: number, max: number): STM.STM<TRandom.TRandom, never, number> =>
+    stm.serviceWithSTM(Tag, (random) => random.nextRange(min, max)).traced(trace)
+)
 
 /**
- * @macro traced
  * @internal
  */
-export const shuffle = <A>(elements: Iterable<A>): STM.STM<TRandom.TRandom, never, Chunk.Chunk<A>> => {
-  const trace = getCallTrace()
-  return stm.serviceWithSTM(Tag)((random) => random.shuffle(elements)).traced(trace)
-}
+export const shuffle = Debug.methodWithTrace((trace) =>
+  <A>(elements: Iterable<A>): STM.STM<TRandom.TRandom, never, Chunk.Chunk<A>> =>
+    stm.serviceWithSTM(Tag, (random) => random.shuffle(elements)).traced(trace)
+)

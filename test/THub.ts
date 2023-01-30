@@ -5,9 +5,9 @@ import * as STM from "@effect/stm/STM"
 import * as it from "@effect/stm/test/utils/extend"
 import * as THub from "@effect/stm/THub"
 import * as TQueue from "@effect/stm/TQueue"
-import { pipe } from "@fp-ts/data/Function"
-import * as number from "@fp-ts/data/Number"
-import * as RA from "@fp-ts/data/ReadonlyArray"
+import { pipe } from "@fp-ts/core/Function"
+import * as number from "@fp-ts/core/Number"
+import * as RA from "@fp-ts/core/ReadonlyArray"
 import * as fc from "fast-check"
 import { assert, describe } from "vitest"
 
@@ -44,7 +44,7 @@ describe.concurrent("THub", () => {
         yield* $(pipe(deferred2, Deferred.succeed<void>(void 0)))
         return yield* $(Fiber.join(subscriber))
       })
-      const result = await Effect.unsafeRunPromise(program)
+      const result = await Effect.runPromise(program)
       assert.deepStrictEqual(Array.from(result), as.slice(0, n))
     })))
 
@@ -98,7 +98,7 @@ describe.concurrent("THub", () => {
         const result2 = yield* $(Fiber.join(subscriber2))
         return { result1, result2 }
       })
-      const { result1, result2 } = await Effect.unsafeRunPromise(program)
+      const { result1, result2 } = await Effect.runPromise(program)
       assert.deepStrictEqual(Array.from(result1), as.slice(0, n))
       assert.deepStrictEqual(Array.from(result2), as.slice(0, n))
     })))
@@ -127,7 +127,7 @@ describe.concurrent("THub", () => {
         ))
         return yield* $(Fiber.join(subscriber))
       })
-      const result = await Effect.unsafeRunPromise(Effect.scoped(program))
+      const result = await Effect.runPromise(Effect.scoped(program))
       assert.deepStrictEqual(Array.from(result), as.slice(0, n))
     })))
 
@@ -170,7 +170,7 @@ describe.concurrent("THub", () => {
         const result2 = yield* $(Fiber.join(subscriber2))
         return { result1, result2 }
       })
-      const { result1, result2 } = await Effect.unsafeRunPromise(Effect.scoped(program))
+      const { result1, result2 } = await Effect.runPromise(Effect.scoped(program))
       assert.deepStrictEqual(Array.from(result1), as.slice(0, n))
       assert.deepStrictEqual(Array.from(result2), as.slice(0, n))
     })))
@@ -227,7 +227,7 @@ describe.concurrent("THub", () => {
         const result2 = yield* $(Fiber.join(subscriber2))
         return { result1, result2 }
       })
-      const { result1, result2 } = await Effect.unsafeRunPromise(program)
+      const { result1, result2 } = await Effect.runPromise(program)
       assert.deepStrictEqual(
         Array.from(result1).filter((n) => n > 0),
         as.slice(0, n)
@@ -267,7 +267,7 @@ describe.concurrent("THub", () => {
         yield* $(pipe(as, Effect.forEach((n) => pipe(hub, THub.publish(n))), Effect.fork))
         return yield* $(Fiber.join(subscriber))
       })
-      const result = await Effect.unsafeRunPromise(program)
+      const result = await Effect.runPromise(program)
       assert.deepStrictEqual(Array.from(result), as)
     })))
 
@@ -308,7 +308,7 @@ describe.concurrent("THub", () => {
         const result2 = yield* $(Fiber.join(subscriber2))
         return { result1, result2 }
       })
-      const { result1, result2 } = await Effect.unsafeRunPromise(program)
+      const { result1, result2 } = await Effect.runPromise(program)
       assert.deepStrictEqual(Array.from(result1), as)
       assert.deepStrictEqual(Array.from(result2), as)
     })))
@@ -365,7 +365,7 @@ describe.concurrent("THub", () => {
         const result2 = yield* $(Fiber.join(subscriber2))
         return { result1, result2 }
       })
-      const { result1, result2 } = await Effect.unsafeRunPromise(program)
+      const { result1, result2 } = await Effect.runPromise(program)
       assert.deepStrictEqual(Array.from(result1).filter((n) => n > 0), as)
       assert.deepStrictEqual(Array.from(result1).filter((n) => n < 0), as.map((n) => -n))
       assert.deepStrictEqual(Array.from(result2).filter((n) => n > 0), as)
@@ -396,7 +396,7 @@ describe.concurrent("THub", () => {
         yield* $(pipe(as, Effect.forEach((n) => pipe(hub, THub.publish(n))), Effect.fork))
         return yield* $(Fiber.join(subscriber))
       })
-      const result = await Effect.unsafeRunPromise(program)
+      const result = await Effect.runPromise(program)
       assert.deepStrictEqual(Array.from(result), as.slice(0, n))
     })))
 
@@ -443,7 +443,7 @@ describe.concurrent("THub", () => {
         const result2 = yield* $(Fiber.join(subscriber2))
         return { result1, result2 }
       })
-      const { result1, result2 } = await Effect.unsafeRunPromise(program)
+      const { result1, result2 } = await Effect.runPromise(program)
       assert.deepStrictEqual(Array.from(result1), as.slice(0, n))
       assert.deepStrictEqual(Array.from(result2), as.slice(0, n))
     })))
@@ -500,7 +500,7 @@ describe.concurrent("THub", () => {
         const result2 = yield* $(Fiber.join(subscriber2))
         return { result1, result2 }
       })
-      const { result1, result2 } = await Effect.unsafeRunPromise(program)
+      const { result1, result2 } = await Effect.runPromise(program)
       assert.deepStrictEqual(
         Array.from(result1).filter((n) => n > 0),
         as.slice(0, Array.from(result1).filter((n) => n > 0).length)
@@ -544,7 +544,7 @@ describe.concurrent("THub", () => {
         yield* $(Fiber.join(publisher))
         return yield* $(Fiber.join(subscriber))
       })
-      const result = await Effect.unsafeRunPromise(program)
+      const result = await Effect.runPromise(program)
       assert.deepStrictEqual(Array.from(result), sort(Array.from(result)))
     })))
 
@@ -591,7 +591,7 @@ describe.concurrent("THub", () => {
         const result2 = yield* $(Fiber.join(subscriber2))
         return { result1, result2 }
       })
-      const { result1, result2 } = await Effect.unsafeRunPromise(program)
+      const { result1, result2 } = await Effect.runPromise(program)
       assert.deepStrictEqual(Array.from(result1), sort(Array.from(result1)))
       assert.deepStrictEqual(Array.from(result2), sort(Array.from(result2)))
     })))
@@ -648,7 +648,7 @@ describe.concurrent("THub", () => {
         const result2 = yield* $(Fiber.join(subscriber2))
         return { result1, result2 }
       })
-      const { result1, result2 } = await Effect.unsafeRunPromise(program)
+      const { result1, result2 } = await Effect.runPromise(program)
       assert.deepStrictEqual(
         Array.from(result1).filter((n) => n > 0),
         sort(Array.from(result1).filter((n) => n > 0))
@@ -688,7 +688,7 @@ describe.concurrent("THub", () => {
         yield* $(pipe(as, Effect.forEach((n) => pipe(hub, THub.publish(n))), Effect.fork))
         return yield* $(Fiber.join(subscriber))
       })
-      const result = await Effect.unsafeRunPromise(program)
+      const result = await Effect.runPromise(program)
       assert.deepStrictEqual(Array.from(result), as)
     })))
 
@@ -729,7 +729,7 @@ describe.concurrent("THub", () => {
         const result2 = yield* $(Fiber.join(subscriber2))
         return { result1, result2 }
       })
-      const { result1, result2 } = await Effect.unsafeRunPromise(program)
+      const { result1, result2 } = await Effect.runPromise(program)
       assert.deepStrictEqual(Array.from(result1), as)
       assert.deepStrictEqual(Array.from(result2), as)
     })))
@@ -786,7 +786,7 @@ describe.concurrent("THub", () => {
         const result2 = yield* $(Fiber.join(subscriber2))
         return { result1, result2 }
       })
-      const { result1, result2 } = await Effect.unsafeRunPromise(program)
+      const { result1, result2 } = await Effect.runPromise(program)
       assert.deepStrictEqual(Array.from(result1).filter((n) => n > 0), as)
       assert.deepStrictEqual(Array.from(result1).filter((n) => n < 0), as.map((n) => -n))
       assert.deepStrictEqual(Array.from(result2).filter((n) => n > 0), as)

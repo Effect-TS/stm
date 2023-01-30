@@ -8,11 +8,11 @@ import * as TDeferred from "@effect/stm/TDeferred"
 import * as it from "@effect/stm/test/utils/extend"
 import * as TQueue from "@effect/stm/TQueue"
 import * as TRef from "@effect/stm/TRef"
+import * as Either from "@fp-ts/core/Either"
+import { constFalse, constTrue, constVoid, pipe } from "@fp-ts/core/Function"
+import * as Option from "@fp-ts/core/Option"
 import * as Chunk from "@fp-ts/data/Chunk"
 import * as Context from "@fp-ts/data/Context"
-import * as Either from "@fp-ts/data/Either"
-import { constFalse, constTrue, constVoid, pipe } from "@fp-ts/data/Function"
-import * as Option from "@fp-ts/data/Option"
 import * as fc from "fast-check"
 import { assert, describe } from "vitest"
 
@@ -187,7 +187,7 @@ describe.concurrent("STM", () => {
         STM.catchSome((e) =>
           Cause.isRuntimeException(e) ?
             Option.some(STM.succeed("gotcha")) :
-            Option.none
+            Option.none()
         )
       )
       const result = yield* $(STM.commit(transaction))
@@ -203,7 +203,7 @@ describe.concurrent("STM", () => {
         STM.catchSome((e) =>
           Cause.isIllegalArgumentException(e) ?
             Option.some(STM.succeed("gotcha")) :
-            Option.none
+            Option.none()
         )
       )
       const result = yield* $(Effect.exit(STM.commit(transaction)))
@@ -239,8 +239,8 @@ describe.concurrent("STM", () => {
         makeSTMEnv(0),
         Effect.flatMap((env) =>
           pipe(
-            STM.serviceWithSTM(STMEnv)((env) => pipe(env.ref, TRef.update((n) => n + 1))),
-            STM.provideEnvironment(pipe(Context.empty(), Context.add(STMEnv)(env))),
+            STM.serviceWithSTM(STMEnv, (env) => pipe(env.ref, TRef.update((n) => n + 1))),
+            STM.provideContext(Context.make(STMEnv, env)),
             STM.commit,
             Effect.zipRight(TRef.get(env.ref))
           )
@@ -255,8 +255,8 @@ describe.concurrent("STM", () => {
         makeSTMEnv(0),
         Effect.flatMap((env) =>
           pipe(
-            STM.serviceWithSTM(STMEnv)((env) => pipe(env.ref, TRef.update((n) => n + 1))),
-            STM.provideEnvironment(pipe(Context.empty(), Context.add(STMEnv)(env))),
+            STM.serviceWithSTM(STMEnv, (env) => pipe(env.ref, TRef.update((n) => n + 1))),
+            STM.provideContext(Context.make(STMEnv, env)),
             STM.zipRight(TRef.get(env.ref))
           )
         )
@@ -420,7 +420,7 @@ describe.concurrent("STM", () => {
   it.effect("flattenErrorOption - with no error and default to value", () =>
     Effect.gen(function*($) {
       const transaction = pipe(
-        STM.fail(Option.none),
+        STM.fail(Option.none()),
         STM.flattenErrorOption(() => "default error")
       )
       const result = yield* $(Effect.exit(STM.commit(transaction)))
@@ -480,7 +480,7 @@ describe.concurrent("STM", () => {
     Effect.gen(function*($) {
       const transaction = STM.head(STM.succeed([]))
       const result = yield* $(Effect.exit(STM.commit(transaction)))
-      assert.deepStrictEqual(Exit.unannotate(result), Exit.fail(Option.none))
+      assert.deepStrictEqual(Exit.unannotate(result), Exit.fail(Option.none()))
     }))
 
   it.effect("head - returns Some if there is an error", () =>
@@ -598,7 +598,7 @@ describe.concurrent("STM", () => {
 
   it.effect("none - on None", () =>
     Effect.gen(function*($) {
-      const transaction = STM.none(STM.succeed(Option.none))
+      const transaction = STM.none(STM.succeed(Option.none()))
       const result = yield* $(STM.commit(transaction))
       assert.isUndefined(result)
     }))
@@ -607,7 +607,7 @@ describe.concurrent("STM", () => {
     Effect.gen(function*($) {
       const transaction = STM.none(STM.succeed(Option.some(1)))
       const result = yield* $(Effect.exit(STM.commit(transaction)))
-      assert.deepStrictEqual(Exit.unannotate(result), Exit.fail(Option.none))
+      assert.deepStrictEqual(Exit.unannotate(result), Exit.fail(Option.none()))
     }))
 
   it.effect("none - on error", () =>
@@ -629,7 +629,7 @@ describe.concurrent("STM", () => {
     Effect.gen(function*($) {
       const transaction = STM.option(STM.fail("Ouch"))
       const result = yield* $(STM.commit(transaction))
-      assert.deepStrictEqual(result, Option.none)
+      assert.deepStrictEqual(result, Option.none())
     }))
 
   it.effect("orElse - succeeds if left succeeds", () =>
@@ -737,9 +737,9 @@ describe.concurrent("STM", () => {
 
   it.effect("unsome - converts None in E to None in A", () =>
     Effect.gen(function*($) {
-      const transaction = STM.unsome(STM.fromEither(Either.left(Option.none)))
+      const transaction = STM.unsome(STM.fromEither(Either.left(Option.none())))
       const result = yield* $(STM.commit(transaction))
-      assert.deepStrictEqual(result, Option.none)
+      assert.deepStrictEqual(result, Option.none())
     }))
 
   it.effect("unsome - no error", () =>
@@ -822,14 +822,14 @@ describe.concurrent("STM", () => {
   it.it("reduce - with a successful step function sums the list properly", () =>
     fc.assert(fc.asyncProperty(fc.array(fc.integer()), async (array) => {
       const transaction = pipe(array, STM.reduce(0, (acc, curr) => STM.succeed(acc + curr)))
-      const result = await Effect.unsafeRunPromise(STM.commit(transaction))
+      const result = await Effect.runPromise(STM.commit(transaction))
       assert.strictEqual(result, array.reduce((acc, curr) => acc + curr, 0))
     })))
 
   it.it("reduce - with a failing step function returns a failed transaction", () =>
     fc.assert(fc.asyncProperty(fc.array(fc.integer(), { minLength: 1 }), async (array) => {
       const transaction = pipe(array, STM.reduce(0, () => STM.fail("Ouch")))
-      const result = await Effect.unsafeRunPromise(Effect.exit(STM.commit(transaction)))
+      const result = await Effect.runPromise(Effect.exit(STM.commit(transaction)))
       assert.deepStrictEqual(Exit.unannotate(result), Exit.fail("Ouch"))
     })))
 
@@ -842,7 +842,7 @@ describe.concurrent("STM", () => {
           (acc, curr) => STM.succeed(pipe(acc, Chunk.append(curr)))
         )
       )
-      const result = await Effect.unsafeRunPromise(STM.commit(transaction))
+      const result = await Effect.runPromise(STM.commit(transaction))
       assert.deepStrictEqual(Array.from(result), array)
     })))
 
@@ -869,14 +869,14 @@ describe.concurrent("STM", () => {
   it.it("reduceRight - with a successful step function sums the list properly", () =>
     fc.assert(fc.asyncProperty(fc.array(fc.integer()), async (array) => {
       const transaction = pipe(array, STM.reduceRight(0, (acc, curr) => STM.succeed(acc + curr)))
-      const result = await Effect.unsafeRunPromise(STM.commit(transaction))
+      const result = await Effect.runPromise(STM.commit(transaction))
       assert.strictEqual(result, array.reduce((acc, curr) => acc + curr, 0))
     })))
 
   it.it("reduceRight - with a failing step function returns a failed transaction", () =>
     fc.assert(fc.asyncProperty(fc.array(fc.integer(), { minLength: 1 }), async (array) => {
       const transaction = pipe(array, STM.reduceRight(0, () => STM.fail("Ouch")))
-      const result = await Effect.unsafeRunPromise(Effect.exit(STM.commit(transaction)))
+      const result = await Effect.runPromise(Effect.exit(STM.commit(transaction)))
       assert.deepStrictEqual(Exit.unannotate(result), Exit.fail("Ouch"))
     })))
 
@@ -889,7 +889,7 @@ describe.concurrent("STM", () => {
           (acc, curr) => STM.succeed(pipe(acc, Chunk.prepend(curr)))
         )
       )
-      const result = await Effect.unsafeRunPromise(STM.commit(transaction))
+      const result = await Effect.runPromise(STM.commit(transaction))
       assert.deepStrictEqual(Array.from(result), array)
     })))
 
@@ -897,7 +897,7 @@ describe.concurrent("STM", () => {
     Effect.gen(function*($) {
       const transaction = pipe(
         STM.succeed(0),
-        STM.reject((n) => n !== 0 ? Option.some("Ouch") : Option.none)
+        STM.reject((n) => n !== 0 ? Option.some("Ouch") : Option.none())
       )
       const result = yield* $(STM.commit(transaction))
       assert.strictEqual(result, 0)
@@ -907,7 +907,7 @@ describe.concurrent("STM", () => {
     Effect.gen(function*($) {
       const transaction = pipe(
         STM.succeed(1),
-        STM.reject((n) => n !== 0 ? Option.some("Ouch") : Option.none)
+        STM.reject((n) => n !== 0 ? Option.some("Ouch") : Option.none())
       )
       const result = yield* $(Effect.exit(STM.commit(transaction)))
       assert.deepStrictEqual(Exit.unannotate(result), Exit.fail("Ouch"))
@@ -917,7 +917,7 @@ describe.concurrent("STM", () => {
     Effect.gen(function*($) {
       const transaction = pipe(
         STM.succeed(0),
-        STM.rejectSTM((n) => n !== 0 ? Option.some(STM.succeed("Ouch")) : Option.none)
+        STM.rejectSTM((n) => n !== 0 ? Option.some(STM.succeed("Ouch")) : Option.none())
       )
       const result = yield* $(STM.commit(transaction))
       assert.strictEqual(result, 0)
@@ -927,7 +927,7 @@ describe.concurrent("STM", () => {
     Effect.gen(function*($) {
       const transaction = pipe(
         STM.succeed(1),
-        STM.rejectSTM((n) => n !== 0 ? Option.some(STM.succeed("Ouch")) : Option.none)
+        STM.rejectSTM((n) => n !== 0 ? Option.some(STM.succeed("Ouch")) : Option.none())
       )
       const result = yield* $(Effect.exit(STM.commit(transaction)))
       assert.deepStrictEqual(Exit.unannotate(result), Exit.fail("Ouch"))
@@ -1016,9 +1016,9 @@ describe.concurrent("STM", () => {
 
   it.effect("some - fails on None", () =>
     Effect.gen(function*($) {
-      const transaction = STM.some(STM.succeed(Option.none))
+      const transaction = STM.some(STM.succeed(Option.none()))
       const result = yield* $(Effect.exit(STM.commit(transaction)))
-      assert.deepStrictEqual(Exit.unannotate(result), Exit.fail(Option.none))
+      assert.deepStrictEqual(Exit.unannotate(result), Exit.fail(Option.none()))
     }))
 
   it.effect("some - fails on error", () =>
@@ -1038,7 +1038,7 @@ describe.concurrent("STM", () => {
 
   it.effect("someOrElse - falls back to the default value if None", () =>
     Effect.gen(function*($) {
-      const transaction = pipe(STM.succeed(Option.none), STM.someOrElse(() => 42))
+      const transaction = pipe(STM.succeed(Option.none()), STM.someOrElse(() => 42))
       const result = yield* $(STM.commit(transaction))
       assert.strictEqual(result, 42)
     }))
@@ -1060,7 +1060,7 @@ describe.concurrent("STM", () => {
 
   it.effect("someOrElseSTM - falls back to the default value if None", () =>
     Effect.gen(function*($) {
-      const transaction = pipe(STM.succeed(Option.none), STM.someOrElseSTM(() => STM.succeed(42)))
+      const transaction = pipe(STM.succeed(Option.none()), STM.someOrElseSTM(() => STM.succeed(42)))
       const result = yield* $(STM.commit(transaction))
       assert.strictEqual(result, 42)
     }))
@@ -1084,7 +1084,7 @@ describe.concurrent("STM", () => {
   it.effect("someOrFail - fails on None", () =>
     Effect.gen(function*($) {
       const error = Cause.RuntimeException("Ouch")
-      const transaction = pipe(STM.succeed(Option.none), STM.someOrFail(() => error))
+      const transaction = pipe(STM.succeed(Option.none()), STM.someOrFail(() => error))
       const result = yield* $(Effect.exit(STM.commit(transaction)))
       assert.deepStrictEqual(Exit.unannotate(result), Exit.fail(error))
     }))
@@ -1107,7 +1107,7 @@ describe.concurrent("STM", () => {
 
   it.effect("someOrFailException - fails when given a None", () =>
     Effect.gen(function*($) {
-      const transaction = STM.someOrFailException(STM.succeed(Option.none))
+      const transaction = STM.someOrFailException(STM.succeed(Option.none()))
       const result = yield* $(Effect.exit(STM.commit(transaction)))
       assert.deepStrictEqual(Exit.unannotate(result), Exit.fail(Cause.NoSuchElementException()))
     }))
@@ -1326,13 +1326,13 @@ describe.concurrent("STM", () => {
       const transaction = STM.gen(function*($) {
         const ref = yield* $(TRef.make(false))
         yield* $(STM.whenCase(
-          (): Option.Option<number> => Option.none,
-          (option) => Option.isSome(option) ? Option.some(pipe(ref, TRef.set(true))) : Option.none
+          (): Option.Option<number> => Option.none(),
+          (option) => Option.isSome(option) ? Option.some(pipe(ref, TRef.set(true))) : Option.none()
         ))
         const result1 = yield* $(TRef.get(ref))
         yield* $(STM.whenCase(
           () => Option.some(1),
-          (option) => Option.isSome(option) ? Option.some(pipe(ref, TRef.set(true))) : Option.none
+          (option) => Option.isSome(option) ? Option.some(pipe(ref, TRef.set(true))) : Option.none()
         ))
         const result2 = yield* $(TRef.get(ref))
         return [result1, result2] as const
@@ -1346,11 +1346,11 @@ describe.concurrent("STM", () => {
       const transaction = STM.gen(function*($) {
         const ref = yield* $(TRef.make(false))
         yield* $(pipe(
-          STM.succeed<Option.Option<number>>(Option.none),
+          STM.succeed<Option.Option<number>>(Option.none()),
           STM.whenCaseSTM((option) =>
             Option.isSome(option) ?
               Option.some(pipe(ref, TRef.set(true))) :
-              Option.none
+              Option.none()
           )
         ))
         const result1 = yield* $(TRef.get(ref))
@@ -1359,7 +1359,7 @@ describe.concurrent("STM", () => {
           STM.whenCaseSTM((option) =>
             Option.isSome(option) ?
               Option.some(pipe(ref, TRef.set(true))) :
-              Option.none
+              Option.none()
           )
         ))
         const result2 = yield* $(TRef.get(ref))
@@ -1479,7 +1479,7 @@ describe.concurrent("STM", () => {
 
   it.effect("stack-safety - long provideEnvironment chains", () =>
     Effect.gen(function*($) {
-      const result = yield* $(chain(10_000)(STM.provideEnvironment(Context.empty())))
+      const result = yield* $(chain(10_000)(STM.provideContext(Context.empty())))
       assert.strictEqual(result, 0)
     }))
 

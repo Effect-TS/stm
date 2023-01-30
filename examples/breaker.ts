@@ -3,10 +3,10 @@ import * as Layer from "@effect/io/Layer"
 import * as Schedule from "@effect/io/Schedule"
 import * as STM from "@effect/stm/STM"
 import * as TRef from "@effect/stm/TRef"
+import * as Either from "@fp-ts/core/Either"
+import { pipe } from "@fp-ts/core/Function"
 import * as Context from "@fp-ts/data/Context"
 import * as Duration from "@fp-ts/data/Duration"
-import * as Either from "@fp-ts/data/Either"
-import { pipe } from "@fp-ts/data/Function"
 
 export class CircuitBreakerError {
   readonly _tag = "CircuitBreakerError"
@@ -117,7 +117,7 @@ export const makeBreaker = <V extends string>(opts?: CircuitBreakerOptions) =>
 export const CircuitBreakerLive = <V extends string>(
   vendor: Context.Tag<CircuitBreaker<V>>,
   opts?: CircuitBreakerOptions
-) => Layer.scoped(vendor)(makeBreaker<V>(opts))
+) => Layer.scoped(vendor, makeBreaker<V>(opts))
 
 // usage
 
@@ -136,5 +136,5 @@ export const program = Effect.gen(function*($) {
 pipe(
   program,
   Effect.provideSomeLayer(CircuitBreakerLive(CircuitBreakerA)),
-  Effect.unsafeFork
+  Effect.runFork
 )

@@ -1,13 +1,13 @@
 /**
  * @since 1.0.0
  */
-import * as internal from "@effect/stm/internal/tArray"
+import * as internal from "@effect/stm/internal_effect_untraced/tArray"
 import type * as STM from "@effect/stm/STM"
 import type * as TRef from "@effect/stm/TRef"
+import type * as Option from "@fp-ts/core/Option"
+import type { Predicate } from "@fp-ts/core/Predicate"
 import type * as Order from "@fp-ts/core/typeclass/Order"
 import type * as Chunk from "@fp-ts/data/Chunk"
-import type * as Option from "@fp-ts/data/Option"
-import type { Predicate } from "@fp-ts/data/Predicate"
 
 /**
  * @since 1.0.0
@@ -54,25 +54,25 @@ export declare namespace TArray {
  * Finds the result of applying a partial function to the first value in its
  * domain.
  *
- * @macro traced
  * @since 1.0.0
  * @category elements
  */
-export const collectFirst: <A, B>(
-  pf: (a: A) => Option.Option<B>
-) => (self: TArray<A>) => STM.STM<never, never, Option.Option<B>> = internal.collectFirst
+export const collectFirst: {
+  <A, B>(self: TArray<A>, pf: (a: A) => Option.Option<B>): STM.STM<never, never, Option.Option<B>>
+  <A, B>(pf: (a: A) => Option.Option<B>): (self: TArray<A>) => STM.STM<never, never, Option.Option<B>>
+} = internal.collectFirst
 
 /**
  * Finds the result of applying an transactional partial function to the first
  * value in its domain.
  *
- * @macro traced
  * @since 1.0.0
  * @category elements
  */
-export const collectFirstSTM: <A, R, E, B>(
-  pf: (a: A) => Option.Option<STM.STM<R, E, B>>
-) => (self: TArray<A>) => STM.STM<R, E, Option.Option<B>> = internal.collectFirstSTM
+export const collectFirstSTM: {
+  <A, R, E, B>(self: TArray<A>, pf: (a: A) => Option.Option<STM.STM<R, E, B>>): STM.STM<R, E, Option.Option<B>>
+  <A, R, E, B>(pf: (a: A) => Option.Option<STM.STM<R, E, B>>): (self: TArray<A>) => STM.STM<R, E, Option.Option<B>>
+} = internal.collectFirstSTM
 
 /**
  * Determine if the array contains a specified value.
@@ -81,7 +81,10 @@ export const collectFirstSTM: <A, R, E, B>(
  * @since 1.0.0
  * @category elements
  */
-export const contains: <A>(value: A) => (self: TArray<A>) => STM.STM<never, never, boolean> = internal.contains
+export const contains: {
+  <A>(self: TArray<A>, value: A): STM.STM<never, never, boolean>
+  <A>(value: A): (self: TArray<A>) => STM.STM<never, never, boolean>
+} = internal.contains
 
 /**
  * Count the values in the array matching a predicate.
@@ -90,7 +93,10 @@ export const contains: <A>(value: A) => (self: TArray<A>) => STM.STM<never, neve
  * @since 1.0.0
  * @category folding
  */
-export const count: <A>(predicate: Predicate<A>) => (self: TArray<A>) => STM.STM<never, never, number> = internal.count
+export const count: {
+  <A>(self: TArray<A>, predicate: Predicate<A>): STM.STM<never, never, number>
+  <A>(predicate: Predicate<A>): (self: TArray<A>) => STM.STM<never, never, number>
+} = internal.count
 
 /**
  * Count the values in the array matching a transactional predicate.
@@ -99,14 +105,14 @@ export const count: <A>(predicate: Predicate<A>) => (self: TArray<A>) => STM.STM
  * @since 1.0.0
  * @category folding
  */
-export const countSTM: <A, R, E>(
-  predicate: (value: A) => STM.STM<R, E, boolean>
-) => (self: TArray<A>) => STM.STM<R, E, number> = internal.countSTM
+export const countSTM: {
+  <A, R, E>(self: TArray<A>, predicate: (value: A) => STM.STM<R, E, boolean>): STM.STM<R, E, number>
+  <A, R, E>(predicate: (value: A) => STM.STM<R, E, boolean>): (self: TArray<A>) => STM.STM<R, E, number>
+} = internal.countSTM
 
 /**
  * Makes an empty `TArray`.
  *
- * @macro traced
  * @since 1.0.0
  * @category constructors
  */
@@ -116,132 +122,184 @@ export const empty: <A>() => STM.STM<never, never, TArray<A>> = internal.empty
  * Atomically evaluate the conjunction of a predicate across the members of
  * the array.
  *
- * @macro traced
  * @since 1.0.0
  * @category elements
  */
-export const every: <A>(predicate: Predicate<A>) => (self: TArray<A>) => STM.STM<never, never, boolean> = internal.every
+export const every: {
+  <A>(self: TArray<A>, predicate: Predicate<A>): STM.STM<never, never, boolean>
+  <A>(predicate: Predicate<A>): (self: TArray<A>) => STM.STM<never, never, boolean>
+} = internal.every
 
 /**
  * Atomically evaluate the conjunction of a transactional predicate across the
  * members of the array.
  *
- * @macro traced
  * @since 1.0.0
  * @category elements
  */
-export const everySTM: <A, R, E>(
-  predicate: (value: A) => STM.STM<R, E, boolean>
-) => (self: TArray<A>) => STM.STM<R, E, boolean> = internal.everySTM
+export const everySTM: {
+  <A, R, E>(self: TArray<A>, predicate: (value: A) => STM.STM<R, E, boolean>): STM.STM<R, E, boolean>
+  <A, R, E>(predicate: (value: A) => STM.STM<R, E, boolean>): (self: TArray<A>) => STM.STM<R, E, boolean>
+} = internal.everySTM
 
 /**
  * Find the first element in the array matching the specified predicate.
  *
- * @macro traced
  * @since 1.0.0
  * @category elements
  */
-export const findFirst: <A>(predicate: Predicate<A>) => (self: TArray<A>) => STM.STM<never, never, Option.Option<A>> =
-  internal.findFirst
+export const findFirst: {
+  <A>(self: TArray<A>, predicate: Predicate<A>): STM.STM<never, never, Option.Option<A>>
+  <A>(predicate: Predicate<A>): (self: TArray<A>) => STM.STM<never, never, Option.Option<A>>
+} = internal.findFirst
 
 /**
- * Get the first index of a specific value in the array, optionally starting
- * from the specified index.
+ * Get the first index of a specific value in the array.
  *
- * @macro traced
  * @since 1.0.0
  * @category elements
  */
-export const findFirstIndex: <A>(
-  value: A,
-  from?: number
-) => (self: TArray<A>) => STM.STM<never, never, Option.Option<number>> = internal.findFirstIndex
+export const findFirstIndex: {
+  <A>(self: TArray<A>, value: A): STM.STM<never, never, Option.Option<number>>
+  <A>(value: A): (self: TArray<A>) => STM.STM<never, never, Option.Option<number>>
+} = internal.findFirstIndex
 
 /**
- * Get the index of the first entry in the array, optionally starting from the
- * specified index, matching a predicate.
+ * Get the first index of a specific value in the array starting from the
+ * specified index.
  *
- * @macro traced
  * @since 1.0.0
  * @category elements
  */
-export const findFirstIndexWhere: <A>(
-  predicate: Predicate<A>,
-  from?: number
-) => (self: TArray<A>) => STM.STM<never, never, Option.Option<number>> = internal.findFirstIndexWhere
+export const findFirstIndexFrom: {
+  <A>(self: TArray<A>, value: A, from: number): STM.STM<never, never, Option.Option<number>>
+  <A>(value: A, from: number): (self: TArray<A>) => STM.STM<never, never, Option.Option<number>>
+} = internal.findFirstIndexFrom
+
+/**
+ * Get the index of the first entry in the array matching a predicate.
+ *
+ * @since 1.0.0
+ * @category elements
+ */
+export const findFirstIndexWhere: {
+  <A>(self: TArray<A>, predicate: Predicate<A>): STM.STM<never, never, Option.Option<number>>
+  <A>(predicate: Predicate<A>): (self: TArray<A>) => STM.STM<never, never, Option.Option<number>>
+} = internal.findFirstIndexWhere
+
+/**
+ * Get the index of the first entry in the array starting from the specified
+ * index, matching a predicate.
+ *
+ * @since 1.0.0
+ * @category elements
+ */
+export const findFirstIndexWhereFrom: {
+  <A>(self: TArray<A>, predicate: Predicate<A>, from: number): STM.STM<never, never, Option.Option<number>>
+  <A>(predicate: Predicate<A>, from: number): (self: TArray<A>) => STM.STM<never, never, Option.Option<number>>
+} = internal.findFirstIndexWhereFrom
+
+/**
+ * Get the index of the next entry that matches a transactional predicate.
+ *
+ * @since 1.0.0
+ * @category elements
+ */
+export const findFirstIndexWhereSTM: {
+  <A, R, E>(self: TArray<A>, predicate: (value: A) => STM.STM<R, E, boolean>): STM.STM<R, E, Option.Option<number>>
+  <A, R, E>(predicate: (value: A) => STM.STM<R, E, boolean>): (self: TArray<A>) => STM.STM<R, E, Option.Option<number>>
+} = internal.findFirstIndexWhereSTM
 
 /**
  * Starting at specified index, get the index of the next entry that matches a
  * transactional predicate.
  *
- * @macro traced
  * @since 1.0.0
  * @category elements
  */
-export const findFirstIndexWhereSTM: <A, R, E>(
-  predicate: (value: A) => STM.STM<R, E, boolean>,
-  from?: number
-) => (self: TArray<A>) => STM.STM<R, E, Option.Option<number>> = internal.findFirstIndexWhereSTM
+export const findFirstIndexWhereFromSTM: {
+  <A, R, E>(
+    self: TArray<A>,
+    predicate: (value: A) => STM.STM<R, E, boolean>,
+    from: number
+  ): STM.STM<R, E, Option.Option<number>>
+  <A, R, E>(
+    predicate: (value: A) => STM.STM<R, E, boolean>,
+    from: number
+  ): (self: TArray<A>) => STM.STM<R, E, Option.Option<number>>
+} = internal.findFirstIndexWhereFromSTM
 
 /**
  * Find the first element in the array matching a transactional predicate.
  *
- * @macro traced
  * @since 1.0.0
  * @category elements
  */
-export const findFirstSTM: <A, R, E>(
-  predicate: (value: A) => STM.STM<R, E, boolean>
-) => (self: TArray<A>) => STM.STM<R, E, Option.Option<A>> = internal.findFirstSTM
+export const findFirstSTM: {
+  <A, R, E>(self: TArray<A>, predicate: (value: A) => STM.STM<R, E, boolean>): STM.STM<R, E, Option.Option<A>>
+  <A, R, E>(predicate: (value: A) => STM.STM<R, E, boolean>): (self: TArray<A>) => STM.STM<R, E, Option.Option<A>>
+} = internal.findFirstSTM
 
 /**
  * Find the last element in the array matching a predicate.
  *
- * @macro traced
  * @since 1.0.0
  * @category elements
  */
-export const findLast: <A>(predicate: Predicate<A>) => (self: TArray<A>) => STM.STM<never, never, Option.Option<A>> =
-  internal.findLast
+export const findLast: {
+  <A>(self: TArray<A>, predicate: Predicate<A>): STM.STM<never, never, Option.Option<A>>
+  <A>(predicate: Predicate<A>): (self: TArray<A>) => STM.STM<never, never, Option.Option<A>>
+} = internal.findLast
 
 /**
- * Get the first index of a specific value in the array, bounded above by a
+ * Get the last index of a specific value in the array bounded above by a
  * specific index.
  *
- * @macro traced
  * @since 1.0.0
  * @category elements
  */
-export const findLastIndex: <A>(
-  value: A,
-  end?: number | undefined
-) => (self: TArray<A>) => STM.STM<never, never, Option.Option<number>> = internal.findLastIndex
+export const findLastIndex: {
+  <A>(self: TArray<A>, value: A): STM.STM<never, never, Option.Option<number>>
+  <A>(value: A): (self: TArray<A>) => STM.STM<never, never, Option.Option<number>>
+} = internal.findLastIndex
+
+/**
+ * Get the last index of a specific value in the array bounded above by a
+ * specific index.
+ *
+ * @since 1.0.0
+ * @category elements
+ */
+export const findLastIndexFrom: {
+  <A>(self: TArray<A>, value: A, end: number): STM.STM<never, never, Option.Option<number>>
+  <A>(value: A, end: number): (self: TArray<A>) => STM.STM<never, never, Option.Option<number>>
+} = internal.findLastIndexFrom
 
 /**
  * Find the last element in the array matching a transactional predicate.
  *
- * @macro traced
  * @since 1.0.0
  * @category elements
  */
-export const findLastSTM: <A, R, E>(
-  predicate: (value: A) => STM.STM<R, E, boolean>
-) => (self: TArray<A>) => STM.STM<R, E, Option.Option<A>> = internal.findLastSTM
+export const findLastSTM: {
+  <A, R, E>(self: TArray<A>, predicate: (value: A) => STM.STM<R, E, boolean>): STM.STM<R, E, Option.Option<A>>
+  <A, R, E>(predicate: (value: A) => STM.STM<R, E, boolean>): (self: TArray<A>) => STM.STM<R, E, Option.Option<A>>
+} = internal.findLastSTM
 
 /**
  * Atomically performs transactional effect for each item in array.
  *
- * @macro traced
  * @since 1.0.0
  * @category elements
  */
-export const forEach: <A, R, E>(f: (value: A) => STM.STM<R, E, void>) => (self: TArray<A>) => STM.STM<R, E, void> =
-  internal.forEach
+export const forEach: {
+  <A, R, E>(self: TArray<A>, f: (value: A) => STM.STM<R, E, void>): STM.STM<R, E, void>
+  <A, R, E>(f: (value: A) => STM.STM<R, E, void>): (self: TArray<A>) => STM.STM<R, E, void>
+} = internal.forEach
 
 /**
  * Makes a new `TArray` initialized with provided iterable.
  *
- * @macro traced
  * @since 1.0.0
  * @category constructors
  */
@@ -250,16 +308,17 @@ export const fromIterable: <A>(iterable: Iterable<A>) => STM.STM<never, never, T
 /**
  * Extracts value from ref in array.
  *
- * @macro traced
  * @since 1.0.0
  * @category elements
  */
-export const get: (index: number) => <A>(self: TArray<A>) => STM.STM<never, never, A> = internal.get
+export const get: {
+  <A>(self: TArray<A>, index: number): STM.STM<never, never, A>
+  (index: number): <A>(self: TArray<A>) => STM.STM<never, never, A>
+} = internal.get
 
 /**
  * The first entry of the array, if it exists.
  *
- * @macro traced
  * @since 1.0.0
  * @category elements
  */
@@ -268,7 +327,6 @@ export const headOption: <A>(self: TArray<A>) => STM.STM<never, never, Option.Op
 /**
  * The last entry in the array, if it exists.
  *
- * @macro traced
  * @since 1.0.0
  * @category elements
  */
@@ -277,7 +335,6 @@ export const lastOption: <A>(self: TArray<A>) => STM.STM<never, never, Option.Op
 /**
  * Makes a new `TArray` that is initialized with specified values.
  *
- * @macro traced
  * @since 1.0.0
  * @category constructors
  */
@@ -288,56 +345,58 @@ export const make: <Elements extends [any, ...Array<any>]>(
 /**
  * Atomically compute the greatest element in the array, if it exists.
  *
- * @macro traced
  * @since 1.0.0
  * @category elements
  */
-export const maxOption: <A>(order: Order.Order<A>) => (self: TArray<A>) => STM.STM<never, never, Option.Option<A>> =
-  internal.maxOption
+export const maxOption: {
+  <A>(self: TArray<A>, order: Order.Order<A>): STM.STM<never, never, Option.Option<A>>
+  <A>(order: Order.Order<A>): (self: TArray<A>) => STM.STM<never, never, Option.Option<A>>
+} = internal.maxOption
 
 /**
  * Atomically compute the least element in the array, if it exists.
  *
- * @macro traced
  * @since 1.0.0
  * @category elements
  */
-export const minOption: <A>(order: Order.Order<A>) => (self: TArray<A>) => STM.STM<never, never, Option.Option<A>> =
-  internal.minOption
+export const minOption: {
+  <A>(self: TArray<A>, order: Order.Order<A>): STM.STM<never, never, Option.Option<A>>
+  <A>(order: Order.Order<A>): (self: TArray<A>) => STM.STM<never, never, Option.Option<A>>
+} = internal.minOption
 
 /**
  * Atomically folds using a pure function.
  *
- * @macro traced
  * @since 1.0.0
  * @category folding
  */
-export const reduce: <Z, A>(
-  zero: Z,
-  f: (accumulator: Z, current: A) => Z
-) => (self: TArray<A>) => STM.STM<never, never, Z> = internal.reduce
+export const reduce: {
+  <Z, A>(self: TArray<A>, zero: Z, f: (accumulator: Z, current: A) => Z): STM.STM<never, never, Z>
+  <Z, A>(zero: Z, f: (accumulator: Z, current: A) => Z): (self: TArray<A>) => STM.STM<never, never, Z>
+} = internal.reduce
 
 /**
  * Atomically reduce the array, if non-empty, by a binary operator.
  *
- * @macro traced
  * @since 1.0.0
  * @category elements
  */
-export const reduceOption: <A>(f: (x: A, y: A) => A) => (self: TArray<A>) => STM.STM<never, never, Option.Option<A>> =
-  internal.reduceOption
+export const reduceOption: {
+  <A>(self: TArray<A>, f: (x: A, y: A) => A): STM.STM<never, never, Option.Option<A>>
+  <A>(f: (x: A, y: A) => A): (self: TArray<A>) => STM.STM<never, never, Option.Option<A>>
+} = internal.reduceOption
 
 /**
  * Atomically reduce the non-empty array using a transactional binary
  * operator.
  *
- * @macro traced
  * @since 1.0.0
  * @category elements
  */
-export const reduceOptionSTM: <A, R, E>(
-  f: (x: A, y: A) => STM.STM<R, E, A>
-) => (self: TArray<A>) => STM.STM<R, E, Option.Option<A>> = internal.reduceOptionSTM
+export const reduceOptionSTM: {
+  <A, R, E>(self: TArray<A>, f: (x: A, y: A) => STM.STM<R, E, A>): STM.STM<R, E, Option.Option<A>>
+  <A, R, E>(f: (x: A, y: A) => STM.STM<R, E, A>): (self: TArray<A>) => STM.STM<R, E, Option.Option<A>>
+} = internal.reduceOptionSTM
 
 /**
  * Atomically folds using a transactional function.
@@ -346,10 +405,10 @@ export const reduceOptionSTM: <A, R, E>(
  * @since 1.0.0
  * @category folding
  */
-export const reduceSTM: <Z, A, R, E>(
-  zero: Z,
-  f: (accumulator: Z, current: A) => STM.STM<R, E, Z>
-) => (self: TArray<A>) => STM.STM<R, E, Z> = internal.reduceSTM
+export const reduceSTM: {
+  <Z, A, R, E>(self: TArray<A>, zero: Z, f: (accumulator: Z, current: A) => STM.STM<R, E, Z>): STM.STM<R, E, Z>
+  <Z, A, R, E>(zero: Z, f: (accumulator: Z, current: A) => STM.STM<R, E, Z>): (self: TArray<A>) => STM.STM<R, E, Z>
+} = internal.reduceSTM
 
 /**
  * Returns the size of the `TArray`.
@@ -362,23 +421,25 @@ export const size: <A>(self: TArray<A>) => number = internal.size
 /**
  * Determine if the array contains a value satisfying a predicate.
  *
- * @macro traced
  * @since 1.0.0
  * @category elements
  */
-export const some: <A>(predicate: Predicate<A>) => (self: TArray<A>) => STM.STM<never, never, boolean> = internal.some
+export const some: {
+  <A>(self: TArray<A>, predicate: Predicate<A>): STM.STM<never, never, boolean>
+  <A>(predicate: Predicate<A>): (self: TArray<A>) => STM.STM<never, never, boolean>
+} = internal.some
 
 /**
  * Determine if the array contains a value satisfying a transactional
  * predicate.
  *
- * @macro traced
  * @since 1.0.0
  * @category elements
  */
-export const someSTM: <A, R, E>(
-  predicate: (value: A) => STM.STM<R, E, boolean>
-) => (self: TArray<A>) => STM.STM<R, E, boolean> = internal.someSTM
+export const someSTM: {
+  <A, R, E>(self: TArray<A>, predicate: (value: A) => STM.STM<R, E, boolean>): STM.STM<R, E, boolean>
+  <A, R, E>(predicate: (value: A) => STM.STM<R, E, boolean>): (self: TArray<A>) => STM.STM<R, E, boolean>
+} = internal.someSTM
 
 /**
  * Collects all elements into a chunk.
@@ -392,40 +453,43 @@ export const toChunk: <A>(self: TArray<A>) => STM.STM<never, never, Chunk.Chunk<
 /**
  * Atomically updates all elements using a pure function.
  *
- * @macro traced
  * @since 1.0.0
  * @category elements
  */
-export const transform: <A>(f: (value: A) => A) => (self: TArray<A>) => STM.STM<never, never, void> = internal.transform
+export const transform: {
+  <A>(self: TArray<A>, f: (value: A) => A): STM.STM<never, never, void>
+  <A>(f: (value: A) => A): (self: TArray<A>) => STM.STM<never, never, void>
+} = internal.transform
 
 /**
  * Atomically updates all elements using a transactional effect.
  *
- * @macro traced
  * @since 1.0.0
  * @category elements
  */
-export const transformSTM: <A, R, E>(f: (value: A) => STM.STM<R, E, A>) => (self: TArray<A>) => STM.STM<R, E, void> =
-  internal.transformSTM
+export const transformSTM: {
+  <A, R, E>(self: TArray<A>, f: (value: A) => STM.STM<R, E, A>): STM.STM<R, E, void>
+  <A, R, E>(f: (value: A) => STM.STM<R, E, A>): (self: TArray<A>) => STM.STM<R, E, void>
+} = internal.transformSTM
 
 /**
  * Updates element in the array with given function.
  *
- * @macro traced
  * @since 1.0.0
  * @category elements
  */
-export const update: <A>(index: number, f: (value: A) => A) => (self: TArray<A>) => STM.STM<never, never, void> =
-  internal.update
+export const update: {
+  <A>(self: TArray<A>, index: number, f: (value: A) => A): STM.STM<never, never, void>
+  <A>(index: number, f: (value: A) => A): (self: TArray<A>) => STM.STM<never, never, void>
+} = internal.update
 
 /**
  * Atomically updates element in the array with given transactional effect.
  *
- * @macro traced
  * @since 1.0.0
  * @category elements
  */
-export const updateSTM: <A, R, E>(
-  index: number,
-  f: (value: A) => STM.STM<R, E, A>
-) => (self: TArray<A>) => STM.STM<R, E, void> = internal.updateSTM
+export const updateSTM: {
+  <A, R, E>(self: TArray<A>, index: number, f: (value: A) => STM.STM<R, E, A>): STM.STM<R, E, void>
+  <A, R, E>(index: number, f: (value: A) => STM.STM<R, E, A>): (self: TArray<A>) => STM.STM<R, E, void>
+} = internal.updateSTM
