@@ -1,5 +1,11 @@
 # @effect/stm
 
+## 0.1.0
+
+### Minor Changes
+
+- [#45](https://github.com/Effect-TS/stm/pull/45) [`8ed658f`](https://github.com/Effect-TS/stm/commit/8ed658fb9bbad61032eb3ef503130ee76472b483) Thanks [@mikearnaldi](https://github.com/mikearnaldi)! - integrate tracing and dual with STM
+
 ## 0.0.15
 
 ### Patch Changes
