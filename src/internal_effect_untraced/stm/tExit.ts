@@ -1,4 +1,4 @@
-import type { Cause } from "@effect/io/Cause"
+import type { StackAnnotation } from "@effect/io/Cause"
 import type * as FiberId from "@effect/io/Fiber/Id"
 import * as OpCodes from "@effect/stm/internal_effect_untraced/opCodes/tExit"
 import { pipe } from "@fp-ts/core/Function"
@@ -38,21 +38,21 @@ const variance = {
 export interface Fail<E> extends TExit.Variance<E, never>, Equal.Equal {
   readonly _tag: OpCodes.OP_FAIL
   readonly error: E
-  readonly annotation: Cause.StackAnnotation
+  readonly annotation: StackAnnotation
 }
 
 /** @internal */
 export interface Die extends TExit.Variance<never, never>, Equal.Equal {
   readonly _tag: OpCodes.OP_DIE
   readonly defect: unknown
-  readonly annotation: Cause.StackAnnotation
+  readonly annotation: StackAnnotation
 }
 
 /** @internal */
 export interface Interrupt extends TExit.Variance<never, never>, Equal.Equal {
   readonly _tag: OpCodes.OP_INTERRUPT
   readonly fiberId: FiberId.FiberId
-  readonly annotation: Cause.StackAnnotation
+  readonly annotation: StackAnnotation
 }
 
 /** @internal */
@@ -97,7 +97,7 @@ export const isRetry = <E, A>(self: TExit<E, A>): self is Retry => {
 }
 
 /** @internal */
-export const fail = <E>(error: E, annotation: Cause.StackAnnotation): TExit<E, never> => ({
+export const fail = <E>(error: E, annotation: StackAnnotation): TExit<E, never> => ({
   [TExitTypeId]: variance,
   _tag: OpCodes.OP_FAIL,
   error,
@@ -115,7 +115,7 @@ export const fail = <E>(error: E, annotation: Cause.StackAnnotation): TExit<E, n
 })
 
 /** @internal */
-export const die = (defect: unknown, annotation: Cause.StackAnnotation): TExit<never, never> => ({
+export const die = (defect: unknown, annotation: StackAnnotation): TExit<never, never> => ({
   [TExitTypeId]: variance,
   _tag: OpCodes.OP_DIE,
   defect,
@@ -133,7 +133,7 @@ export const die = (defect: unknown, annotation: Cause.StackAnnotation): TExit<n
 })
 
 /** @internal */
-export const interrupt = (fiberId: FiberId.FiberId, annotation: Cause.StackAnnotation): TExit<never, never> => ({
+export const interrupt = (fiberId: FiberId.FiberId, annotation: StackAnnotation): TExit<never, never> => ({
   [TExitTypeId]: variance,
   _tag: OpCodes.OP_INTERRUPT,
   fiberId,
