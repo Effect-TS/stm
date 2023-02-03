@@ -22,6 +22,7 @@ import type { LazyArg } from "@fp-ts/core/Function"
 import { constVoid, pipe } from "@fp-ts/core/Function"
 import * as Chunk from "@fp-ts/data/Chunk"
 import type * as Context from "@fp-ts/data/Context"
+import * as MRef from "@fp-ts/data/MutableRef"
 
 /** @internal */
 const STMSymbolKey = "@effect/stm/STM"
@@ -409,7 +410,7 @@ type Continuation = STMOnFailure | STMOnSuccess | STMOnRetry | STMTraced
 export class STMDriver<R, E, A> {
   private contStack: Array<Continuation> = []
   private env: Context.Context<unknown>
-  private traceStack: Array<NonNullable<Debug.Trace>> = []
+  private traceStack: Array<Debug.SourceLocation> = []
 
   constructor(
     readonly self: STM.STM<R, E, A>,
@@ -442,22 +443,15 @@ export class STMDriver<R, E, A> {
     return
   }
 
-  stackToLines(): Chunk.Chunk<Debug.Trace> {
+  stackToLines(): Chunk.Chunk<Debug.SourceLocation> {
     if (this.traceStack.length === 0) {
       return Chunk.empty()
     }
-    const lines: Array<Debug.Trace> = []
-    let current = this.contStack.length - 1
+    const lines: Array<Debug.SourceLocation> = []
+    let current = this.traceStack.length - 1
     while (current >= 0 && lines.length < Debug.runtimeDebug.traceStackLimit) {
-      const value = this.contStack[current]!
-      switch (value._stmTag) {
-        case OpCodes.OP_TRACED: {
-          if (value.trace) {
-            lines.push(value.trace)
-          }
-          break
-        }
-      }
+      const value = this.traceStack[current]!
+      lines.push(value)
       current = current - 1
     }
     return Chunk.unsafeFromArray(lines)
@@ -500,12 +494,18 @@ export class STMDriver<R, E, A> {
             break
           }
           case OpCodes.OP_DIE: {
-            const annotation = new internalCause.StackAnnotation(this.stackToLines())
+            const annotation = new Cause.StackAnnotation(
+              this.stackToLines(),
+              MRef.incrementAndGet(Cause.globalErrorSeq)
+            )
             exit = TExit.die(current.defect(), annotation)
             break
           }
           case OpCodes.OP_FAIL: {
-            const annotation = new internalCause.StackAnnotation(this.stackToLines())
+            const annotation = new internalCause.StackAnnotation(
+              this.stackToLines(),
+              MRef.incrementAndGet(Cause.globalErrorSeq)
+            )
             const cont = this.nextFailure()
             if (cont === undefined) {
               exit = TExit.fail(current.error(), annotation)
@@ -524,7 +524,10 @@ export class STMDriver<R, E, A> {
             break
           }
           case OpCodes.OP_INTERRUPT: {
-            const annotation = new internalCause.StackAnnotation(this.stackToLines())
+            const annotation = new Cause.StackAnnotation(
+              this.stackToLines(),
+              MRef.incrementAndGet(Cause.globalErrorSeq)
+            )
             exit = TExit.interrupt(this.fiberId, annotation)
             break
           }
