@@ -1,18 +1,14 @@
 /// <reference types="vitest" />
-import { effectPlugin } from "@effect/vite-plugin"
+
+import babel from "@vitejs/plugin-react"
 import path from "path"
 import { defineConfig } from "vite"
 
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const babelConfig = require("./.babel.mjs.json")
+
 export default defineConfig({
-  plugins: [
-    effectPlugin({
-      babel: {
-        plugins: [["annotate-pure-calls"]],
-        compact: false
-      },
-      tsconfig: "tsconfig.test.json"
-    })
-  ],
+  plugins: [babel({ babel: babelConfig })],
   test: {
     include: ["./test/**/*.{js,mjs,cjs,ts,mts,cts,jsx,tsx}"],
     exclude: ["./test/utils/**/*.ts", "./test/**/*.init.ts"],
@@ -20,8 +16,8 @@ export default defineConfig({
   },
   resolve: {
     alias: {
-      "@effect/stm/test": path.resolve(__dirname, "/test"),
-      "@effect/stm": path.resolve(__dirname, "/src")
+      "@effect/stm/test": path.join(__dirname, "test"),
+      "@effect/stm": path.join(__dirname, "src")
     }
   }
 })
