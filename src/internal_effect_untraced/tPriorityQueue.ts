@@ -9,8 +9,8 @@ import * as Option from "@fp-ts/core/Option"
 import type { Predicate } from "@fp-ts/core/Predicate"
 import * as ReadonlyArray from "@fp-ts/core/ReadonlyArray"
 import type * as Order from "@fp-ts/core/typeclass/Order"
-import * as Chunk from "@fp-ts/data/Chunk"
-import * as SortedMap from "@fp-ts/data/SortedMap"
+import * as Chunk from "@effect/data/Chunk"
+import * as SortedMap from "@effect/data/SortedMap"
 
 /** @internal */
 const TPriorityQueueSymbolKey = "@effect/stm/TPriorityQueue"

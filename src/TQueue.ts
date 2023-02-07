@@ -5,7 +5,7 @@ import * as internal from "@effect/stm/internal_effect_untraced/tQueue"
 import type * as STM from "@effect/stm/STM"
 import type * as Option from "@fp-ts/core/Option"
 import type { Predicate } from "@fp-ts/core/Predicate"
-import type * as Chunk from "@fp-ts/data/Chunk"
+import type * as Chunk from "@effect/data/Chunk"
 
 /**
  * @since 1.0.0

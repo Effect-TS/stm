@@ -8,7 +8,7 @@ import type * as tQueue from "@effect/stm/internal_effect_untraced/tQueue"
 import type * as STM from "@effect/stm/STM"
 import type * as TQueue from "@effect/stm/TQueue"
 import type * as TRef from "@effect/stm/TRef"
-import type * as HashSet from "@fp-ts/data/HashSet"
+import type * as HashSet from "@effect/data/HashSet"
 
 /**
  * @since 1.0.0

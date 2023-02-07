@@ -9,8 +9,8 @@ import type * as TReentrantLock from "@effect/stm/TReentrantLock"
 import type * as TRef from "@effect/stm/TRef"
 import { pipe } from "@fp-ts/core/Function"
 import * as Option from "@fp-ts/core/Option"
-import * as Equal from "@fp-ts/data/Equal"
-import * as HashMap from "@fp-ts/data/HashMap"
+import * as Equal from "@effect/data/Equal"
+import * as HashMap from "@effect/data/HashMap"
 
 const TReentrantLockSymbolKey = "@effect/stm/TReentrantLock"
 

@@ -2,8 +2,8 @@ import type { StackAnnotation } from "@effect/io/Cause"
 import type * as FiberId from "@effect/io/Fiber/Id"
 import * as OpCodes from "@effect/stm/internal_effect_untraced/opCodes/tExit"
 import { pipe } from "@fp-ts/core/Function"
-import * as Equal from "@fp-ts/data/Equal"
-import * as Hash from "@fp-ts/data/Hash"
+import * as Equal from "@effect/data/Equal"
+import * as Hash from "@effect/data/Hash"
 
 /** @internal */
 const TExitSymbolKey = "@effect/io/TExit"

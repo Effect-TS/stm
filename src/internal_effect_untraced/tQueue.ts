@@ -9,7 +9,7 @@ import type * as TRef from "@effect/stm/TRef"
 import { pipe } from "@fp-ts/core/Function"
 import * as Option from "@fp-ts/core/Option"
 import type { Predicate } from "@fp-ts/core/Predicate"
-import * as Chunk from "@fp-ts/data/Chunk"
+import * as Chunk from "@effect/data/Chunk"
 
 const TEnqueueSymbolKey = "@effect/stm/TQueue/TEnqueue"
 

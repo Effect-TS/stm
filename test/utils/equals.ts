@@ -1,5 +1,5 @@
+import * as Equal from "@effect/data/Equal"
 import type * as Equivalence from "@fp-ts/core/typeclass/Equivalence"
-import * as Equal from "@fp-ts/data/Equal"
 
 export const equivalentElements = <A>(): Equivalence.Equivalence<A> =>
   (x, y) => {

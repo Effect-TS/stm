@@ -7,7 +7,7 @@ import type * as TRef from "@effect/stm/TRef"
 import type * as Option from "@fp-ts/core/Option"
 import type { Predicate } from "@fp-ts/core/Predicate"
 import type * as Order from "@fp-ts/core/typeclass/Order"
-import type * as Chunk from "@fp-ts/data/Chunk"
+import type * as Chunk from "@effect/data/Chunk"
 
 /**
  * @since 1.0.0

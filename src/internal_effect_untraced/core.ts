@@ -20,9 +20,9 @@ import type * as STM from "@effect/stm/STM"
 import * as Either from "@fp-ts/core/Either"
 import type { LazyArg } from "@fp-ts/core/Function"
 import { constVoid, pipe } from "@fp-ts/core/Function"
-import * as Chunk from "@fp-ts/data/Chunk"
-import type * as Context from "@fp-ts/data/Context"
-import * as MRef from "@fp-ts/data/MutableRef"
+import * as Chunk from "@effect/data/Chunk"
+import type * as Context from "@effect/data/Context"
+import * as MRef from "@effect/data/MutableRef"
 
 /** @internal */
 const STMSymbolKey = "@effect/stm/STM"
