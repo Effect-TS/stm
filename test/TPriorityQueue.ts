@@ -1,3 +1,4 @@
+import * as Chunk from "@effect/data/Chunk"
 import * as Effect from "@effect/io/Effect"
 import * as STM from "@effect/stm/STM"
 import { equivalentElements } from "@effect/stm/test/utils/equals"
@@ -8,7 +9,6 @@ import * as number from "@fp-ts/core/Number"
 import * as Option from "@fp-ts/core/Option"
 import * as ReadonlyArray from "@fp-ts/core/ReadonlyArray"
 import * as Order from "@fp-ts/core/typeclass/Order"
-import * as Chunk from "@fp-ts/data/Chunk"
 import * as fc from "fast-check"
 import { assert, describe } from "vitest"
 

@@ -9,8 +9,8 @@ import { pipe } from "@fp-ts/core/Function"
 import * as Option from "@fp-ts/core/Option"
 import type { Predicate } from "@fp-ts/core/Predicate"
 import * as Order from "@fp-ts/core/typeclass/Order"
-import * as Chunk from "@fp-ts/data/Chunk"
-import * as Equal from "@fp-ts/data/Equal"
+import * as Chunk from "@effect/data/Chunk"
+import * as Equal from "@effect/data/Equal"
 
 /** @internal */
 const TArraySymbolKey = "@effect/stm/TArray"

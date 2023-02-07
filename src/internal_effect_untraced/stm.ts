@@ -16,8 +16,8 @@ import type { LazyArg } from "@fp-ts/core/Function"
 import { constFalse, constTrue, constVoid, identity, pipe } from "@fp-ts/core/Function"
 import * as Option from "@fp-ts/core/Option"
 import type { Predicate } from "@fp-ts/core/Predicate"
-import * as Chunk from "@fp-ts/data/Chunk"
-import * as Context from "@fp-ts/data/Context"
+import * as Chunk from "@effect/data/Chunk"
+import * as Context from "@effect/data/Context"
 
 /**
  * @internal

@@ -12,8 +12,8 @@ import type * as TQueue from "@effect/stm/TQueue"
 import type * as TRef from "@effect/stm/TRef"
 import { identity, pipe } from "@fp-ts/core/Function"
 import * as Option from "@fp-ts/core/Option"
-import * as Chunk from "@fp-ts/data/Chunk"
-import * as HashSet from "@fp-ts/data/HashSet"
+import * as Chunk from "@effect/data/Chunk"
+import * as HashSet from "@effect/data/HashSet"
 
 /** @internal */
 const THubSymbolKey = "@effect/stm/THub"

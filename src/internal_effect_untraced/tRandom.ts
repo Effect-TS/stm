@@ -9,9 +9,9 @@ import type * as TArray from "@effect/stm/TArray"
 import type * as TRandom from "@effect/stm/TRandom"
 import type * as TRef from "@effect/stm/TRef"
 import { pipe } from "@fp-ts/core/Function"
-import type * as Chunk from "@fp-ts/data/Chunk"
-import * as Context from "@fp-ts/data/Context"
-import * as Random from "@fp-ts/data/Random"
+import type * as Chunk from "@effect/data/Chunk"
+import * as Context from "@effect/data/Context"
+import * as Random from "@effect/data/Random"
 
 const TRandomSymbolKey = "@effect/stm/TRandom"
 

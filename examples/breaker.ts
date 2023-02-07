@@ -1,3 +1,5 @@
+import * as Context from "@effect/data/Context"
+import * as Duration from "@effect/data/Duration"
 import * as Effect from "@effect/io/Effect"
 import * as Layer from "@effect/io/Layer"
 import * as Schedule from "@effect/io/Schedule"
@@ -5,8 +7,6 @@ import * as STM from "@effect/stm/STM"
 import * as TRef from "@effect/stm/TRef"
 import * as Either from "@fp-ts/core/Either"
 import { pipe } from "@fp-ts/core/Function"
-import * as Context from "@fp-ts/data/Context"
-import * as Duration from "@fp-ts/data/Duration"
 
 export class CircuitBreakerError {
   readonly _tag = "CircuitBreakerError"

@@ -6,8 +6,8 @@ import type * as STM from "@effect/stm/STM"
 import type * as TMap from "@effect/stm/TMap"
 import type * as Option from "@fp-ts/core/Option"
 import type { Predicate } from "@fp-ts/core/Predicate"
-import type * as Chunk from "@fp-ts/data/Chunk"
-import type * as HashSet from "@fp-ts/data/HashSet"
+import type * as Chunk from "@effect/data/Chunk"
+import type * as HashSet from "@effect/data/HashSet"
 
 /**
  * @since 1.0.0

@@ -1,3 +1,4 @@
+import * as Chunk from "@effect/data/Chunk"
 import * as Cause from "@effect/io/Cause"
 import * as Effect from "@effect/io/Effect"
 import * as Exit from "@effect/io/Exit"
@@ -10,7 +11,6 @@ import * as Either from "@fp-ts/core/Either"
 import { constFalse, constTrue, identity, pipe } from "@fp-ts/core/Function"
 import * as Number from "@fp-ts/core/Number"
 import * as Option from "@fp-ts/core/Option"
-import * as Chunk from "@fp-ts/data/Chunk"
 import { assert, describe } from "vitest"
 
 const largePrime = 223

@@ -7,8 +7,8 @@ import type * as TSet from "@effect/stm/TSet"
 import { pipe } from "@fp-ts/core/Function"
 import type * as Option from "@fp-ts/core/Option"
 import type { Predicate } from "@fp-ts/core/Predicate"
-import * as Chunk from "@fp-ts/data/Chunk"
-import * as HashSet from "@fp-ts/data/HashSet"
+import * as Chunk from "@effect/data/Chunk"
+import * as HashSet from "@effect/data/HashSet"
 
 /** @internal */
 const TSetSymbolKey = "@effect/stm/TSet"

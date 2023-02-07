@@ -5,9 +5,9 @@ import type * as Layer from "@effect/io/Layer"
 import * as internal from "@effect/stm/internal_effect_untraced/tRandom"
 import type * as STM from "@effect/stm/STM"
 import type * as TRef from "@effect/stm/TRef"
-import type * as Chunk from "@fp-ts/data/Chunk"
-import type * as Context from "@fp-ts/data/Context"
-import type * as Random from "@fp-ts/data/Random"
+import type * as Chunk from "@effect/data/Chunk"
+import type * as Context from "@effect/data/Context"
+import type * as Random from "@effect/data/Random"
 
 /**
  * @since 1.0.0
