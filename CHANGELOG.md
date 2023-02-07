@@ -1,5 +1,11 @@
 # @effect/stm
 
+## 0.1.3
+
+### Patch Changes
+
+- [#52](https://github.com/Effect-TS/stm/pull/52) [`7902341`](https://github.com/Effect-TS/stm/commit/790234169ce3ade581ba69f3dfefad017783c8f4) Thanks [@IMax153](https://github.com/IMax153)! - fix pinned version of @effect/data
+
 ## 0.1.2
 
 ### Patch Changes
