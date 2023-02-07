@@ -1,5 +1,11 @@
 # @effect/stm
 
+## 0.1.2
+
+### Patch Changes
+
+- [#50](https://github.com/Effect-TS/stm/pull/50) [`6fddcc7`](https://github.com/Effect-TS/stm/commit/6fddcc72db23ea2eeea99937668a0957b2cdca65) Thanks [@IMax153](https://github.com/IMax153)! - replace @fp-ts/data with @effect/data
+
 ## 0.1.1
 
 ### Patch Changes
