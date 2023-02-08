@@ -1,5 +1,11 @@
 # @effect/stm
 
+## 0.1.4
+
+### Patch Changes
+
+- [#54](https://github.com/Effect-TS/stm/pull/54) [`365758c`](https://github.com/Effect-TS/stm/commit/365758cdd7ecd3b7a6563c968125e4f9961ac708) Thanks [@IMax153](https://github.com/IMax153)! - migrate usage of dual to new @fp-ts/core@0.2.0 api
+
 ## 0.1.3
 
 ### Patch Changes
