@@ -1,3 +1,6 @@
+import type * as Chunk from "@effect/data/Chunk"
+import * as Context from "@effect/data/Context"
+import * as Random from "@effect/data/Random"
 import * as Debug from "@effect/io/Debug"
 import * as Layer from "@effect/io/Layer"
 import * as core from "@effect/stm/internal_effect_untraced/core"
@@ -9,9 +12,6 @@ import type * as TArray from "@effect/stm/TArray"
 import type * as TRandom from "@effect/stm/TRandom"
 import type * as TRef from "@effect/stm/TRef"
 import { pipe } from "@fp-ts/core/Function"
-import type * as Chunk from "@effect/data/Chunk"
-import * as Context from "@effect/data/Context"
-import * as Random from "@effect/data/Random"
 
 const TRandomSymbolKey = "@effect/stm/TRandom"
 
@@ -125,47 +125,35 @@ export const live = Debug.methodWithTrace((trace) =>
     )
 )
 
-/**
- * @internal
- */
+/** @internal */
 export const next = Debug.methodWithTrace((trace) =>
   (): STM.STM<TRandom.TRandom, never, number> => stm.serviceWithSTM(Tag, (random) => random.next()).traced(trace)
 )
 
-/**
- * @internal
- */
+/** @internal */
 export const nextBoolean = Debug.methodWithTrace((trace) =>
   (): STM.STM<TRandom.TRandom, never, boolean> =>
     stm.serviceWithSTM(Tag, (random) => random.nextBoolean()).traced(trace)
 )
 
-/**
- * @internal
- */
+/** @internal */
 export const nextInt = Debug.methodWithTrace((trace) =>
   (): STM.STM<TRandom.TRandom, never, number> => stm.serviceWithSTM(Tag, (random) => random.nextInt()).traced(trace)
 )
 
-/**
- * @internal
- */
+/** @internal */
 export const nextIntBetween = Debug.methodWithTrace((trace) =>
   (low: number, high: number): STM.STM<TRandom.TRandom, never, number> =>
     stm.serviceWithSTM(Tag, (random) => random.nextIntBetween(low, high)).traced(trace)
 )
 
-/**
- * @internal
- */
+/** @internal */
 export const nextRange = Debug.methodWithTrace((trace) =>
   (min: number, max: number): STM.STM<TRandom.TRandom, never, number> =>
     stm.serviceWithSTM(Tag, (random) => random.nextRange(min, max)).traced(trace)
 )
 
-/**
- * @internal
- */
+/** @internal */
 export const shuffle = Debug.methodWithTrace((trace) =>
   <A>(elements: Iterable<A>): STM.STM<TRandom.TRandom, never, Chunk.Chunk<A>> =>
     stm.serviceWithSTM(Tag, (random) => random.shuffle(elements)).traced(trace)

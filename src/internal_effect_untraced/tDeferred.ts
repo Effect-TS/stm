@@ -28,9 +28,7 @@ class TDeferredImpl<E, A> implements TDeferred.TDeferred<E, A> {
   constructor(readonly ref: TRef.TRef<Option.Option<Either.Either<E, A>>>) {}
 }
 
-/**
- * @internal
- */
+/** @internal */
 export const _await = Debug.methodWithTrace((trace) =>
   <E, A>(self: TDeferred.TDeferred<E, A>): STM.STM<never, E, A> =>
     stm.flatten(
@@ -41,12 +39,10 @@ export const _await = Debug.methodWithTrace((trace) =>
     ).traced(trace)
 )
 
-/**
- * @internal
- */
+/** @internal */
 export const done = Debug.dualWithTrace<
-  <E, A>(self: TDeferred.TDeferred<E, A>, either: Either.Either<E, A>) => STM.STM<never, never, boolean>,
-  <E, A>(either: Either.Either<E, A>) => (self: TDeferred.TDeferred<E, A>) => STM.STM<never, never, boolean>
+  <E, A>(either: Either.Either<E, A>) => (self: TDeferred.TDeferred<E, A>) => STM.STM<never, never, boolean>,
+  <E, A>(self: TDeferred.TDeferred<E, A>, either: Either.Either<E, A>) => STM.STM<never, never, boolean>
 >(2, (trace) =>
   (self, either) =>
     core.flatMap(
@@ -61,17 +57,13 @@ export const done = Debug.dualWithTrace<
       )
     ).traced(trace))
 
-/**
- * @internal
- */
+/** @internal */
 export const fail = Debug.dualWithTrace<
-  <E, A>(self: TDeferred.TDeferred<E, A>, error: E) => STM.STM<never, never, boolean>,
-  <E>(error: E) => <A>(self: TDeferred.TDeferred<E, A>) => STM.STM<never, never, boolean>
+  <E>(error: E) => <A>(self: TDeferred.TDeferred<E, A>) => STM.STM<never, never, boolean>,
+  <E, A>(self: TDeferred.TDeferred<E, A>, error: E) => STM.STM<never, never, boolean>
 >(2, (trace) => (self, error) => done(self, Either.left(error)).traced(trace))
 
-/**
- * @internal
- */
+/** @internal */
 export const make = Debug.methodWithTrace((trace) =>
   <E, A>(): STM.STM<never, never, TDeferred.TDeferred<E, A>> =>
     core.map(
@@ -80,18 +72,14 @@ export const make = Debug.methodWithTrace((trace) =>
     ).traced(trace)
 )
 
-/**
- * @internal
- */
+/** @internal */
 export const poll = Debug.methodWithTrace((trace) =>
   <E, A>(self: TDeferred.TDeferred<E, A>): STM.STM<never, never, Option.Option<Either.Either<E, A>>> =>
     tRef.get(self.ref).traced(trace)
 )
 
-/**
- * @internal
- */
+/** @internal */
 export const succeed = Debug.dualWithTrace<
-  <E, A>(self: TDeferred.TDeferred<E, A>, value: A) => STM.STM<never, never, boolean>,
-  <A>(value: A) => <E>(self: TDeferred.TDeferred<E, A>) => STM.STM<never, never, boolean>
+  <A>(value: A) => <E>(self: TDeferred.TDeferred<E, A>) => STM.STM<never, never, boolean>,
+  <E, A>(self: TDeferred.TDeferred<E, A>, value: A) => STM.STM<never, never, boolean>
 >(2, (trace) => (self, value) => done(self, Either.right(value)).traced(trace))

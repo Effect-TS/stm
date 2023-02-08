@@ -173,8 +173,8 @@ export const releaseWrite: (self: TReentrantLock) => STM.STM<never, never, numbe
  * @category mutations
  */
 export const withLock: {
-  <R, E, A>(effect: Effect.Effect<R, E, A>, self: TReentrantLock): Effect.Effect<R, E, A>
   (self: TReentrantLock): <R, E, A>(effect: Effect.Effect<R, E, A>) => Effect.Effect<R, E, A>
+  <R, E, A>(effect: Effect.Effect<R, E, A>, self: TReentrantLock): Effect.Effect<R, E, A>
 } = internal.withLock
 
 /**
@@ -184,8 +184,8 @@ export const withLock: {
  * @category mutations
  */
 export const withReadLock: {
-  <R, E, A>(effect: Effect.Effect<R, E, A>, self: TReentrantLock): Effect.Effect<R, E, A>
   (self: TReentrantLock): <R, E, A>(effect: Effect.Effect<R, E, A>) => Effect.Effect<R, E, A>
+  <R, E, A>(effect: Effect.Effect<R, E, A>, self: TReentrantLock): Effect.Effect<R, E, A>
 } = internal.withReadLock
 
 /**
@@ -195,8 +195,8 @@ export const withReadLock: {
  * @category mutations
  */
 export const withWriteLock: {
-  <R, E, A>(effect: Effect.Effect<R, E, A>, self: TReentrantLock): Effect.Effect<R, E, A>
   (self: TReentrantLock): <R, E, A>(effect: Effect.Effect<R, E, A>) => Effect.Effect<R, E, A>
+  <R, E, A>(effect: Effect.Effect<R, E, A>, self: TReentrantLock): Effect.Effect<R, E, A>
 } = internal.withWriteLock
 
 /**

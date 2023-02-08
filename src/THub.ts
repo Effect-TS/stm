@@ -1,6 +1,7 @@
 /**
  * @since 1.0.0
  */
+import type * as HashSet from "@effect/data/HashSet"
 import type * as Effect from "@effect/io/Effect"
 import type * as Scope from "@effect/io/Scope"
 import * as internal from "@effect/stm/internal_effect_untraced/tHub"
@@ -8,7 +9,6 @@ import type * as tQueue from "@effect/stm/internal_effect_untraced/tQueue"
 import type * as STM from "@effect/stm/STM"
 import type * as TQueue from "@effect/stm/TQueue"
 import type * as TRef from "@effect/stm/TRef"
-import type * as HashSet from "@effect/data/HashSet"
 
 /**
  * @since 1.0.0
@@ -119,8 +119,8 @@ export const isShutdown: <A>(self: THub<A>) => STM.STM<never, never, boolean> = 
  * @category mutations
  */
 export const publish: {
-  <A>(self: THub<A>, value: A): STM.STM<never, never, boolean>
   <A>(value: A): (self: THub<A>) => STM.STM<never, never, boolean>
+  <A>(self: THub<A>, value: A): STM.STM<never, never, boolean>
 } = internal.publish
 
 /**
@@ -131,8 +131,8 @@ export const publish: {
  * @category mutations
  */
 export const publishAll: {
-  <A>(self: THub<A>, iterable: Iterable<A>): STM.STM<never, never, boolean>
   <A>(iterable: Iterable<A>): (self: THub<A>) => STM.STM<never, never, boolean>
+  <A>(self: THub<A>, iterable: Iterable<A>): STM.STM<never, never, boolean>
 } = internal.publishAll
 
 /**

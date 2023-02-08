@@ -1,13 +1,13 @@
 /**
  * @since 1.0.0
  */
+import type * as Chunk from "@effect/data/Chunk"
+import type * as HashSet from "@effect/data/HashSet"
 import * as internal from "@effect/stm/internal_effect_untraced/tSet"
 import type * as STM from "@effect/stm/STM"
 import type * as TMap from "@effect/stm/TMap"
 import type * as Option from "@fp-ts/core/Option"
 import type { Predicate } from "@fp-ts/core/Predicate"
-import type * as Chunk from "@effect/data/Chunk"
-import type * as HashSet from "@effect/data/HashSet"
 
 /**
  * @since 1.0.0
@@ -59,8 +59,8 @@ export declare namespace TSet {
  * @category mutations
  */
 export const add: {
-  <A>(self: TSet<A>, value: A): STM.STM<never, never, void>
   <A>(value: A): (self: TSet<A>) => STM.STM<never, never, void>
+  <A>(self: TSet<A>, value: A): STM.STM<never, never, void>
 } = internal.add
 
 /**
@@ -71,8 +71,8 @@ export const add: {
  * @category mutations
  */
 export const difference: {
-  <A>(self: TSet<A>, other: TSet<A>): STM.STM<never, never, void>
   <A>(other: TSet<A>): (self: TSet<A>) => STM.STM<never, never, void>
+  <A>(self: TSet<A>, other: TSet<A>): STM.STM<never, never, void>
 } = internal.difference
 
 /**
@@ -90,8 +90,8 @@ export const empty: <A>() => STM.STM<never, never, TSet<A>> = internal.empty
  * @category elements
  */
 export const forEach: {
-  <A, R, E>(self: TSet<A>, f: (value: A) => STM.STM<R, E, void>): STM.STM<R, E, void>
   <A, R, E>(f: (value: A) => STM.STM<R, E, void>): (self: TSet<A>) => STM.STM<R, E, void>
+  <A, R, E>(self: TSet<A>, f: (value: A) => STM.STM<R, E, void>): STM.STM<R, E, void>
 } = internal.forEach
 
 /**
@@ -109,8 +109,8 @@ export const fromIterable: <A>(iterable: Iterable<A>) => STM.STM<never, never, T
  * @category elements
  */
 export const has: {
-  <A>(self: TSet<A>, value: A): STM.STM<never, never, boolean>
   <A>(value: A): (self: TSet<A>) => STM.STM<never, never, boolean>
+  <A>(self: TSet<A>, value: A): STM.STM<never, never, boolean>
 } = internal.has
 
 /**
@@ -121,8 +121,8 @@ export const has: {
  * @category mutations
  */
 export const intersection: {
-  <A>(self: TSet<A>, other: TSet<A>): STM.STM<never, never, void>
   <A>(other: TSet<A>): (self: TSet<A>) => STM.STM<never, never, void>
+  <A>(self: TSet<A>, other: TSet<A>): STM.STM<never, never, void>
 } = internal.intersection
 
 /**
@@ -150,8 +150,8 @@ export const make: <Elements extends Array<any>>(
  * @category folding
  */
 export const reduce: {
-  <Z, A>(self: TSet<A>, zero: Z, f: (accumulator: Z, value: A) => Z): STM.STM<never, never, Z>
   <Z, A>(zero: Z, f: (accumulator: Z, value: A) => Z): (self: TSet<A>) => STM.STM<never, never, Z>
+  <Z, A>(self: TSet<A>, zero: Z, f: (accumulator: Z, value: A) => Z): STM.STM<never, never, Z>
 } = internal.reduce
 
 /**
@@ -161,8 +161,8 @@ export const reduce: {
  * @category folding
  */
 export const reduceSTM: {
-  <Z, A, R, E>(self: TSet<A>, zero: Z, f: (accumulator: Z, value: A) => STM.STM<R, E, Z>): STM.STM<R, E, Z>
   <Z, A, R, E>(zero: Z, f: (accumulator: Z, value: A) => STM.STM<R, E, Z>): (self: TSet<A>) => STM.STM<R, E, Z>
+  <Z, A, R, E>(self: TSet<A>, zero: Z, f: (accumulator: Z, value: A) => STM.STM<R, E, Z>): STM.STM<R, E, Z>
 } = internal.reduceSTM
 
 /**
@@ -172,8 +172,8 @@ export const reduceSTM: {
  * @category mutations
  */
 export const remove: {
-  <A>(self: TSet<A>, value: A): STM.STM<never, never, void>
   <A>(value: A): (self: TSet<A>) => STM.STM<never, never, void>
+  <A>(self: TSet<A>, value: A): STM.STM<never, never, void>
 } = internal.remove
 
 /**
@@ -183,8 +183,8 @@ export const remove: {
  * @category mutations
  */
 export const removeAll: {
-  <A>(self: TSet<A>, iterable: Iterable<A>): STM.STM<never, never, void>
   <A>(iterable: Iterable<A>): (self: TSet<A>) => STM.STM<never, never, void>
+  <A>(self: TSet<A>, iterable: Iterable<A>): STM.STM<never, never, void>
 } = internal.removeAll
 
 /**
@@ -194,8 +194,8 @@ export const removeAll: {
  * @category mutations
  */
 export const removeIf: {
-  <A>(self: TSet<A>, predicate: Predicate<A>): STM.STM<never, never, Chunk.Chunk<A>>
   <A>(predicate: Predicate<A>): (self: TSet<A>) => STM.STM<never, never, Chunk.Chunk<A>>
+  <A>(self: TSet<A>, predicate: Predicate<A>): STM.STM<never, never, Chunk.Chunk<A>>
 } = internal.removeIf
 
 /**
@@ -205,8 +205,8 @@ export const removeIf: {
  * @category mutations
  */
 export const removeIfDiscard: {
-  <A>(self: TSet<A>, predicate: Predicate<A>): STM.STM<never, never, void>
   <A>(predicate: Predicate<A>): (self: TSet<A>) => STM.STM<never, never, void>
+  <A>(self: TSet<A>, predicate: Predicate<A>): STM.STM<never, never, void>
 } = internal.removeIfDiscard
 
 /**
@@ -216,8 +216,8 @@ export const removeIfDiscard: {
  * @category mutations
  */
 export const retainIf: {
-  <A>(self: TSet<A>, predicate: Predicate<A>): STM.STM<never, never, Chunk.Chunk<A>>
   <A>(predicate: Predicate<A>): (self: TSet<A>) => STM.STM<never, never, Chunk.Chunk<A>>
+  <A>(self: TSet<A>, predicate: Predicate<A>): STM.STM<never, never, Chunk.Chunk<A>>
 } = internal.retainIf
 
 /**
@@ -227,8 +227,8 @@ export const retainIf: {
  * @category mutations
  */
 export const retainIfDiscard: {
-  <A>(self: TSet<A>, predicate: Predicate<A>): STM.STM<never, never, void>
   <A>(predicate: Predicate<A>): (self: TSet<A>) => STM.STM<never, never, void>
+  <A>(self: TSet<A>, predicate: Predicate<A>): STM.STM<never, never, void>
 } = internal.retainIfDiscard
 
 /**
@@ -246,8 +246,8 @@ export const size: <A>(self: TSet<A>) => STM.STM<never, never, number> = interna
  * @category mutations
  */
 export const takeFirst: {
-  <A, B>(self: TSet<A>, pf: (a: A) => Option.Option<B>): STM.STM<never, never, B>
   <A, B>(pf: (a: A) => Option.Option<B>): (self: TSet<A>) => STM.STM<never, never, B>
+  <A, B>(self: TSet<A>, pf: (a: A) => Option.Option<B>): STM.STM<never, never, B>
 } = internal.takeFirst
 
 /**
@@ -257,8 +257,8 @@ export const takeFirst: {
  * @category mutations
  */
 export const takeFirstSTM: {
-  <A, R, E, B>(self: TSet<A>, pf: (a: A) => STM.STM<R, Option.Option<E>, B>): STM.STM<R, E, B>
   <A, R, E, B>(pf: (a: A) => STM.STM<R, Option.Option<E>, B>): (self: TSet<A>) => STM.STM<R, E, B>
+  <A, R, E, B>(self: TSet<A>, pf: (a: A) => STM.STM<R, Option.Option<E>, B>): STM.STM<R, E, B>
 } = internal.takeFirstSTM
 
 /**
@@ -268,8 +268,8 @@ export const takeFirstSTM: {
  * @category mutations
  */
 export const takeSome: {
-  <A, B>(self: TSet<A>, pf: (a: A) => Option.Option<B>): STM.STM<never, never, Chunk.NonEmptyChunk<B>>
   <A, B>(pf: (a: A) => Option.Option<B>): (self: TSet<A>) => STM.STM<never, never, Chunk.NonEmptyChunk<B>>
+  <A, B>(self: TSet<A>, pf: (a: A) => Option.Option<B>): STM.STM<never, never, Chunk.NonEmptyChunk<B>>
 } = internal.takeSome
 
 /**
@@ -279,8 +279,8 @@ export const takeSome: {
  * @category mutations
  */
 export const takeSomeSTM: {
-  <A, R, E, B>(self: TSet<A>, pf: (a: A) => STM.STM<R, Option.Option<E>, B>): STM.STM<R, E, Chunk.NonEmptyChunk<B>>
   <A, R, E, B>(pf: (a: A) => STM.STM<R, Option.Option<E>, B>): (self: TSet<A>) => STM.STM<R, E, Chunk.NonEmptyChunk<B>>
+  <A, R, E, B>(self: TSet<A>, pf: (a: A) => STM.STM<R, Option.Option<E>, B>): STM.STM<R, E, Chunk.NonEmptyChunk<B>>
 } = internal.takeSomeSTM
 
 /**
@@ -322,8 +322,8 @@ export const toReadonlySet: <A>(self: TSet<A>) => STM.STM<never, never, Readonly
  * @category mutations
  */
 export const transform: {
-  <A>(self: TSet<A>, f: (a: A) => A): STM.STM<never, never, void>
   <A>(f: (a: A) => A): (self: TSet<A>) => STM.STM<never, never, void>
+  <A>(self: TSet<A>, f: (a: A) => A): STM.STM<never, never, void>
 } = internal.transform
 
 /**
@@ -333,8 +333,8 @@ export const transform: {
  * @category mutations
  */
 export const transformSTM: {
-  <A, R, E>(self: TSet<A>, f: (a: A) => STM.STM<R, E, A>): STM.STM<R, E, void>
   <A, R, E>(f: (a: A) => STM.STM<R, E, A>): (self: TSet<A>) => STM.STM<R, E, void>
+  <A, R, E>(self: TSet<A>, f: (a: A) => STM.STM<R, E, A>): STM.STM<R, E, void>
 } = internal.transformSTM
 
 /**
@@ -345,6 +345,6 @@ export const transformSTM: {
  * @category mutations
  */
 export const union: {
-  <A>(self: TSet<A>, other: TSet<A>): STM.STM<never, never, void>
   <A>(other: TSet<A>): (self: TSet<A>) => STM.STM<never, never, void>
+  <A>(self: TSet<A>, other: TSet<A>): STM.STM<never, never, void>
 } = internal.union

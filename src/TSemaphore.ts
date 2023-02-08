@@ -58,8 +58,8 @@ export const acquire: (self: TSemaphore) => STM.STM<never, never, void> = intern
  * @category mutations
  */
 export const acquireN: {
-  (self: TSemaphore, n: number): STM.STM<never, never, void>
   (n: number): (self: TSemaphore) => STM.STM<never, never, void>
+  (self: TSemaphore, n: number): STM.STM<never, never, void>
 } = internal.acquireN
 
 /**
@@ -85,8 +85,8 @@ export const release: (self: TSemaphore) => STM.STM<never, never, void> = intern
  * @category mutations
  */
 export const releaseN: {
-  (self: TSemaphore, n: number): STM.STM<never, never, void>
   (n: number): (self: TSemaphore) => STM.STM<never, never, void>
+  (self: TSemaphore, n: number): STM.STM<never, never, void>
 } = internal.releaseN
 
 /**
@@ -94,8 +94,8 @@ export const releaseN: {
  * @category mutations
  */
 export const withPermit: {
-  <R, E, A>(self: Effect.Effect<R, E, A>, semaphore: TSemaphore): Effect.Effect<R, E, A>
   (semaphore: TSemaphore): <R, E, A>(self: Effect.Effect<R, E, A>) => Effect.Effect<R, E, A>
+  <R, E, A>(self: Effect.Effect<R, E, A>, semaphore: TSemaphore): Effect.Effect<R, E, A>
 } = internal.withPermit
 
 /**
@@ -103,8 +103,8 @@ export const withPermit: {
  * @category mutations
  */
 export const withPermits: {
-  <R, E, A>(self: Effect.Effect<R, E, A>, semaphore: TSemaphore, permits: number): Effect.Effect<R, E, A>
   (semaphore: TSemaphore, permits: number): <R, E, A>(self: Effect.Effect<R, E, A>) => Effect.Effect<R, E, A>
+  <R, E, A>(self: Effect.Effect<R, E, A>, semaphore: TSemaphore, permits: number): Effect.Effect<R, E, A>
 } = internal.withPermits
 
 /**
@@ -118,8 +118,8 @@ export const withPermitScoped: (self: TSemaphore) => Effect.Effect<Scope.Scope, 
  * @category mutations
  */
 export const withPermitsScoped: {
-  (self: TSemaphore, permits: number): Effect.Effect<Scope.Scope, never, void>
   (permits: number): (self: TSemaphore) => Effect.Effect<Scope.Scope, never, void>
+  (self: TSemaphore, permits: number): Effect.Effect<Scope.Scope, never, void>
 } = internal.withPermitsScoped
 
 /**

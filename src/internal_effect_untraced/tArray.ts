@@ -1,3 +1,5 @@
+import * as Chunk from "@effect/data/Chunk"
+import * as Equal from "@effect/data/Equal"
 import * as Debug from "@effect/io/Debug"
 import * as core from "@effect/stm/internal_effect_untraced/core"
 import * as stm from "@effect/stm/internal_effect_untraced/stm"
@@ -9,8 +11,6 @@ import { pipe } from "@fp-ts/core/Function"
 import * as Option from "@fp-ts/core/Option"
 import type { Predicate } from "@fp-ts/core/Predicate"
 import * as Order from "@fp-ts/core/typeclass/Order"
-import * as Chunk from "@effect/data/Chunk"
-import * as Equal from "@effect/data/Equal"
 
 /** @internal */
 const TArraySymbolKey = "@effect/stm/TArray"
@@ -31,8 +31,8 @@ export class TArrayImpl<A> implements TArray.TArray<A> {
 
 /** @internal */
 export const collectFirst = Debug.dualWithTrace<
-  <A, B>(self: TArray.TArray<A>, pf: (a: A) => Option.Option<B>) => STM.STM<never, never, Option.Option<B>>,
-  <A, B>(pf: (a: A) => Option.Option<B>) => (self: TArray.TArray<A>) => STM.STM<never, never, Option.Option<B>>
+  <A, B>(pf: (a: A) => Option.Option<B>) => (self: TArray.TArray<A>) => STM.STM<never, never, Option.Option<B>>,
+  <A, B>(self: TArray.TArray<A>, pf: (a: A) => Option.Option<B>) => STM.STM<never, never, Option.Option<B>>
 >(2, (trace, restore) =>
   (self, pf) =>
     collectFirstSTM(
@@ -43,12 +43,14 @@ export const collectFirst = Debug.dualWithTrace<
 /** @internal */
 export const collectFirstSTM = Debug.dualWithTrace<
   <A, R, E, B>(
-    self: TArray.TArray<A>,
     pf: (a: A) => Option.Option<STM.STM<R, E, B>>
+  ) => (
+    self: TArray.TArray<A>
   ) => STM.STM<R, E, Option.Option<B>>,
   <A, R, E, B>(
+    self: TArray.TArray<A>,
     pf: (a: A) => Option.Option<STM.STM<R, E, B>>
-  ) => (self: TArray.TArray<A>) => STM.STM<R, E, Option.Option<B>>
+  ) => STM.STM<R, E, Option.Option<B>>
 >(
   2,
   (trace, restore) =>
@@ -76,14 +78,14 @@ export const collectFirstSTM = Debug.dualWithTrace<
 
 /** @internal */
 export const contains = Debug.dualWithTrace<
-  <A>(self: TArray.TArray<A>, value: A) => STM.STM<never, never, boolean>,
-  <A>(value: A) => (self: TArray.TArray<A>) => STM.STM<never, never, boolean>
+  <A>(value: A) => (self: TArray.TArray<A>) => STM.STM<never, never, boolean>,
+  <A>(self: TArray.TArray<A>, value: A) => STM.STM<never, never, boolean>
 >(2, (trace) => (self, value) => some(self, (a) => Equal.equals(a)(value)).traced(trace))
 
 /** @internal */
 export const count = Debug.dualWithTrace<
-  <A>(self: TArray.TArray<A>, predicate: Predicate<A>) => STM.STM<never, never, number>,
-  <A>(predicate: Predicate<A>) => (self: TArray.TArray<A>) => STM.STM<never, never, number>
+  <A>(predicate: Predicate<A>) => (self: TArray.TArray<A>) => STM.STM<never, never, number>,
+  <A>(self: TArray.TArray<A>, predicate: Predicate<A>) => STM.STM<never, never, number>
 >(2, (trace, restore) =>
   (self, predicate) =>
     reduce(
@@ -94,8 +96,8 @@ export const count = Debug.dualWithTrace<
 
 /** @internal */
 export const countSTM = Debug.dualWithTrace<
-  <A, R, E>(self: TArray.TArray<A>, predicate: (value: A) => STM.STM<R, E, boolean>) => STM.STM<R, E, number>,
-  <A, R, E>(predicate: (value: A) => STM.STM<R, E, boolean>) => (self: TArray.TArray<A>) => STM.STM<R, E, number>
+  <A, R, E>(predicate: (value: A) => STM.STM<R, E, boolean>) => (self: TArray.TArray<A>) => STM.STM<R, E, number>,
+  <A, R, E>(self: TArray.TArray<A>, predicate: (value: A) => STM.STM<R, E, boolean>) => STM.STM<R, E, number>
 >(2, (trace, restore) =>
   (self, predicate) =>
     reduceSTM(
@@ -111,14 +113,14 @@ export const empty = Debug.methodWithTrace((trace) =>
 
 /** @internal */
 export const every = Debug.dualWithTrace<
-  <A>(self: TArray.TArray<A>, predicate: Predicate<A>) => STM.STM<never, never, boolean>,
-  <A>(predicate: Predicate<A>) => (self: TArray.TArray<A>) => STM.STM<never, never, boolean>
+  <A>(predicate: Predicate<A>) => (self: TArray.TArray<A>) => STM.STM<never, never, boolean>,
+  <A>(self: TArray.TArray<A>, predicate: Predicate<A>) => STM.STM<never, never, boolean>
 >(2, (trace, restore) => (self, predicate) => stm.negate(some(self, (a) => !restore(predicate)(a))).traced(trace))
 
 /** @internal */
 export const everySTM = Debug.dualWithTrace<
-  <A, R, E>(self: TArray.TArray<A>, predicate: (value: A) => STM.STM<R, E, boolean>) => STM.STM<R, E, boolean>,
-  <A, R, E>(predicate: (value: A) => STM.STM<R, E, boolean>) => (self: TArray.TArray<A>) => STM.STM<R, E, boolean>
+  <A, R, E>(predicate: (value: A) => STM.STM<R, E, boolean>) => (self: TArray.TArray<A>) => STM.STM<R, E, boolean>,
+  <A, R, E>(self: TArray.TArray<A>, predicate: (value: A) => STM.STM<R, E, boolean>) => STM.STM<R, E, boolean>
 >(2, (trace, restore) =>
   (self, predicate) =>
     core.map(
@@ -128,8 +130,8 @@ export const everySTM = Debug.dualWithTrace<
 
 /** @internal */
 export const findFirst = Debug.dualWithTrace<
-  <A>(self: TArray.TArray<A>, predicate: Predicate<A>) => STM.STM<never, never, Option.Option<A>>,
-  <A>(predicate: Predicate<A>) => (self: TArray.TArray<A>) => STM.STM<never, never, Option.Option<A>>
+  <A>(predicate: Predicate<A>) => (self: TArray.TArray<A>) => STM.STM<never, never, Option.Option<A>>,
+  <A>(self: TArray.TArray<A>, predicate: Predicate<A>) => STM.STM<never, never, Option.Option<A>>
 >(2, (trace, restore) =>
   (self, predicate) =>
     collectFirst(self, (a) =>
@@ -139,14 +141,14 @@ export const findFirst = Debug.dualWithTrace<
 
 /** @internal */
 export const findFirstIndex = Debug.dualWithTrace<
-  <A>(self: TArray.TArray<A>, value: A) => STM.STM<never, never, Option.Option<number>>,
-  <A>(value: A) => (self: TArray.TArray<A>) => STM.STM<never, never, Option.Option<number>>
+  <A>(value: A) => (self: TArray.TArray<A>) => STM.STM<never, never, Option.Option<number>>,
+  <A>(self: TArray.TArray<A>, value: A) => STM.STM<never, never, Option.Option<number>>
 >(2, (trace) => (self, value) => findFirstIndexFrom(self, value, 0).traced(trace))
 
 /** @internal */
 export const findFirstIndexFrom = Debug.dualWithTrace<
-  <A>(self: TArray.TArray<A>, value: A, from: number) => STM.STM<never, never, Option.Option<number>>,
-  <A>(value: A, from: number) => (self: TArray.TArray<A>) => STM.STM<never, never, Option.Option<number>>
+  <A>(value: A, from: number) => (self: TArray.TArray<A>) => STM.STM<never, never, Option.Option<number>>,
+  <A>(self: TArray.TArray<A>, value: A, from: number) => STM.STM<never, never, Option.Option<number>>
 >(3, (trace) =>
   (self, value, from) =>
     findFirstIndexWhereFrom(
@@ -157,14 +159,17 @@ export const findFirstIndexFrom = Debug.dualWithTrace<
 
 /** @internal */
 export const findFirstIndexWhere = Debug.dualWithTrace<
-  <A>(self: TArray.TArray<A>, predicate: Predicate<A>) => STM.STM<never, never, Option.Option<number>>,
-  <A>(predicate: Predicate<A>) => (self: TArray.TArray<A>) => STM.STM<never, never, Option.Option<number>>
+  <A>(predicate: Predicate<A>) => (self: TArray.TArray<A>) => STM.STM<never, never, Option.Option<number>>,
+  <A>(self: TArray.TArray<A>, predicate: Predicate<A>) => STM.STM<never, never, Option.Option<number>>
 >(2, (trace, restore) => (self, predicate) => findFirstIndexWhereFrom(self, restore(predicate), 0).traced(trace))
 
 /** @internal */
 export const findFirstIndexWhereFrom = Debug.dualWithTrace<
-  <A>(self: TArray.TArray<A>, predicate: Predicate<A>, from: number) => STM.STM<never, never, Option.Option<number>>,
-  <A>(predicate: Predicate<A>, from: number) => (self: TArray.TArray<A>) => STM.STM<never, never, Option.Option<number>>
+  <A>(
+    predicate: Predicate<A>,
+    from: number
+  ) => (self: TArray.TArray<A>) => STM.STM<never, never, Option.Option<number>>,
+  <A>(self: TArray.TArray<A>, predicate: Predicate<A>, from: number) => STM.STM<never, never, Option.Option<number>>
 >(3, (trace, restore) =>
   (self, predicate, from) => {
     if (from < 0) {
@@ -188,25 +193,25 @@ export const findFirstIndexWhereFrom = Debug.dualWithTrace<
 /** @internal */
 export const findFirstIndexWhereSTM = Debug.dualWithTrace<
   <A, R, E>(
+    predicate: (value: A) => STM.STM<R, E, boolean>
+  ) => (self: TArray.TArray<A>) => STM.STM<R, E, Option.Option<number>>,
+  <A, R, E>(
     self: TArray.TArray<A>,
     predicate: (value: A) => STM.STM<R, E, boolean>
-  ) => STM.STM<R, E, Option.Option<number>>,
-  <A, R, E>(
-    predicate: (value: A) => STM.STM<R, E, boolean>
-  ) => (self: TArray.TArray<A>) => STM.STM<R, E, Option.Option<number>>
+  ) => STM.STM<R, E, Option.Option<number>>
 >(2, (trace, restore) => (self, predicate) => findFirstIndexWhereFromSTM(self, restore(predicate), 0).traced(trace))
 
 /** @internal */
 export const findFirstIndexWhereFromSTM = Debug.dualWithTrace<
   <A, R, E>(
+    predicate: (value: A) => STM.STM<R, E, boolean>,
+    from: number
+  ) => (self: TArray.TArray<A>) => STM.STM<R, E, Option.Option<number>>,
+  <A, R, E>(
     self: TArray.TArray<A>,
     predicate: (value: A) => STM.STM<R, E, boolean>,
     from: number
-  ) => STM.STM<R, E, Option.Option<number>>,
-  <A, R, E>(
-    predicate: (value: A) => STM.STM<R, E, boolean>,
-    from: number
-  ) => (self: TArray.TArray<A>) => STM.STM<R, E, Option.Option<number>>
+  ) => STM.STM<R, E, Option.Option<number>>
 >(3, (trace, restore) =>
   <A, R, E>(
     self: TArray.TArray<A>,
@@ -233,13 +238,13 @@ export const findFirstIndexWhereFromSTM = Debug.dualWithTrace<
 /** @internal */
 export const findFirstSTM = Debug.dualWithTrace<
   <A, R, E>(
-    self: TArray.TArray<A>,
-    predicate: (value: A) => STM.STM<R, E, boolean>
-  ) => STM.STM<R, E, Option.Option<A>>,
-  <A, R, E>(
     predicate: (value: A) => STM.STM<R, E, boolean>
   ) => (
     self: TArray.TArray<A>
+  ) => STM.STM<R, E, Option.Option<A>>,
+  <A, R, E>(
+    self: TArray.TArray<A>,
+    predicate: (value: A) => STM.STM<R, E, boolean>
   ) => STM.STM<R, E, Option.Option<A>>
 >(2, (trace, restore) =>
   <A, R, E>(self: TArray.TArray<A>, predicate: (value: A) => STM.STM<R, E, boolean>) => {
@@ -265,8 +270,8 @@ export const findFirstSTM = Debug.dualWithTrace<
 
 /** @internal */
 export const findLast = Debug.dualWithTrace<
-  <A>(self: TArray.TArray<A>, predicate: Predicate<A>) => STM.STM<never, never, Option.Option<A>>,
-  <A>(predicate: Predicate<A>) => (self: TArray.TArray<A>) => STM.STM<never, never, Option.Option<A>>
+  <A>(predicate: Predicate<A>) => (self: TArray.TArray<A>) => STM.STM<never, never, Option.Option<A>>,
+  <A>(self: TArray.TArray<A>, predicate: Predicate<A>) => STM.STM<never, never, Option.Option<A>>
 >(
   2,
   (trace, restore) =>
@@ -287,14 +292,14 @@ export const findLast = Debug.dualWithTrace<
 
 /** @internal */
 export const findLastIndex = Debug.dualWithTrace<
-  <A>(self: TArray.TArray<A>, value: A) => STM.STM<never, never, Option.Option<number>>,
-  <A>(value: A) => (self: TArray.TArray<A>) => STM.STM<never, never, Option.Option<number>>
+  <A>(value: A) => (self: TArray.TArray<A>) => STM.STM<never, never, Option.Option<number>>,
+  <A>(self: TArray.TArray<A>, value: A) => STM.STM<never, never, Option.Option<number>>
 >(2, (trace) => (self, value) => findLastIndexFrom(self, value, self.chunk.length - 1).traced(trace))
 
 /** @internal */
 export const findLastIndexFrom = Debug.dualWithTrace<
-  <A>(self: TArray.TArray<A>, value: A, end: number) => STM.STM<never, never, Option.Option<number>>,
-  <A>(value: A, end: number) => (self: TArray.TArray<A>) => STM.STM<never, never, Option.Option<number>>
+  <A>(value: A, end: number) => (self: TArray.TArray<A>) => STM.STM<never, never, Option.Option<number>>,
+  <A>(self: TArray.TArray<A>, value: A, end: number) => STM.STM<never, never, Option.Option<number>>
 >(3, (trace) =>
   (self, value, end) => {
     if (end >= self.chunk.length) {
@@ -318,12 +323,12 @@ export const findLastIndexFrom = Debug.dualWithTrace<
 /** @internal */
 export const findLastSTM = Debug.dualWithTrace<
   <A, R, E>(
+    predicate: (value: A) => STM.STM<R, E, boolean>
+  ) => (self: TArray.TArray<A>) => STM.STM<R, E, Option.Option<A>>,
+  <A, R, E>(
     self: TArray.TArray<A>,
     predicate: (value: A) => STM.STM<R, E, boolean>
-  ) => STM.STM<R, E, Option.Option<A>>,
-  <A, R, E>(
-    predicate: (value: A) => STM.STM<R, E, boolean>
-  ) => (self: TArray.TArray<A>) => STM.STM<R, E, Option.Option<A>>
+  ) => STM.STM<R, E, Option.Option<A>>
 >(2, (trace, restore) =>
   <A, R, E>(self: TArray.TArray<A>, predicate: (value: A) => STM.STM<R, E, boolean>) => {
     const init = [Option.none() as Option.Option<A>, self.chunk.length - 1] as const
@@ -347,8 +352,8 @@ export const findLastSTM = Debug.dualWithTrace<
 
 /** @internal */
 export const forEach = Debug.dualWithTrace<
-  <A, R, E>(self: TArray.TArray<A>, f: (value: A) => STM.STM<R, E, void>) => STM.STM<R, E, void>,
-  <A, R, E>(f: (value: A) => STM.STM<R, E, void>) => (self: TArray.TArray<A>) => STM.STM<R, E, void>
+  <A, R, E>(f: (value: A) => STM.STM<R, E, void>) => (self: TArray.TArray<A>) => STM.STM<R, E, void>,
+  <A, R, E>(self: TArray.TArray<A>, f: (value: A) => STM.STM<R, E, void>) => STM.STM<R, E, void>
 >(2, (trace, restore) => (self, f) => reduceSTM(self, void 0 as void, (_, a) => restore(f)(a)).traced(trace))
 
 /** @internal */
@@ -362,8 +367,8 @@ export const fromIterable = Debug.methodWithTrace((trace) =>
 
 /** @internal */
 export const get = Debug.dualWithTrace<
-  <A>(self: TArray.TArray<A>, index: number) => STM.STM<never, never, A>,
-  (index: number) => <A>(self: TArray.TArray<A>) => STM.STM<never, never, A>
+  (index: number) => <A>(self: TArray.TArray<A>) => STM.STM<never, never, A>,
+  <A>(self: TArray.TArray<A>, index: number) => STM.STM<never, never, A>
 >(2, (trace) =>
   (self, index) => {
     if (index < 0 || index >= self.chunk.length) {
@@ -397,8 +402,8 @@ export const make = Debug.methodWithTrace((trace) =>
 
 /** @internal */
 export const maxOption = Debug.dualWithTrace<
-  <A>(self: TArray.TArray<A>, order: Order.Order<A>) => STM.STM<never, never, Option.Option<A>>,
-  <A>(order: Order.Order<A>) => (self: TArray.TArray<A>) => STM.STM<never, never, Option.Option<A>>
+  <A>(order: Order.Order<A>) => (self: TArray.TArray<A>) => STM.STM<never, never, Option.Option<A>>,
+  <A>(self: TArray.TArray<A>, order: Order.Order<A>) => STM.STM<never, never, Option.Option<A>>
 >(2, (trace) =>
   (self, order) => {
     const greaterThan = Order.greaterThan(order)
@@ -407,8 +412,8 @@ export const maxOption = Debug.dualWithTrace<
 
 /** @internal */
 export const minOption = Debug.dualWithTrace<
-  <A>(self: TArray.TArray<A>, order: Order.Order<A>) => STM.STM<never, never, Option.Option<A>>,
-  <A>(order: Order.Order<A>) => (self: TArray.TArray<A>) => STM.STM<never, never, Option.Option<A>>
+  <A>(order: Order.Order<A>) => (self: TArray.TArray<A>) => STM.STM<never, never, Option.Option<A>>,
+  <A>(self: TArray.TArray<A>, order: Order.Order<A>) => STM.STM<never, never, Option.Option<A>>
 >(2, (trace) =>
   (self, order) => {
     const lessThan = Order.lessThan(order)
@@ -417,8 +422,8 @@ export const minOption = Debug.dualWithTrace<
 
 /** @internal */
 export const reduce = Debug.dualWithTrace<
-  <Z, A>(self: TArray.TArray<A>, zero: Z, f: (accumulator: Z, current: A) => Z) => STM.STM<never, never, Z>,
-  <Z, A>(zero: Z, f: (accumulator: Z, current: A) => Z) => (self: TArray.TArray<A>) => STM.STM<never, never, Z>
+  <Z, A>(zero: Z, f: (accumulator: Z, current: A) => Z) => (self: TArray.TArray<A>) => STM.STM<never, never, Z>,
+  <Z, A>(self: TArray.TArray<A>, zero: Z, f: (accumulator: Z, current: A) => Z) => STM.STM<never, never, Z>
 >(
   3,
   (trace, restore) =>
@@ -437,8 +442,8 @@ export const reduce = Debug.dualWithTrace<
 
 /** @internal */
 export const reduceOption = Debug.dualWithTrace<
-  <A>(self: TArray.TArray<A>, f: (x: A, y: A) => A) => STM.STM<never, never, Option.Option<A>>,
-  <A>(f: (x: A, y: A) => A) => (self: TArray.TArray<A>) => STM.STM<never, never, Option.Option<A>>
+  <A>(f: (x: A, y: A) => A) => (self: TArray.TArray<A>) => STM.STM<never, never, Option.Option<A>>,
+  <A>(self: TArray.TArray<A>, f: (x: A, y: A) => A) => STM.STM<never, never, Option.Option<A>>
 >(
   2,
   (trace, restore) =>
@@ -457,8 +462,8 @@ export const reduceOption = Debug.dualWithTrace<
 
 /** @internal */
 export const reduceOptionSTM = Debug.dualWithTrace<
-  <A, R, E>(self: TArray.TArray<A>, f: (x: A, y: A) => STM.STM<R, E, A>) => STM.STM<R, E, Option.Option<A>>,
-  <A, R, E>(f: (x: A, y: A) => STM.STM<R, E, A>) => (self: TArray.TArray<A>) => STM.STM<R, E, Option.Option<A>>
+  <A, R, E>(f: (x: A, y: A) => STM.STM<R, E, A>) => (self: TArray.TArray<A>) => STM.STM<R, E, Option.Option<A>>,
+  <A, R, E>(self: TArray.TArray<A>, f: (x: A, y: A) => STM.STM<R, E, A>) => STM.STM<R, E, Option.Option<A>>
 >(
   2,
   (trace, restore) =>
@@ -472,14 +477,14 @@ export const reduceOptionSTM = Debug.dualWithTrace<
 /** @internal */
 export const reduceSTM = Debug.dualWithTrace<
   <Z, A, R, E>(
+    zero: Z,
+    f: (accumulator: Z, current: A) => STM.STM<R, E, Z>
+  ) => (self: TArray.TArray<A>) => STM.STM<R, E, Z>,
+  <Z, A, R, E>(
     self: TArray.TArray<A>,
     zero: Z,
     f: (accumulator: Z, current: A) => STM.STM<R, E, Z>
-  ) => STM.STM<R, E, Z>,
-  <Z, A, R, E>(
-    zero: Z,
-    f: (accumulator: Z, current: A) => STM.STM<R, E, Z>
-  ) => (self: TArray.TArray<A>) => STM.STM<R, E, Z>
+  ) => STM.STM<R, E, Z>
 >(3, (trace, restore) =>
   (self, zero, f) =>
     core.flatMap(
@@ -492,8 +497,8 @@ export const size = <A>(self: TArray.TArray<A>): number => self.chunk.length
 
 /** @internal */
 export const some = Debug.dualWithTrace<
-  <A>(self: TArray.TArray<A>, predicate: Predicate<A>) => STM.STM<never, never, boolean>,
-  <A>(predicate: Predicate<A>) => (self: TArray.TArray<A>) => STM.STM<never, never, boolean>
+  <A>(predicate: Predicate<A>) => (self: TArray.TArray<A>) => STM.STM<never, never, boolean>,
+  <A>(self: TArray.TArray<A>, predicate: Predicate<A>) => STM.STM<never, never, boolean>
 >(2, (trace, restore) =>
   (self, predicate) =>
     core.map(
@@ -503,8 +508,8 @@ export const some = Debug.dualWithTrace<
 
 /** @internal */
 export const someSTM = Debug.dualWithTrace<
-  <A, R, E>(self: TArray.TArray<A>, predicate: (value: A) => STM.STM<R, E, boolean>) => STM.STM<R, E, boolean>,
-  <A, R, E>(predicate: (value: A) => STM.STM<R, E, boolean>) => (self: TArray.TArray<A>) => STM.STM<R, E, boolean>
+  <A, R, E>(predicate: (value: A) => STM.STM<R, E, boolean>) => (self: TArray.TArray<A>) => STM.STM<R, E, boolean>,
+  <A, R, E>(self: TArray.TArray<A>, predicate: (value: A) => STM.STM<R, E, boolean>) => STM.STM<R, E, boolean>
 >(2, (trace, restore) => (self, predicate) => core.map(countSTM(self, restore(predicate)), (n) => n > 0).traced(trace))
 
 /** @internal */
@@ -514,8 +519,8 @@ export const toChunk = Debug.methodWithTrace((trace) =>
 
 /** @internal */
 export const transform = Debug.dualWithTrace<
-  <A>(self: TArray.TArray<A>, f: (value: A) => A) => STM.STM<never, never, void>,
-  <A>(f: (value: A) => A) => (self: TArray.TArray<A>) => STM.STM<never, never, void>
+  <A>(f: (value: A) => A) => (self: TArray.TArray<A>) => STM.STM<never, never, void>,
+  <A>(self: TArray.TArray<A>, f: (value: A) => A) => STM.STM<never, never, void>
 >(2, (trace, restore) =>
   (self, f) =>
     core.effect<never, void>((journal) => {
@@ -530,8 +535,8 @@ export const transform = Debug.dualWithTrace<
 
 /** @internal */
 export const transformSTM = Debug.dualWithTrace<
-  <A, R, E>(self: TArray.TArray<A>, f: (value: A) => STM.STM<R, E, A>) => STM.STM<R, E, void>,
-  <A, R, E>(f: (value: A) => STM.STM<R, E, A>) => (self: TArray.TArray<A>) => STM.STM<R, E, void>
+  <A, R, E>(f: (value: A) => STM.STM<R, E, A>) => (self: TArray.TArray<A>) => STM.STM<R, E, void>,
+  <A, R, E>(self: TArray.TArray<A>, f: (value: A) => STM.STM<R, E, A>) => STM.STM<R, E, void>
 >(2, (trace, restore) =>
   <A, R, E>(self: TArray.TArray<A>, f: (value: A) => STM.STM<R, E, A>) =>
     core.flatMap(
@@ -554,8 +559,8 @@ export const transformSTM = Debug.dualWithTrace<
 
 /** @internal */
 export const update = Debug.dualWithTrace<
-  <A>(self: TArray.TArray<A>, index: number, f: (value: A) => A) => STM.STM<never, never, void>,
-  <A>(index: number, f: (value: A) => A) => (self: TArray.TArray<A>) => STM.STM<never, never, void>
+  <A>(index: number, f: (value: A) => A) => (self: TArray.TArray<A>) => STM.STM<never, never, void>,
+  <A>(self: TArray.TArray<A>, index: number, f: (value: A) => A) => STM.STM<never, never, void>
 >(3, (trace, restore) =>
   (self, index, f) => {
     if (index < 0 || index >= self.chunk.length) {
@@ -566,8 +571,8 @@ export const update = Debug.dualWithTrace<
 
 /** @internal */
 export const updateSTM = Debug.dualWithTrace<
-  <A, R, E>(self: TArray.TArray<A>, index: number, f: (value: A) => STM.STM<R, E, A>) => STM.STM<R, E, void>,
-  <A, R, E>(index: number, f: (value: A) => STM.STM<R, E, A>) => (self: TArray.TArray<A>) => STM.STM<R, E, void>
+  <A, R, E>(index: number, f: (value: A) => STM.STM<R, E, A>) => (self: TArray.TArray<A>) => STM.STM<R, E, void>,
+  <A, R, E>(self: TArray.TArray<A>, index: number, f: (value: A) => STM.STM<R, E, A>) => STM.STM<R, E, void>
 >(3, (trace, restore) =>
   (self, index, f) => {
     if (index < 0 || index >= self.chunk.length) {

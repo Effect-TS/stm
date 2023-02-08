@@ -478,16 +478,15 @@ describe.concurrent("TMap", () => {
   it.effect("avoid issues due to race conditions (ZIO Issue #4648)", () =>
     Effect.gen(function*($) {
       const keys = ReadonlyArray.range(0, 10)
-      const map = yield* $(TMap.fromIterable(pipe(keys, ReadonlyArray.mapWithIndex((n, i) => [n, i]))))
+      const map = yield* $(TMap.fromIterable(ReadonlyArray.map(keys, (n, i) => [n, i])))
       const result = yield* $(pipe(
         keys,
         Effect.forEachDiscard((key) =>
           pipe(
-            map,
-            TMap.remove(key),
+            TMap.remove(map, key),
             STM.commit,
             Effect.fork,
-            Effect.zipRight(pipe(TMap.toChunk(map))),
+            Effect.zipRight(TMap.toChunk(map)),
             Effect.asUnit
           )
         ),

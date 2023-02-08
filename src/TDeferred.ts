@@ -63,8 +63,8 @@ export {
  * @category mutations
  */
 export const done: {
-  <E, A>(self: TDeferred<E, A>, either: Either.Either<E, A>): STM.STM<never, never, boolean>
   <E, A>(either: Either.Either<E, A>): (self: TDeferred<E, A>) => STM.STM<never, never, boolean>
+  <E, A>(self: TDeferred<E, A>, either: Either.Either<E, A>): STM.STM<never, never, boolean>
 } = internal.done
 
 /**
@@ -72,8 +72,8 @@ export const done: {
  * @category mutations
  */
 export const fail: {
-  <E, A>(self: TDeferred<E, A>, error: E): STM.STM<never, never, boolean>
   <E>(error: E): <A>(self: TDeferred<E, A>) => STM.STM<never, never, boolean>
+  <E, A>(self: TDeferred<E, A>, error: E): STM.STM<never, never, boolean>
 } = internal.fail
 
 /**
@@ -94,6 +94,6 @@ export const poll: <E, A>(self: TDeferred<E, A>) => STM.STM<never, never, Option
  * @category mutations
  */
 export const succeed: {
-  <E, A>(self: TDeferred<E, A>, value: A): STM.STM<never, never, boolean>
   <A>(value: A): <E>(self: TDeferred<E, A>) => STM.STM<never, never, boolean>
+  <E, A>(self: TDeferred<E, A>, value: A): STM.STM<never, never, boolean>
 } = internal.succeed

@@ -1,14 +1,14 @@
 /**
  * @since 1.0.0
  */
+import type * as Chunk from "@effect/data/Chunk"
+import type * as SortedMap from "@effect/data/SortedMap"
 import * as internal from "@effect/stm/internal_effect_untraced/tPriorityQueue"
 import type * as STM from "@effect/stm/STM"
 import type * as TRef from "@effect/stm/TRef"
 import type * as Option from "@fp-ts/core/Option"
 import type { Predicate } from "@fp-ts/core/Predicate"
 import type * as Order from "@fp-ts/core/typeclass/Order"
-import type * as Chunk from "@effect/data/Chunk"
-import type * as SortedMap from "@effect/data/SortedMap"
 
 /**
  * @since 1.0.0
@@ -107,8 +107,8 @@ export const make: <A>(order: Order.Order<A>) => (...elements: Array<A>) => STM.
  * @category mutations
  */
 export const offer: {
-  <A>(self: TPriorityQueue<A>, value: A): STM.STM<never, never, void>
   <A>(value: A): (self: TPriorityQueue<A>) => STM.STM<never, never, void>
+  <A>(self: TPriorityQueue<A>, value: A): STM.STM<never, never, void>
 } = internal.offer
 
 /**
@@ -118,8 +118,8 @@ export const offer: {
  * @category mutations
  */
 export const offerAll: {
-  <A>(self: TPriorityQueue<A>, values: Iterable<A>): STM.STM<never, never, void>
   <A>(values: Iterable<A>): (self: TPriorityQueue<A>) => STM.STM<never, never, void>
+  <A>(self: TPriorityQueue<A>, values: Iterable<A>): STM.STM<never, never, void>
 } = internal.offerAll
 
 /**
@@ -147,8 +147,8 @@ export const peekOption: <A>(self: TPriorityQueue<A>) => STM.STM<never, never, O
  * @category getters
  */
 export const removeIf: {
-  <A>(self: TPriorityQueue<A>, predicate: Predicate<A>): STM.STM<never, never, void>
   <A>(predicate: Predicate<A>): (self: TPriorityQueue<A>) => STM.STM<never, never, void>
+  <A>(self: TPriorityQueue<A>, predicate: Predicate<A>): STM.STM<never, never, void>
 } = internal.removeIf
 
 /**
@@ -158,8 +158,8 @@ export const removeIf: {
  * @category getters
  */
 export const retainIf: {
-  <A>(self: TPriorityQueue<A>, predicate: Predicate<A>): STM.STM<never, never, void>
   <A>(predicate: Predicate<A>): (self: TPriorityQueue<A>) => STM.STM<never, never, void>
+  <A>(self: TPriorityQueue<A>, predicate: Predicate<A>): STM.STM<never, never, void>
 } = internal.retainIf
 
 /**
@@ -202,8 +202,8 @@ export const takeOption: <A>(self: TPriorityQueue<A>) => STM.STM<never, never, O
  * @category mutations
  */
 export const takeUpTo: {
-  <A>(self: TPriorityQueue<A>, n: number): STM.STM<never, never, Chunk.Chunk<A>>
   (n: number): <A>(self: TPriorityQueue<A>) => STM.STM<never, never, Chunk.Chunk<A>>
+  <A>(self: TPriorityQueue<A>, n: number): STM.STM<never, never, Chunk.Chunk<A>>
 } = internal.takeUpTo
 
 /**

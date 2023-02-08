@@ -1,3 +1,6 @@
+import * as Chunk from "@effect/data/Chunk"
+import type * as Context from "@effect/data/Context"
+import * as MRef from "@effect/data/MutableRef"
 import * as Cause from "@effect/io/Cause"
 import * as Debug from "@effect/io/Debug"
 import * as Effect from "@effect/io/Effect"
@@ -20,9 +23,6 @@ import type * as STM from "@effect/stm/STM"
 import * as Either from "@fp-ts/core/Either"
 import type { LazyArg } from "@fp-ts/core/Function"
 import { constVoid, pipe } from "@fp-ts/core/Function"
-import * as Chunk from "@effect/data/Chunk"
-import type * as Context from "@effect/data/Context"
-import * as MRef from "@effect/data/MutableRef"
 
 /** @internal */
 const STMSymbolKey = "@effect/stm/STM"
@@ -163,17 +163,13 @@ const proto = Object.assign({}, {
   }
 })
 
-/**
- * @internal
- */
+/** @internal */
 export const commit = Debug.methodWithTrace((trace) =>
   <R, E, A>(self: STM.STM<R, E, A>): Effect.Effect<R, E, A> =>
     unsafeAtomically(self, constVoid, constVoid).traced(trace)
 )
 
-/**
- * @internal
- */
+/** @internal */
 export const unsafeAtomically = Debug.methodWithTrace((trace) =>
   <R, E, A>(
     self: STM.STM<R, E, A>,
@@ -580,17 +576,17 @@ export class STMDriver<R, E, A> {
   }
 }
 
-/**
- * @internal
- */
+/** @internal */
 export const catchAll = Debug.dualWithTrace<
+  <E, R1, E1, B>(
+    f: (e: E) => STM.STM<R1, E1, B>
+  ) => <R, A>(
+    self: STM.STM<R, E, A>
+  ) => STM.STM<R1 | R, E1, B | A>,
   <R, A, E, R1, E1, B>(
     self: STM.STM<R, E, A>,
     f: (e: E) => STM.STM<R1, E1, B>
-  ) => STM.STM<R1 | R, E1, B | A>,
-  <E, R1, E1, B>(
-    f: (e: E) => STM.STM<R1, E1, B>
-  ) => <R, A>(self: STM.STM<R, E, A>) => STM.STM<R1 | R, E1, B | A>
+  ) => STM.STM<R1 | R, E1, B | A>
 >(2, (trace, restore) =>
   (self, f) => {
     const stm = Object.create(proto)
@@ -604,23 +600,41 @@ export const catchAll = Debug.dualWithTrace<
     return stm
   })
 
-/**
- * @internal
- */
+/** @internal */
+export const contramapContext = Debug.dualWithTrace<
+  <R0, R>(
+    f: (context: Context.Context<R0>) => Context.Context<R>
+  ) => <E, A>(
+    self: STM.STM<R, E, A>
+  ) => STM.STM<R0, E, A>,
+  <E, A, R0, R>(
+    self: STM.STM<R, E, A>,
+    f: (context: Context.Context<R0>) => Context.Context<R>
+  ) => STM.STM<R0, E, A>
+>(2, (trace, restore) =>
+  (self, f) => {
+    const stm = Object.create(proto)
+    stm._stmTag = OpCodes.OP_PROVIDE
+    stm.stm = self
+    stm.provide = restore(f)
+    stm.trace = void 0
+    if (trace) {
+      return stm.traced(trace)
+    }
+    return stm
+  })
+
+/** @internal */
 export const die = Debug.methodWithTrace((trace) =>
   (defect: unknown): STM.STM<never, never, never> => dieSync(() => defect).traced(trace)
 )
 
-/**
- * @internal
- */
+/** @internal */
 export const dieMessage = Debug.methodWithTrace((trace) =>
   (message: string): STM.STM<never, never, never> => dieSync(() => Cause.RuntimeException(message)).traced(trace)
 )
 
-/**
- * @internal
- */
+/** @internal */
 export const dieSync = Debug.methodWithTrace((trace, restore) =>
   (evaluate: LazyArg<unknown>): STM.STM<never, never, never> => {
     const stm = Object.create(proto)
@@ -634,41 +648,31 @@ export const dieSync = Debug.methodWithTrace((trace, restore) =>
   }
 )
 
-/**
- * @internal
- */
+/** @internal */
 export const effect = Debug.methodWithTrace((trace, restore) =>
   <R, A>(
     f: (journal: Journal.Journal, fiberId: FiberId.FiberId, environment: Context.Context<R>) => A
   ): STM.STM<R, never, A> => withSTMRuntime((_) => succeed(restore(f)(_.journal, _.fiberId, _.getEnv()))).traced(trace)
 )
 
-/**
- * @internal
- */
+/** @internal */
 export const ensuring = Debug.dualWithTrace<
-  <R, E, A, R1, B>(self: STM.STM<R, E, A>, finalizer: STM.STM<R1, never, B>) => STM.STM<R1 | R, E, A>,
-  <R1, B>(finalizer: STM.STM<R1, never, B>) => <R, E, A>(self: STM.STM<R, E, A>) => STM.STM<R1 | R, E, A>
+  <R1, B>(finalizer: STM.STM<R1, never, B>) => <R, E, A>(self: STM.STM<R, E, A>) => STM.STM<R1 | R, E, A>,
+  <R, E, A, R1, B>(self: STM.STM<R, E, A>, finalizer: STM.STM<R1, never, B>) => STM.STM<R1 | R, E, A>
 >(2, (trace) =>
   (self, finalizer) =>
-    pipe(
+    matchSTM(
       self,
-      matchSTM(
-        (e) => pipe(finalizer, zipRight(fail(e))),
-        (a) => pipe(finalizer, zipRight(succeed(a)))
-      )
+      (e) => zipRight(finalizer, fail(e)),
+      (a) => zipRight(finalizer, succeed(a))
     ).traced(trace))
 
-/**
- * @internal
- */
+/** @internal */
 export const fail = Debug.methodWithTrace((trace) =>
   <E>(error: E): STM.STM<never, E, never> => failSync(() => error).traced(trace)
 )
 
-/**
- * @internal
- */
+/** @internal */
 export const failSync = Debug.methodWithTrace((trace, restore) =>
   <E>(evaluate: LazyArg<E>): STM.STM<never, E, never> => {
     const stm = Object.create(proto)
@@ -682,12 +686,10 @@ export const failSync = Debug.methodWithTrace((trace, restore) =>
   }
 )
 
-/**
- * @internal
- */
+/** @internal */
 export const flatMap = Debug.dualWithTrace<
-  <R, E, A, R1, E1, A2>(self: STM.STM<R, E, A>, f: (a: A) => STM.STM<R1, E1, A2>) => STM.STM<R1 | R, E1 | E, A2>,
-  <A, R1, E1, A2>(f: (a: A) => STM.STM<R1, E1, A2>) => <R, E>(self: STM.STM<R, E, A>) => STM.STM<R1 | R, E1 | E, A2>
+  <A, R1, E1, A2>(f: (a: A) => STM.STM<R1, E1, A2>) => <R, E>(self: STM.STM<R, E, A>) => STM.STM<R1 | R, E1 | E, A2>,
+  <R, E, A, R1, E1, A2>(self: STM.STM<R, E, A>, f: (a: A) => STM.STM<R1, E1, A2>) => STM.STM<R1 | R, E1 | E, A2>
 >(2, (trace, restore) =>
   (self, f) => {
     const stm = Object.create(proto)
@@ -701,19 +703,17 @@ export const flatMap = Debug.dualWithTrace<
     return stm
   })
 
-/**
- * @internal
- */
+/** @internal */
 export const matchSTM = Debug.dualWithTrace<
+  <E, R1, E1, A1, A, R2, E2, A2>(
+    onFailure: (e: E) => STM.STM<R1, E1, A1>,
+    onSuccess: (a: A) => STM.STM<R2, E2, A2>
+  ) => <R>(self: STM.STM<R, E, A>) => STM.STM<R1 | R2 | R, E1 | E2, A1 | A2>,
   <R, E, R1, E1, A1, A, R2, E2, A2>(
     self: STM.STM<R, E, A>,
     onFailure: (e: E) => STM.STM<R1, E1, A1>,
     onSuccess: (a: A) => STM.STM<R2, E2, A2>
-  ) => STM.STM<R1 | R2 | R, E1 | E2, A1 | A2>,
-  <E, R1, E1, A1, A, R2, E2, A2>(
-    onFailure: (e: E) => STM.STM<R1, E1, A1>,
-    onSuccess: (a: A) => STM.STM<R2, E2, A2>
-  ) => <R>(self: STM.STM<R, E, A>) => STM.STM<R1 | R2 | R, E1 | E2, A1 | A2>
+  ) => STM.STM<R1 | R2 | R, E1 | E2, A1 | A2>
 >(3, (trace, restore) =>
   <R, E, R1, E1, A1, A, R2, E2, A2>(
     self: STM.STM<R, E, A>,
@@ -736,9 +736,7 @@ export const matchSTM = Debug.dualWithTrace<
       })
     ).traced(trace))
 
-/**
- * @internal
- */
+/** @internal */
 export const interrupt = Debug.methodWithTrace((trace) =>
   (): STM.STM<never, never, never> =>
     withSTMRuntime((_) => {
@@ -753,10 +751,8 @@ export const interrupt = Debug.methodWithTrace((trace) =>
     })
 )
 
-/**
- * @internal
- */
-export const interruptWith = Debug.methodWithTrace((trace) =>
+/** @internal */
+export const interruptAs = Debug.methodWithTrace((trace) =>
   (fiberId: FiberId.FiberId): STM.STM<never, never, never> => {
     const stm = Object.create(proto)
     stm._stmTag = OpCodes.OP_INTERRUPT
@@ -769,20 +765,23 @@ export const interruptWith = Debug.methodWithTrace((trace) =>
   }
 )
 
-/**
- * @internal
- */
+/** @internal */
 export const map = Debug.dualWithTrace<
-  <R, E, A, B>(self: STM.STM<R, E, A>, f: (a: A) => B) => STM.STM<R, E, B>,
-  <A, B>(f: (a: A) => B) => <R, E>(self: STM.STM<R, E, A>) => STM.STM<R, E, B>
+  <A, B>(f: (a: A) => B) => <R, E>(self: STM.STM<R, E, A>) => STM.STM<R, E, B>,
+  <R, E, A, B>(self: STM.STM<R, E, A>, f: (a: A) => B) => STM.STM<R, E, B>
 >(2, (trace, resume) => (self, f) => pipe(self, flatMap((a) => sync(() => resume(f)(a)))).traced(trace))
 
-/**
- * @internal
- */
+/** @internal */
 export const orTry = Debug.dualWithTrace<
-  <R, E, A, R1, E1, A1>(self: STM.STM<R, E, A>, that: () => STM.STM<R1, E1, A1>) => STM.STM<R1 | R, E1 | E, A1 | A>,
-  <R1, E1, A1>(that: () => STM.STM<R1, E1, A1>) => <R, E, A>(self: STM.STM<R, E, A>) => STM.STM<R1 | R, E1 | E, A1 | A>
+  <R1, E1, A1>(
+    that: LazyArg<STM.STM<R1, E1, A1>>
+  ) => <R, E, A>(
+    self: STM.STM<R, E, A>
+  ) => STM.STM<R1 | R, E1 | E, A1 | A>,
+  <R, E, A, R1, E1, A1>(
+    self: STM.STM<R, E, A>,
+    that: LazyArg<STM.STM<R1, E1, A1>>
+  ) => STM.STM<R1 | R, E1 | E, A1 | A>
 >(2, (trace, restore) =>
   (self, that) => {
     const stm = Object.create(proto)
@@ -796,9 +795,7 @@ export const orTry = Debug.dualWithTrace<
     return stm
   })
 
-/**
- * @internal
- */
+/** @internal */
 export const retry = Debug.methodWithTrace((trace) =>
   (): STM.STM<never, never, never> => {
     const stm = Object.create(proto)
@@ -811,9 +808,7 @@ export const retry = Debug.methodWithTrace((trace) =>
   }
 )
 
-/**
- * @internal
- */
+/** @internal */
 export const succeed = Debug.methodWithTrace((trace) =>
   <A>(value: A): STM.STM<never, never, A> => {
     const stm = Object.create(proto)
@@ -827,9 +822,7 @@ export const succeed = Debug.methodWithTrace((trace) =>
   }
 )
 
-/**
- * @internal
- */
+/** @internal */
 export const sync = Debug.methodWithTrace((trace, restore) =>
   <A>(evaluate: () => A): STM.STM<never, never, A> => {
     const stm = Object.create(proto)
@@ -843,30 +836,7 @@ export const sync = Debug.methodWithTrace((trace, restore) =>
   }
 )
 
-/**
- * @internal
- */
-export const contramapContext = Debug.dualWithTrace<
-  <E, A, R0, R>(self: STM.STM<R, E, A>, f: (context: Context.Context<R0>) => Context.Context<R>) => STM.STM<R0, E, A>,
-  <R0, R>(
-    f: (context: Context.Context<R0>) => Context.Context<R>
-  ) => <E, A>(self: STM.STM<R, E, A>) => STM.STM<R0, E, A>
->(2, (trace, restore) =>
-  (self, f) => {
-    const stm = Object.create(proto)
-    stm._stmTag = OpCodes.OP_PROVIDE
-    stm.stm = self
-    stm.provide = restore(f)
-    stm.trace = void 0
-    if (trace) {
-      return stm.traced(trace)
-    }
-    return stm
-  })
-
-/**
- * @internal
- */
+/** @internal */
 export const withSTMRuntime = Debug.methodWithTrace((trace, restore) =>
   <R, E, A>(
     f: (runtime: STMDriver<unknown, unknown, unknown>) => STM.STM<R, E, A>
@@ -882,48 +852,44 @@ export const withSTMRuntime = Debug.methodWithTrace((trace, restore) =>
   }
 )
 
-/**
- * @internal
- */
+/** @internal */
 export const zip = Debug.dualWithTrace<
+  <R1, E1, A1>(
+    that: STM.STM<R1, E1, A1>
+  ) => <R, E, A>(
+    self: STM.STM<R, E, A>
+  ) => STM.STM<R1 | R, E1 | E, readonly [A, A1]>,
   <R, E, A, R1, E1, A1>(
     self: STM.STM<R, E, A>,
     that: STM.STM<R1, E1, A1>
-  ) => STM.STM<R1 | R, E1 | E, readonly [A, A1]>,
-  <R1, E1, A1>(
-    that: STM.STM<R1, E1, A1>
-  ) => <R, E, A>(self: STM.STM<R, E, A>) => STM.STM<R1 | R, E1 | E, readonly [A, A1]>
+  ) => STM.STM<R1 | R, E1 | E, readonly [A, A1]>
 >(2, (trace) => (self, that) => pipe(self, zipWith(that, (a, a1) => [a, a1] as const)).traced(trace))
 
-/**
- * @internal
- */
+/** @internal */
 export const zipLeft = Debug.dualWithTrace<
-  <R, E, A, R1, E1, A1>(self: STM.STM<R, E, A>, that: STM.STM<R1, E1, A1>) => STM.STM<R1 | R, E1 | E, A>,
-  <R1, E1, A1>(that: STM.STM<R1, E1, A1>) => <R, E, A>(self: STM.STM<R, E, A>) => STM.STM<R1 | R, E1 | E, A>
+  <R1, E1, A1>(that: STM.STM<R1, E1, A1>) => <R, E, A>(self: STM.STM<R, E, A>) => STM.STM<R1 | R, E1 | E, A>,
+  <R, E, A, R1, E1, A1>(self: STM.STM<R, E, A>, that: STM.STM<R1, E1, A1>) => STM.STM<R1 | R, E1 | E, A>
 >(2, (trace) => (self, that) => pipe(self, flatMap((a) => pipe(that, map(() => a)))).traced(trace))
 
-/**
- * @internal
- */
+/** @internal */
 export const zipRight = Debug.dualWithTrace<
-  <R, E, A, R1, E1, A1>(self: STM.STM<R, E, A>, that: STM.STM<R1, E1, A1>) => STM.STM<R1 | R, E1 | E, A1>,
-  <R1, E1, A1>(that: STM.STM<R1, E1, A1>) => <R, E, A>(self: STM.STM<R, E, A>) => STM.STM<R1 | R, E1 | E, A1>
+  <R1, E1, A1>(that: STM.STM<R1, E1, A1>) => <R, E, A>(self: STM.STM<R, E, A>) => STM.STM<R1 | R, E1 | E, A1>,
+  <R, E, A, R1, E1, A1>(self: STM.STM<R, E, A>, that: STM.STM<R1, E1, A1>) => STM.STM<R1 | R, E1 | E, A1>
 >(2, (trace) => (self, that) => pipe(self, flatMap(() => that)).traced(trace))
 
-/**
- * @internal
- */
+/** @internal */
 export const zipWith = Debug.dualWithTrace<
+  <R1, E1, A1, A, A2>(
+    that: STM.STM<R1, E1, A1>,
+    f: (a: A, b: A1) => A2
+  ) => <R, E>(
+    self: STM.STM<R, E, A>
+  ) => STM.STM<R1 | R, E1 | E, A2>,
   <R, E, R1, E1, A1, A, A2>(
     self: STM.STM<R, E, A>,
     that: STM.STM<R1, E1, A1>,
     f: (a: A, b: A1) => A2
-  ) => STM.STM<R1 | R, E1 | E, A2>,
-  <R1, E1, A1, A, A2>(
-    that: STM.STM<R1, E1, A1>,
-    f: (a: A, b: A1) => A2
-  ) => <R, E>(self: STM.STM<R, E, A>) => STM.STM<R1 | R, E1 | E, A2>
+  ) => STM.STM<R1 | R, E1 | E, A2>
 >(
   3,
   (trace, restore) =>

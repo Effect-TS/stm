@@ -75,8 +75,8 @@ export const get: <A>(self: TRef<A>) => STM.STM<never, never, A> = internal.get
  * @category mutations
  */
 export const getAndSet: {
-  <A>(self: TRef<A>, value: A): STM.STM<never, never, A>
   <A>(value: A): (self: TRef<A>) => STM.STM<never, never, A>
+  <A>(self: TRef<A>, value: A): STM.STM<never, never, A>
 } = internal.getAndSet
 
 /**
@@ -84,8 +84,8 @@ export const getAndSet: {
  * @category mutations
  */
 export const getAndUpdate: {
-  <A>(self: TRef<A>, f: (a: A) => A): STM.STM<never, never, A>
   <A>(f: (a: A) => A): (self: TRef<A>) => STM.STM<never, never, A>
+  <A>(self: TRef<A>, f: (a: A) => A): STM.STM<never, never, A>
 } = internal.getAndUpdate
 
 /**
@@ -93,8 +93,8 @@ export const getAndUpdate: {
  * @category mutations
  */
 export const getAndUpdateSome: {
-  <A>(self: TRef<A>, f: (a: A) => Option.Option<A>): STM.STM<never, never, A>
   <A>(f: (a: A) => Option.Option<A>): (self: TRef<A>) => STM.STM<never, never, A>
+  <A>(self: TRef<A>, f: (a: A) => Option.Option<A>): STM.STM<never, never, A>
 } = internal.getAndUpdateSome
 
 /**
@@ -108,8 +108,8 @@ export const make: <A>(value: A) => STM.STM<never, never, TRef<A>> = internal.ma
  * @category mutations
  */
 export const modify: {
-  <A, B>(self: TRef<A>, f: (a: A) => readonly [B, A]): STM.STM<never, never, B>
   <A, B>(f: (a: A) => readonly [B, A]): (self: TRef<A>) => STM.STM<never, never, B>
+  <A, B>(self: TRef<A>, f: (a: A) => readonly [B, A]): STM.STM<never, never, B>
 } = internal.modify
 
 /**
@@ -117,8 +117,8 @@ export const modify: {
  * @category mutations
  */
 export const modifySome: {
-  <A, B>(self: TRef<A>, fallback: B, f: (a: A) => Option.Option<readonly [B, A]>): STM.STM<never, never, B>
   <A, B>(fallback: B, f: (a: A) => Option.Option<readonly [B, A]>): (self: TRef<A>) => STM.STM<never, never, B>
+  <A, B>(self: TRef<A>, fallback: B, f: (a: A) => Option.Option<readonly [B, A]>): STM.STM<never, never, B>
 } = internal.modifySome
 
 /**
@@ -126,8 +126,8 @@ export const modifySome: {
  * @category mutations
  */
 export const set: {
-  <A>(self: TRef<A>, value: A): STM.STM<never, never, void>
   <A>(value: A): (self: TRef<A>) => STM.STM<never, never, void>
+  <A>(self: TRef<A>, value: A): STM.STM<never, never, void>
 } = internal.set
 
 /**
@@ -135,8 +135,8 @@ export const set: {
  * @category mutations
  */
 export const setAndGet: {
-  <A>(self: TRef<A>, value: A): STM.STM<never, never, A>
   <A>(value: A): (self: TRef<A>) => STM.STM<never, never, A>
+  <A>(self: TRef<A>, value: A): STM.STM<never, never, A>
 } = internal.setAndGet
 
 /**
@@ -144,8 +144,8 @@ export const setAndGet: {
  * @category mutations
  */
 export const update: {
-  <A>(self: TRef<A>, f: (a: A) => A): STM.STM<never, never, void>
   <A>(f: (a: A) => A): (self: TRef<A>) => STM.STM<never, never, void>
+  <A>(self: TRef<A>, f: (a: A) => A): STM.STM<never, never, void>
 } = internal.update
 
 /**
@@ -153,8 +153,8 @@ export const update: {
  * @category mutations
  */
 export const updateAndGet: {
-  <A>(self: TRef<A>, f: (a: A) => A): STM.STM<never, never, A>
   <A>(f: (a: A) => A): (self: TRef<A>) => STM.STM<never, never, A>
+  <A>(self: TRef<A>, f: (a: A) => A): STM.STM<never, never, A>
 } = internal.updateAndGet
 
 /**
@@ -162,8 +162,8 @@ export const updateAndGet: {
  * @category mutations
  */
 export const updateSome: {
-  <A>(self: TRef<A>, f: (a: A) => Option.Option<A>): STM.STM<never, never, void>
   <A>(f: (a: A) => Option.Option<A>): (self: TRef<A>) => STM.STM<never, never, void>
+  <A>(self: TRef<A>, f: (a: A) => Option.Option<A>): STM.STM<never, never, void>
 } = internal.updateSome
 
 /**
@@ -171,6 +171,6 @@ export const updateSome: {
  * @category mutations
  */
 export const updateSomeAndGet: {
-  <A>(self: TRef<A>, f: (a: A) => Option.Option<A>): STM.STM<never, never, A>
   <A>(f: (a: A) => Option.Option<A>): (self: TRef<A>) => STM.STM<never, never, A>
+  <A>(self: TRef<A>, f: (a: A) => Option.Option<A>): STM.STM<never, never, A>
 } = internal.updateSomeAndGet
