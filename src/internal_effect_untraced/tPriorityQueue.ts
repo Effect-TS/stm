@@ -1,3 +1,5 @@
+import * as Chunk from "@effect/data/Chunk"
+import * as SortedMap from "@effect/data/SortedMap"
 import * as Debug from "@effect/io/Debug"
 import * as core from "@effect/stm/internal_effect_untraced/core"
 import * as tRef from "@effect/stm/internal_effect_untraced/tRef"
@@ -9,8 +11,6 @@ import * as Option from "@fp-ts/core/Option"
 import type { Predicate } from "@fp-ts/core/Predicate"
 import * as ReadonlyArray from "@fp-ts/core/ReadonlyArray"
 import type * as Order from "@fp-ts/core/typeclass/Order"
-import * as Chunk from "@effect/data/Chunk"
-import * as SortedMap from "@effect/data/SortedMap"
 
 /** @internal */
 const TPriorityQueueSymbolKey = "@effect/stm/TPriorityQueue"
@@ -87,24 +87,25 @@ export const make = Debug.methodWithTrace((trace) =>
 
 /** @internal */
 export const offer = Debug.dualWithTrace<
-  <A>(self: TPriorityQueue.TPriorityQueue<A>, value: A) => STM.STM<never, never, void>,
-  <A>(value: A) => (self: TPriorityQueue.TPriorityQueue<A>) => STM.STM<never, never, void>
+  <A>(value: A) => (self: TPriorityQueue.TPriorityQueue<A>) => STM.STM<never, never, void>,
+  <A>(self: TPriorityQueue.TPriorityQueue<A>, value: A) => STM.STM<never, never, void>
 >(2, (trace) =>
   (self, value) =>
     tRef.update(self.ref, (map) =>
       SortedMap.set(
         map,
         value,
-        pipe(
+        Option.match(
           SortedMap.get(map, value),
-          Option.match(() => ReadonlyArray.of(value), ReadonlyArray.prepend(value))
+          () => ReadonlyArray.of(value),
+          ReadonlyArray.prepend(value)
         )
       )).traced(trace))
 
 /** @internal */
 export const offerAll = Debug.dualWithTrace<
-  <A>(self: TPriorityQueue.TPriorityQueue<A>, values: Iterable<A>) => STM.STM<never, never, void>,
-  <A>(values: Iterable<A>) => (self: TPriorityQueue.TPriorityQueue<A>) => STM.STM<never, never, void>
+  <A>(values: Iterable<A>) => (self: TPriorityQueue.TPriorityQueue<A>) => STM.STM<never, never, void>,
+  <A>(self: TPriorityQueue.TPriorityQueue<A>, values: Iterable<A>) => STM.STM<never, never, void>
 >(2, (trace) =>
   (self, values) =>
     tRef.update(self.ref, (map) =>
@@ -113,9 +114,10 @@ export const offerAll = Debug.dualWithTrace<
           SortedMap.set(
             map,
             value,
-            pipe(
+            Option.match(
               SortedMap.get(map, value),
-              Option.match(() => ReadonlyArray.of(value), ReadonlyArray.prepend(value))
+              () => ReadonlyArray.of(value),
+              ReadonlyArray.prepend(value)
             )
           ),
         map
@@ -126,9 +128,10 @@ export const peek = Debug.methodWithTrace((trace) =>
   <A>(self: TPriorityQueue.TPriorityQueue<A>): STM.STM<never, never, A> =>
     core.withSTMRuntime((runtime) => {
       const map = tRef.unsafeGet(self.ref, runtime.journal)
-      return pipe(
+      return Option.match(
         SortedMap.headOption(map),
-        Option.match(core.retry, (elements) => core.succeed(elements[0]))
+        core.retry,
+        (elements) => core.succeed(elements[0])
       )
     }).traced(trace)
 )
@@ -137,21 +140,21 @@ export const peek = Debug.methodWithTrace((trace) =>
 export const peekOption = Debug.methodWithTrace((trace) =>
   <A>(self: TPriorityQueue.TPriorityQueue<A>): STM.STM<never, never, Option.Option<A>> =>
     tRef.modify(self.ref, (map) => [
-      pipe(SortedMap.headOption(map), Option.map((elements) => elements[0])),
+      Option.map(SortedMap.headOption(map), (elements) => elements[0]),
       map
     ]).traced(trace)
 )
 
 /** @internal */
 export const removeIf = Debug.dualWithTrace<
-  <A>(self: TPriorityQueue.TPriorityQueue<A>, predicate: Predicate<A>) => STM.STM<never, never, void>,
-  <A>(predicate: Predicate<A>) => (self: TPriorityQueue.TPriorityQueue<A>) => STM.STM<never, never, void>
+  <A>(predicate: Predicate<A>) => (self: TPriorityQueue.TPriorityQueue<A>) => STM.STM<never, never, void>,
+  <A>(self: TPriorityQueue.TPriorityQueue<A>, predicate: Predicate<A>) => STM.STM<never, never, void>
 >(2, (trace, restore) => (self, predicate) => retainIf(self, (a) => !restore(predicate)(a)).traced(trace))
 
 /** @internal */
 export const retainIf = Debug.dualWithTrace<
-  <A>(self: TPriorityQueue.TPriorityQueue<A>, predicate: Predicate<A>) => STM.STM<never, never, void>,
-  <A>(predicate: Predicate<A>) => (self: TPriorityQueue.TPriorityQueue<A>) => STM.STM<never, never, void>
+  <A>(predicate: Predicate<A>) => (self: TPriorityQueue.TPriorityQueue<A>) => STM.STM<never, never, void>,
+  <A>(self: TPriorityQueue.TPriorityQueue<A>, predicate: Predicate<A>) => STM.STM<never, never, void>
 >(
   2,
   (trace, restore) =>
@@ -160,7 +163,7 @@ export const retainIf = Debug.dualWithTrace<
         self.ref,
         (map) =>
           SortedMap.reduceWithIndex(map, SortedMap.empty(SortedMap.getOrder(map)), (map, value, key) => {
-            const filtered: ReadonlyArray<A> = pipe(value, ReadonlyArray.filter(restore(predicate)))
+            const filtered: ReadonlyArray<A> = ReadonlyArray.filter(value, restore(predicate))
             return filtered.length > 0 ?
               SortedMap.set(map, key, filtered as [A, ...Array<A>]) :
               SortedMap.remove(map, key)
@@ -242,8 +245,8 @@ export const takeOption = Debug.methodWithTrace((trace) =>
 
 /** @internal */
 export const takeUpTo = Debug.dualWithTrace<
-  <A>(self: TPriorityQueue.TPriorityQueue<A>, n: number) => STM.STM<never, never, Chunk.Chunk<A>>,
-  (n: number) => <A>(self: TPriorityQueue.TPriorityQueue<A>) => STM.STM<never, never, Chunk.Chunk<A>>
+  (n: number) => <A>(self: TPriorityQueue.TPriorityQueue<A>) => STM.STM<never, never, Chunk.Chunk<A>>,
+  <A>(self: TPriorityQueue.TPriorityQueue<A>, n: number) => STM.STM<never, never, Chunk.Chunk<A>>
 >(2, (trace) =>
   <A>(self: TPriorityQueue.TPriorityQueue<A>, n: number) =>
     tRef.modify(self.ref, (map) => {

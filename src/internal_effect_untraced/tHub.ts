@@ -1,3 +1,5 @@
+import * as Chunk from "@effect/data/Chunk"
+import * as HashSet from "@effect/data/HashSet"
 import * as Debug from "@effect/io/Debug"
 import * as Effect from "@effect/io/Effect"
 import type * as Scope from "@effect/io/Scope"
@@ -12,8 +14,6 @@ import type * as TQueue from "@effect/stm/TQueue"
 import type * as TRef from "@effect/stm/TRef"
 import { identity, pipe } from "@fp-ts/core/Function"
 import * as Option from "@fp-ts/core/Option"
-import * as Chunk from "@effect/data/Chunk"
-import * as HashSet from "@effect/data/HashSet"
 
 /** @internal */
 const THubSymbolKey = "@effect/stm/THub"
@@ -88,7 +88,7 @@ class THubImpl<A> implements THub.THub<A> {
       core.withSTMRuntime((runtime) => {
         const currentPublisherTail = tRef.unsafeGet(this.publisherTail, runtime.journal)
         if (currentPublisherTail === undefined) {
-          return core.interruptWith(runtime.fiberId)
+          return core.interruptAs(runtime.fiberId)
         }
         const currentSubscriberCount = tRef.unsafeGet(this.subscriberCount, runtime.journal)
         if (currentSubscriberCount === 0) {
@@ -167,7 +167,7 @@ class THubImpl<A> implements THub.THub<A> {
       core.withSTMRuntime((runtime) => {
         const currentPublisherTail = tRef.unsafeGet(this.publisherTail, runtime.journal)
         if (currentPublisherTail === undefined) {
-          return core.interruptWith(runtime.fiberId)
+          return core.interruptAs(runtime.fiberId)
         }
         return core.succeed(tRef.unsafeGet(this.hubSize, runtime.journal))
       }).traced(trace)
@@ -239,7 +239,7 @@ class THubSubscriptionImpl<A> implements TQueue.TDequeue<A> {
       core.withSTMRuntime((runtime) => {
         let currentSubscriberHead = tRef.unsafeGet(this.subscriberHead, runtime.journal)
         if (currentSubscriberHead === undefined) {
-          return core.interruptWith(runtime.fiberId)
+          return core.interruptAs(runtime.fiberId)
         }
         let value: A | undefined = undefined
         let loop = true
@@ -267,7 +267,7 @@ class THubSubscriptionImpl<A> implements TQueue.TDequeue<A> {
       core.withSTMRuntime((runtime) => {
         let currentSubscriberHead = tRef.unsafeGet(this.subscriberHead, runtime.journal)
         if (currentSubscriberHead === undefined) {
-          return core.interruptWith(runtime.fiberId)
+          return core.interruptAs(runtime.fiberId)
         }
         let value: Option.Option<A> = Option.none()
         let loop = true
@@ -297,7 +297,7 @@ class THubSubscriptionImpl<A> implements TQueue.TDequeue<A> {
       core.withSTMRuntime((runtime) => {
         let currentSubscriberHead = tRef.unsafeGet(this.subscriberHead, runtime.journal)
         if (currentSubscriberHead === undefined) {
-          return core.interruptWith(runtime.fiberId)
+          return core.interruptAs(runtime.fiberId)
         }
         let loop = true
         let size = 0
@@ -372,7 +372,7 @@ class THubSubscriptionImpl<A> implements TQueue.TDequeue<A> {
       core.withSTMRuntime((runtime) => {
         let currentSubscriberHead = tRef.unsafeGet(this.subscriberHead, runtime.journal)
         if (currentSubscriberHead === undefined) {
-          return core.interruptWith(runtime.fiberId)
+          return core.interruptAs(runtime.fiberId)
         }
         let value: A | undefined = undefined
         let loop = true
@@ -420,7 +420,7 @@ class THubSubscriptionImpl<A> implements TQueue.TDequeue<A> {
       core.withSTMRuntime((runtime) => {
         let currentSubscriberHead = tRef.unsafeGet(this.subscriberHead, runtime.journal)
         if (currentSubscriberHead === undefined) {
-          return core.interruptWith(runtime.fiberId)
+          return core.interruptAs(runtime.fiberId)
         }
         const builder: Array<A> = []
         let n = 0
@@ -575,14 +575,14 @@ export const isShutdown = Debug.methodWithTrace((trace) =>
 
 /** @internal */
 export const publish = Debug.dualWithTrace<
-  <A>(self: THub.THub<A>, value: A) => STM.STM<never, never, boolean>,
-  <A>(value: A) => (self: THub.THub<A>) => STM.STM<never, never, boolean>
+  <A>(value: A) => (self: THub.THub<A>) => STM.STM<never, never, boolean>,
+  <A>(self: THub.THub<A>, value: A) => STM.STM<never, never, boolean>
 >(2, (trace) => (self, value) => self.offer(value).traced(trace))
 
 /** @internal */
 export const publishAll = Debug.dualWithTrace<
-  <A>(self: THub.THub<A>, iterable: Iterable<A>) => STM.STM<never, never, boolean>,
-  <A>(iterable: Iterable<A>) => (self: THub.THub<A>) => STM.STM<never, never, boolean>
+  <A>(iterable: Iterable<A>) => (self: THub.THub<A>) => STM.STM<never, never, boolean>,
+  <A>(self: THub.THub<A>, iterable: Iterable<A>) => STM.STM<never, never, boolean>
 >(2, (trace) => (self, iterable) => self.offerAll(iterable).traced(trace))
 
 /** @internal */

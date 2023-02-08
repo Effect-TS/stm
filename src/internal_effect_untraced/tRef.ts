@@ -6,7 +6,7 @@ import type * as TxnId from "@effect/stm/internal_effect_untraced/stm/txnId"
 import * as Versioned from "@effect/stm/internal_effect_untraced/stm/versioned"
 import type * as STM from "@effect/stm/STM"
 import type * as TRef from "@effect/stm/TRef"
-import { pipe } from "@fp-ts/core/Function"
+import { dual, pipe } from "@fp-ts/core/Function"
 import * as Option from "@fp-ts/core/Option"
 
 /** @internal */
@@ -43,9 +43,7 @@ export class TRefImpl<A> implements TRef.TRef<A> {
   }
 }
 
-/**
- * @internal
- */
+/** @internal */
 export const make = Debug.methodWithTrace((trace) =>
   <A>(value: A): STM.STM<never, never, TRef.TRef<A>> =>
     core.effect<never, TRef.TRef<A>>((journal) => {
@@ -55,17 +53,13 @@ export const make = Debug.methodWithTrace((trace) =>
     }).traced(trace)
 )
 
-/**
- * @internal
- */
+/** @internal */
 export const get = Debug.methodWithTrace((trace) => <A>(self: TRef.TRef<A>) => self.modify((a) => [a, a]).traced(trace))
 
-/**
- * @internal
- */
+/** @internal */
 export const set = Debug.dualWithTrace<
-  <A>(self: TRef.TRef<A>, value: A) => STM.STM<never, never, void>,
-  <A>(value: A) => (self: TRef.TRef<A>) => STM.STM<never, never, void>
+  <A>(value: A) => (self: TRef.TRef<A>) => STM.STM<never, never, void>,
+  <A>(self: TRef.TRef<A>, value: A) => STM.STM<never, never, void>
 >(
   2,
   (trace) =>
@@ -73,28 +67,22 @@ export const set = Debug.dualWithTrace<
       self.modify((): [void, A] => [void 0, value]).traced(trace)
 )
 
-/**
- * @internal
- */
+/** @internal */
 export const getAndSet = Debug.dualWithTrace<
-  <A>(self: TRef.TRef<A>, value: A) => STM.STM<never, never, A>,
-  <A>(value: A) => (self: TRef.TRef<A>) => STM.STM<never, never, A>
+  <A>(value: A) => (self: TRef.TRef<A>) => STM.STM<never, never, A>,
+  <A>(self: TRef.TRef<A>, value: A) => STM.STM<never, never, A>
 >(2, (trace) => (self, value) => self.modify((a) => [a, value]).traced(trace))
 
-/**
- * @internal
- */
+/** @internal */
 export const getAndUpdate = Debug.dualWithTrace<
-  <A>(self: TRef.TRef<A>, f: (a: A) => A) => STM.STM<never, never, A>,
-  <A>(f: (a: A) => A) => (self: TRef.TRef<A>) => STM.STM<never, never, A>
+  <A>(f: (a: A) => A) => (self: TRef.TRef<A>) => STM.STM<never, never, A>,
+  <A>(self: TRef.TRef<A>, f: (a: A) => A) => STM.STM<never, never, A>
 >(2, (trace, restore) => (self, f) => self.modify((a) => [a, restore(f)(a)]).traced(trace))
 
-/**
- * @internal
- */
+/** @internal */
 export const getAndUpdateSome = Debug.dualWithTrace<
-  <A>(self: TRef.TRef<A>, f: (a: A) => Option.Option<A>) => STM.STM<never, never, A>,
-  <A>(f: (a: A) => Option.Option<A>) => (self: TRef.TRef<A>) => STM.STM<never, never, A>
+  <A>(f: (a: A) => Option.Option<A>) => (self: TRef.TRef<A>) => STM.STM<never, never, A>,
+  <A>(self: TRef.TRef<A>, f: (a: A) => Option.Option<A>) => STM.STM<never, never, A>
 >(2, (trace, restore) =>
   (self, f) =>
     self.modify((a) =>
@@ -104,28 +92,22 @@ export const getAndUpdateSome = Debug.dualWithTrace<
       )
     ).traced(trace))
 
-/**
- * @internal
- */
+/** @internal */
 export const setAndGet = Debug.dualWithTrace<
-  <A>(self: TRef.TRef<A>, value: A) => STM.STM<never, never, A>,
-  <A>(value: A) => (self: TRef.TRef<A>) => STM.STM<never, never, A>
+  <A>(value: A) => (self: TRef.TRef<A>) => STM.STM<never, never, A>,
+  <A>(self: TRef.TRef<A>, value: A) => STM.STM<never, never, A>
 >(2, (trace) => (self, value) => self.modify(() => [value, value]).traced(trace))
 
-/**
- * @internal
- */
+/** @internal */
 export const modify = Debug.dualWithTrace<
-  <A, B>(self: TRef.TRef<A>, f: (a: A) => readonly [B, A]) => STM.STM<never, never, B>,
-  <A, B>(f: (a: A) => readonly [B, A]) => (self: TRef.TRef<A>) => STM.STM<never, never, B>
+  <A, B>(f: (a: A) => readonly [B, A]) => (self: TRef.TRef<A>) => STM.STM<never, never, B>,
+  <A, B>(self: TRef.TRef<A>, f: (a: A) => readonly [B, A]) => STM.STM<never, never, B>
 >(2, (trace, restore) => (self, f) => self.modify(restore(f)).traced(trace))
 
-/**
- * @internal
- */
+/** @internal */
 export const modifySome = Debug.dualWithTrace<
-  <A, B>(self: TRef.TRef<A>, fallback: B, f: (a: A) => Option.Option<readonly [B, A]>) => STM.STM<never, never, B>,
-  <A, B>(fallback: B, f: (a: A) => Option.Option<readonly [B, A]>) => (self: TRef.TRef<A>) => STM.STM<never, never, B>
+  <A, B>(fallback: B, f: (a: A) => Option.Option<readonly [B, A]>) => (self: TRef.TRef<A>) => STM.STM<never, never, B>,
+  <A, B>(self: TRef.TRef<A>, fallback: B, f: (a: A) => Option.Option<readonly [B, A]>) => STM.STM<never, never, B>
 >(3, (trace, restore) =>
   (self, fallback, f) =>
     self.modify((a) =>
@@ -138,20 +120,16 @@ export const modifySome = Debug.dualWithTrace<
       )
     ).traced(trace))
 
-/**
- * @internal
- */
+/** @internal */
 export const update = Debug.dualWithTrace<
-  <A>(self: TRef.TRef<A>, f: (a: A) => A) => STM.STM<never, never, void>,
-  <A>(f: (a: A) => A) => (self: TRef.TRef<A>) => STM.STM<never, never, void>
+  <A>(f: (a: A) => A) => (self: TRef.TRef<A>) => STM.STM<never, never, void>,
+  <A>(self: TRef.TRef<A>, f: (a: A) => A) => STM.STM<never, never, void>
 >(2, (trace, restore) => (self, f) => self.modify((a) => [void 0, restore(f)(a)]).traced(trace))
 
-/**
- * @internal
- */
+/** @internal */
 export const updateAndGet = Debug.dualWithTrace<
-  <A>(self: TRef.TRef<A>, f: (a: A) => A) => STM.STM<never, never, A>,
-  <A>(f: (a: A) => A) => (self: TRef.TRef<A>) => STM.STM<never, never, A>
+  <A>(f: (a: A) => A) => (self: TRef.TRef<A>) => STM.STM<never, never, A>,
+  <A>(self: TRef.TRef<A>, f: (a: A) => A) => STM.STM<never, never, A>
 >(2, (trace, restore) =>
   (self, f) =>
     self.modify((a) => {
@@ -159,24 +137,20 @@ export const updateAndGet = Debug.dualWithTrace<
       return [b, b]
     }).traced(trace))
 
-/**
- * @internal
- */
+/** @internal */
 export const updateSome = Debug.dualWithTrace<
-  <A>(self: TRef.TRef<A>, f: (a: A) => Option.Option<A>) => STM.STM<never, never, void>,
-  <A>(f: (a: A) => Option.Option<A>) => (self: TRef.TRef<A>) => STM.STM<never, never, void>
+  <A>(f: (a: A) => Option.Option<A>) => (self: TRef.TRef<A>) => STM.STM<never, never, void>,
+  <A>(self: TRef.TRef<A>, f: (a: A) => Option.Option<A>) => STM.STM<never, never, void>
 >(
   2,
   (trace, restore) =>
     (self, f) => self.modify((a) => [void 0, pipe(restore(f)(a), Option.match(() => a, (b) => b))]).traced(trace)
 )
 
-/**
- * @internal
- */
+/** @internal */
 export const updateSomeAndGet = Debug.dualWithTrace<
-  <A>(self: TRef.TRef<A>, f: (a: A) => Option.Option<A>) => STM.STM<never, never, A>,
-  <A>(f: (a: A) => Option.Option<A>) => (self: TRef.TRef<A>) => STM.STM<never, never, A>
+  <A>(f: (a: A) => Option.Option<A>) => (self: TRef.TRef<A>) => STM.STM<never, never, A>,
+  <A>(self: TRef.TRef<A>, f: (a: A) => Option.Option<A>) => STM.STM<never, never, A>
 >(
   2,
   (trace, restore) =>
@@ -195,17 +169,20 @@ const getOrMakeEntry = <A>(self: TRef.TRef<A>, journal: Journal.Journal): Entry.
 
 /** @internal */
 export const unsafeGet: {
-  <A>(self: TRef.TRef<A>, journal: Journal.Journal): A
   (journal: Journal.Journal): <A>(self: TRef.TRef<A>) => A
-} = Debug.dual<
-  <A>(self: TRef.TRef<A>, journal: Journal.Journal) => A,
-  (journal: Journal.Journal) => <A>(self: TRef.TRef<A>) => A
+  <A>(self: TRef.TRef<A>, journal: Journal.Journal): A
+} = dual<
+  (journal: Journal.Journal) => <A>(self: TRef.TRef<A>) => A,
+  <A>(self: TRef.TRef<A>, journal: Journal.Journal) => A
 >(2, <A>(self: TRef.TRef<A>, journal: Journal.Journal) => Entry.unsafeGet(getOrMakeEntry(self, journal)) as A)
 
 /** @internal */
-export const unsafeSet = Debug.dual<
-  <A>(self: TRef.TRef<A>, value: A, journal: Journal.Journal) => void,
-  <A>(value: A, journal: Journal.Journal) => (self: TRef.TRef<A>) => void
+export const unsafeSet: {
+  <A>(value: A, journal: Journal.Journal): (self: TRef.TRef<A>) => void
+  <A>(self: TRef.TRef<A>, value: A, journal: Journal.Journal): void
+} = dual<
+  <A>(value: A, journal: Journal.Journal) => (self: TRef.TRef<A>) => void,
+  <A>(self: TRef.TRef<A>, value: A, journal: Journal.Journal) => void
 >(3, (self, value, journal) => {
   const entry = getOrMakeEntry(self, journal)
   Entry.unsafeSet(entry, value)

@@ -24,12 +24,12 @@ const orderByTime: Order.Order<Event> = pipe(
 
 const eventArb: fc.Arbitrary<Event> = fc.tuple(
   fc.integer({ min: -10, max: 10 }),
-  fc.string({ minLength: 1 })
+  fc.asciiString({ minLength: 1 })
 ).map(([time, description]) => ({ time, description }))
 
 const eventsArb: fc.Arbitrary<Array<Event>> = fc.array(eventArb)
 
-const predicateArb: fc.Arbitrary<(event: Event) => boolean> = fc.func(fc.boolean())
+const predicateArb: fc.Arbitrary<(event: Event) => boolean> = fc.func(fc.boolean()).map((f) => (e: Event) => f(e))
 
 describe.concurrent("TPriorityQueue", () => {
   it.it("isEmpty", () =>
@@ -76,10 +76,10 @@ describe.concurrent("TPriorityQueue", () => {
         STM.flatMap(TPriorityQueue.toReadonlyArray)
       )
       const result = await Effect.runPromise(STM.commit(transaction))
-      const filtered = pipe(events, ReadonlyArray.filter((a) => !f(a)))
-      assert.lengthOf(pipe(result, ReadonlyArray.difference(equivalentElements())(filtered)), 0)
-      assert.lengthOf(pipe(filtered, ReadonlyArray.difference(equivalentElements())(result)), 0)
-      assert.deepStrictEqual(result, pipe(result, ReadonlyArray.sort(orderByTime)))
+      const filtered = ReadonlyArray.filter(events, (a) => !f(a))
+      assert.lengthOf(ReadonlyArray.difference(equivalentElements())(result, filtered), 0)
+      assert.lengthOf(ReadonlyArray.difference(equivalentElements())(filtered, result), 0)
+      assert.deepStrictEqual(result, ReadonlyArray.sort(orderByTime)(result))
     })))
 
   it.it("retainIf", () =>
@@ -90,10 +90,10 @@ describe.concurrent("TPriorityQueue", () => {
         STM.flatMap(TPriorityQueue.toReadonlyArray)
       )
       const result = await Effect.runPromise(STM.commit(transaction))
-      const filtered = pipe(events, ReadonlyArray.filter(f))
-      assert.lengthOf(pipe(result, ReadonlyArray.difference(equivalentElements())(filtered)), 0)
-      assert.lengthOf(pipe(filtered, ReadonlyArray.difference(equivalentElements())(result)), 0)
-      assert.deepStrictEqual(result, pipe(result, ReadonlyArray.sort(orderByTime)))
+      const filtered = ReadonlyArray.filter(events, f)
+      assert.lengthOf(ReadonlyArray.difference(equivalentElements())(result, filtered), 0)
+      assert.lengthOf(ReadonlyArray.difference(equivalentElements())(filtered, result), 0)
+      assert.deepStrictEqual(result, ReadonlyArray.sort(orderByTime)(result))
     })))
 
   it.it("take", () =>

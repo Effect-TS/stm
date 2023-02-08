@@ -1,3 +1,5 @@
+import * as Equal from "@effect/data/Equal"
+import * as HashMap from "@effect/data/HashMap"
 import * as Debug from "@effect/io/Debug"
 import * as Effect from "@effect/io/Effect"
 import * as FiberId from "@effect/io/Fiber/Id"
@@ -7,10 +9,7 @@ import * as tRef from "@effect/stm/internal_effect_untraced/tRef"
 import type * as STM from "@effect/stm/STM"
 import type * as TReentrantLock from "@effect/stm/TReentrantLock"
 import type * as TRef from "@effect/stm/TRef"
-import { pipe } from "@fp-ts/core/Function"
 import * as Option from "@fp-ts/core/Option"
-import * as Equal from "@effect/data/Equal"
-import * as HashMap from "@effect/data/HashMap"
 
 const TReentrantLockSymbolKey = "@effect/stm/TReentrantLock"
 
@@ -70,7 +69,10 @@ export class ReadLock implements LockState {
     return 0
   }
   readLocksHeld(fiberId: FiberId.FiberId): number {
-    return pipe(this.readers, HashMap.get(fiberId), Option.getOrElse(() => 0))
+    return Option.getOrElse(
+      HashMap.get(this.readers, fiberId),
+      () => 0
+    )
   }
   writeLocksHeld(_fiberId: FiberId.FiberId): number {
     return 0
@@ -131,7 +133,7 @@ const makeReadLock = (fiberId: FiberId.FiberId, count: number): ReadLock => {
  */
 const noOtherHolder = (readLock: ReadLock, fiberId: FiberId.FiberId): boolean => {
   return HashMap.isEmpty(readLock.readers) ||
-    (HashMap.size(readLock.readers) === 1 && pipe(readLock.readers, HashMap.has(fiberId)))
+    (HashMap.size(readLock.readers) === 1 && HashMap.has(readLock.readers, fiberId))
 }
 
 /**
@@ -146,73 +148,61 @@ const adjustReadLock = (readLock: ReadLock, fiberId: FiberId.FiberId, adjustment
     )
   }
   if (newTotal === 0) {
-    return new ReadLock(pipe(readLock.readers, HashMap.remove(fiberId)))
+    return new ReadLock(HashMap.remove(readLock.readers, fiberId))
   }
-  return new ReadLock(pipe(readLock.readers, HashMap.set(fiberId, newTotal)))
+  return new ReadLock(HashMap.set(readLock.readers, fiberId, newTotal))
 }
 
-const adjustRead = (delta: number) => {
-  return (self: TReentrantLock.TReentrantLock): STM.STM<never, never, number> =>
-    core.withSTMRuntime((runtime) => {
-      const lock = pipe(self.state, tRef.unsafeGet(runtime.journal))
-      if (isReadLock(lock)) {
-        const result = adjustReadLock(lock, runtime.fiberId, delta)
-        pipe(self.state, tRef.unsafeSet<LockState>(result, runtime.journal))
-        return core.succeed(result.readLocksHeld(runtime.fiberId))
-      }
-      if (isWriteLock(lock) && Equal.equals(runtime.fiberId)(lock.fiberId)) {
-        const newTotal = lock.readLocks + delta
-        if (newTotal < 0) {
-          throw new Error(
-            `Defect: Fiber ${
-              FiberId.threadName(runtime.fiberId)
-            } releasing read locks it does not hold, newTotal: ${newTotal}`
-          )
-        }
-        pipe(
-          self.state,
-          tRef.unsafeSet<LockState>(
-            new WriteLock(newTotal, lock.writeLocks, runtime.fiberId),
-            runtime.journal
-          )
+const adjustRead = (self: TReentrantLock.TReentrantLock, delta: number): STM.STM<never, never, number> =>
+  core.withSTMRuntime((runtime) => {
+    const lock = tRef.unsafeGet(self.state, runtime.journal)
+    if (isReadLock(lock)) {
+      const result = adjustReadLock(lock, runtime.fiberId, delta)
+      tRef.unsafeSet(self.state, result, runtime.journal)
+      return core.succeed(result.readLocksHeld(runtime.fiberId))
+    }
+    if (isWriteLock(lock) && Equal.equals(runtime.fiberId)(lock.fiberId)) {
+      const newTotal = lock.readLocks + delta
+      if (newTotal < 0) {
+        throw new Error(
+          `Defect: Fiber ${
+            FiberId.threadName(runtime.fiberId)
+          } releasing read locks it does not hold, newTotal: ${newTotal}`
         )
-        return core.succeed(newTotal)
       }
-      return core.retry()
-    })
-}
+      tRef.unsafeSet(
+        self.state,
+        new WriteLock(newTotal, lock.writeLocks, runtime.fiberId),
+        runtime.journal
+      )
+      return core.succeed(newTotal)
+    }
+    return core.retry()
+  })
 
-/**
- * @internal
- */
+/** @internal */
 export const acquireRead = Debug.methodWithTrace((trace) =>
-  (self: TReentrantLock.TReentrantLock): STM.STM<never, never, number> => pipe(self, adjustRead(1)).traced(trace)
+  (self: TReentrantLock.TReentrantLock): STM.STM<never, never, number> => adjustRead(self, 1).traced(trace)
 )
 
-/**
- * @internal
- */
+/** @internal */
 export const acquireWrite = Debug.methodWithTrace((trace) =>
   (self: TReentrantLock.TReentrantLock): STM.STM<never, never, number> =>
     core.withSTMRuntime((runtime) => {
-      const lock = pipe(self.state, tRef.unsafeGet(runtime.journal))
+      const lock = tRef.unsafeGet(self.state, runtime.journal)
       if (isReadLock(lock) && noOtherHolder(lock, runtime.fiberId)) {
-        pipe(
+        tRef.unsafeSet(
           self.state,
-          tRef.unsafeSet<LockState>(
-            new WriteLock(lock.readLocksHeld(runtime.fiberId), 1, runtime.fiberId),
-            runtime.journal
-          )
+          new WriteLock(lock.readLocksHeld(runtime.fiberId), 1, runtime.fiberId),
+          runtime.journal
         )
         return core.succeed(1)
       }
       if (isWriteLock(lock) && Equal.equals(runtime.fiberId)(lock.fiberId)) {
-        pipe(
+        tRef.unsafeSet(
           self.state,
-          tRef.unsafeSet<LockState>(
-            new WriteLock(lock.readLocks, lock.writeLocks + 1, runtime.fiberId),
-            runtime.journal
-          )
+          new WriteLock(lock.readLocks, lock.writeLocks + 1, runtime.fiberId),
+          runtime.journal
         )
         return core.succeed(lock.writeLocks + 1)
       }
@@ -220,64 +210,53 @@ export const acquireWrite = Debug.methodWithTrace((trace) =>
     }).traced(trace)
 )
 
-/**
- * @internal
- */
+/** @internal */
 export const fiberReadLocks = Debug.methodWithTrace((trace) =>
   (self: TReentrantLock.TReentrantLock): STM.STM<never, never, number> =>
     core.effect<never, number>((journal, fiberId) =>
-      pipe(
+      tRef.unsafeGet(
         self.state,
-        tRef.unsafeGet(journal)
+        journal
       ).readLocksHeld(fiberId)
     ).traced(trace)
 )
 
-/**
- * @internal
- */
+/** @internal */
 export const fiberWriteLocks = Debug.methodWithTrace((trace) =>
   (self: TReentrantLock.TReentrantLock): STM.STM<never, never, number> =>
     core.effect<never, number>((journal, fiberId) =>
-      pipe(
+      tRef.unsafeGet(
         self.state,
-        tRef.unsafeGet(journal)
+        journal
       ).writeLocksHeld(fiberId)
     ).traced(trace)
 )
 
-/**
- * @internal
- */
+/** @internal */
 export const lock = Debug.methodWithTrace((trace) =>
   (self: TReentrantLock.TReentrantLock): Effect.Effect<Scope.Scope, never, number> => writeLock(self).traced(trace)
 )
 
-/**
- * @internal
- */
+/** @internal */
 export const locked = Debug.methodWithTrace((trace) =>
   (self: TReentrantLock.TReentrantLock): STM.STM<never, never, boolean> =>
-    pipe(
+    core.zipWith(
       readLocked(self),
-      core.zipWith(writeLocked(self), (x, y) => x || y)
+      writeLocked(self),
+      (x, y) => x || y
     ).traced(trace)
 )
 
-/**
- * @internal
- */
+/** @internal */
 export const make = Debug.methodWithTrace((trace) =>
   (): STM.STM<never, never, TReentrantLock.TReentrantLock> =>
-    pipe(
+    core.map(
       tRef.make(emptyReadLock),
-      core.map((readLock) => new TReentranLockImpl(readLock))
+      (readLock) => new TReentranLockImpl(readLock)
     ).traced(trace)
 )
 
-/**
- * @internal
- */
+/** @internal */
 export const readLock = Debug.methodWithTrace((trace) =>
   (self: TReentrantLock.TReentrantLock): Effect.Effect<Scope.Scope, never, number> =>
     Effect.acquireRelease(
@@ -286,48 +265,42 @@ export const readLock = Debug.methodWithTrace((trace) =>
     ).traced(trace)
 )
 
-/**
- * @internal
- */
+/** @internal */
 export const readLocks = Debug.methodWithTrace((trace) =>
   (self: TReentrantLock.TReentrantLock): STM.STM<never, never, number> =>
-    pipe(tRef.get(self.state), core.map((state) => state.readLocks)).traced(trace)
-)
-
-/**
- * @internal
- */
-export const readLocked = Debug.methodWithTrace((trace) =>
-  (self: TReentrantLock.TReentrantLock): STM.STM<never, never, boolean> =>
-    pipe(tRef.get(self.state), core.map((state) => state.readLocks > 0)).traced(trace)
-)
-
-/**
- * @internal
- */
-export const releaseRead = Debug.methodWithTrace((trace) =>
-  (self: TReentrantLock.TReentrantLock): STM.STM<never, never, number> =>
-    pipe(
-      self,
-      adjustRead(-1)
+    core.map(
+      tRef.get(self.state),
+      (state) => state.readLocks
     ).traced(trace)
 )
 
-/**
- * @internal
- */
+/** @internal */
+export const readLocked = Debug.methodWithTrace((trace) =>
+  (self: TReentrantLock.TReentrantLock): STM.STM<never, never, boolean> =>
+    core.map(
+      tRef.get(self.state),
+      (state) => state.readLocks > 0
+    ).traced(trace)
+)
+
+/** @internal */
+export const releaseRead = Debug.methodWithTrace((trace) =>
+  (self: TReentrantLock.TReentrantLock): STM.STM<never, never, number> => adjustRead(self, -1).traced(trace)
+)
+
+/** @internal */
 export const releaseWrite = Debug.methodWithTrace((trace) =>
   (self: TReentrantLock.TReentrantLock): STM.STM<never, never, number> =>
     core.withSTMRuntime((runtime) => {
-      const lock = pipe(self.state, tRef.unsafeGet(runtime.journal))
+      const lock = tRef.unsafeGet(self.state, runtime.journal)
       if (isWriteLock(lock) && lock.writeLocks === 1 && Equal.equals(runtime.fiberId)(lock.fiberId)) {
         const result = makeReadLock(lock.fiberId, lock.readLocks)
-        pipe(self.state, tRef.unsafeSet<LockState>(result, runtime.journal))
+        tRef.unsafeSet(self.state, result, runtime.journal)
         return core.succeed(result.writeLocksHeld(runtime.fiberId))
       }
       if (isWriteLock(lock) && Equal.equals(runtime.fiberId)(lock.fiberId)) {
         const result = new WriteLock(lock.readLocks, lock.writeLocks - 1, runtime.fiberId)
-        pipe(self.state, tRef.unsafeSet<LockState>(result, runtime.journal))
+        tRef.unsafeSet(self.state, result, runtime.journal)
         return core.succeed(result.writeLocksHeld(runtime.fiberId))
       }
       throw new Error(
@@ -336,57 +309,55 @@ export const releaseWrite = Debug.methodWithTrace((trace) =>
     }).traced(trace)
 )
 
-/**
- * @internal
- */
+/** @internal */
 export const withLock = Debug.dualWithTrace<
-  <R, E, A>(
-    effect: Effect.Effect<R, E, A>,
-    self: TReentrantLock.TReentrantLock
-  ) => Effect.Effect<R, E, A>,
   (
     self: TReentrantLock.TReentrantLock
-  ) => <R, E, A>(effect: Effect.Effect<R, E, A>) => Effect.Effect<R, E, A>
->(2, (trace) => (effect, self) => pipe(effect, withWriteLock(self)).traced(trace))
-
-/**
- * @internal
- */
-export const withReadLock = Debug.dualWithTrace<
+  ) => <R, E, A>(effect: Effect.Effect<R, E, A>) => Effect.Effect<R, E, A>,
   <R, E, A>(
     effect: Effect.Effect<R, E, A>,
     self: TReentrantLock.TReentrantLock
-  ) => Effect.Effect<R, E, A>,
+  ) => Effect.Effect<R, E, A>
+>(2, (trace) => (effect, self) => withWriteLock(effect, self).traced(trace))
+
+/** @internal */
+export const withReadLock = Debug.dualWithTrace<
   (self: TReentrantLock.TReentrantLock) => <R, E, A>(
     effect: Effect.Effect<R, E, A>
+  ) => Effect.Effect<R, E, A>,
+  <R, E, A>(
+    effect: Effect.Effect<R, E, A>,
+    self: TReentrantLock.TReentrantLock
   ) => Effect.Effect<R, E, A>
 >(2, (trace) =>
   (effect, self) =>
     Effect.uninterruptibleMask((restore) =>
-      pipe(
+      Effect.zipRight(
         restore(core.commit(acquireRead(self))),
-        Effect.zipRight(pipe(restore(effect), Effect.ensuring(core.commit(releaseRead(self)))))
+        Effect.ensuring(
+          restore(effect),
+          core.commit(releaseRead(self))
+        )
       )
     ).traced(trace))
 
-/**
- * @internal
- */
+/** @internal */
 export const withWriteLock = Debug.dualWithTrace<
-  <R, E, A>(effect: Effect.Effect<R, E, A>, self: TReentrantLock.TReentrantLock) => Effect.Effect<R, E, A>,
-  (self: TReentrantLock.TReentrantLock) => <R, E, A>(effect: Effect.Effect<R, E, A>) => Effect.Effect<R, E, A>
+  (self: TReentrantLock.TReentrantLock) => <R, E, A>(effect: Effect.Effect<R, E, A>) => Effect.Effect<R, E, A>,
+  <R, E, A>(effect: Effect.Effect<R, E, A>, self: TReentrantLock.TReentrantLock) => Effect.Effect<R, E, A>
 >(2, (trace) =>
   (effect, self) =>
     Effect.uninterruptibleMask((restore) =>
-      pipe(
+      Effect.zipRight(
         restore(core.commit(acquireWrite(self))),
-        Effect.zipRight(pipe(restore(effect), Effect.ensuring(core.commit(releaseWrite(self)))))
+        Effect.ensuring(
+          restore(effect),
+          core.commit(releaseWrite(self))
+        )
       )
     ).traced(trace))
 
-/**
- * @internal
- */
+/** @internal */
 export const writeLock = Debug.methodWithTrace((trace) =>
   (self: TReentrantLock.TReentrantLock): Effect.Effect<Scope.Scope, never, number> =>
     Effect.acquireRelease(
@@ -395,18 +366,20 @@ export const writeLock = Debug.methodWithTrace((trace) =>
     ).traced(trace)
 )
 
-/**
- * @internal
- */
+/** @internal */
 export const writeLocked = Debug.methodWithTrace((trace) =>
   (self: TReentrantLock.TReentrantLock): STM.STM<never, never, boolean> =>
-    pipe(tRef.get(self.state), core.map((state) => state.writeLocks > 0)).traced(trace)
+    core.map(
+      tRef.get(self.state),
+      (state) => state.writeLocks > 0
+    ).traced(trace)
 )
 
-/**
- * @internal
- */
+/** @internal */
 export const writeLocks = Debug.methodWithTrace((trace) =>
   (self: TReentrantLock.TReentrantLock): STM.STM<never, never, number> =>
-    pipe(tRef.get(self.state), core.map((state) => state.writeLocks)).traced(trace)
+    core.map(
+      tRef.get(self.state),
+      (state) => state.writeLocks
+    ).traced(trace)
 )

@@ -1,11 +1,11 @@
 /**
  * @since 1.0.0
  */
+import type * as Chunk from "@effect/data/Chunk"
 import * as internal from "@effect/stm/internal_effect_untraced/tQueue"
 import type * as STM from "@effect/stm/STM"
 import type * as Option from "@fp-ts/core/Option"
 import type { Predicate } from "@fp-ts/core/Predicate"
-import type * as Chunk from "@effect/data/Chunk"
 
 /**
  * @since 1.0.0
@@ -271,8 +271,8 @@ export const isShutdown: <A>(self: TQueue<A>) => STM.STM<never, never, boolean> 
  * @category mutations
  */
 export const offer: {
-  <A>(self: TEnqueue<A>, value: A): STM.STM<never, never, void>
   <A>(value: A): (self: TEnqueue<A>) => STM.STM<never, never, void>
+  <A>(self: TEnqueue<A>, value: A): STM.STM<never, never, void>
 } = internal.offer
 
 /**
@@ -294,8 +294,8 @@ export const offer: {
  * @category mutations
  */
 export const offerAll: {
-  <A>(self: TEnqueue<A>, iterable: Iterable<A>): STM.STM<never, never, boolean>
   <A>(iterable: Iterable<A>): (self: TEnqueue<A>) => STM.STM<never, never, boolean>
+  <A>(self: TEnqueue<A>, iterable: Iterable<A>): STM.STM<never, never, boolean>
 } = internal.offerAll
 
 /**
@@ -334,8 +334,8 @@ export const poll: <A>(self: TDequeue<A>) => STM.STM<never, never, Option.Option
  * @category mutations
  */
 export const seek: {
-  <A>(self: TDequeue<A>, predicate: Predicate<A>): STM.STM<never, never, A>
   <A>(predicate: Predicate<A>): (self: TDequeue<A>) => STM.STM<never, never, A>
+  <A>(self: TDequeue<A>, predicate: Predicate<A>): STM.STM<never, never, A>
 } = internal.seek
 
 /**
@@ -395,8 +395,8 @@ export const takeAll: <A>(self: TDequeue<A>) => STM.STM<never, never, Chunk.Chun
  * @category mutations
  */
 export const takeBetween: {
-  <A>(self: TDequeue<A>, min: number, max: number): STM.STM<never, never, Chunk.Chunk<A>>
   (min: number, max: number): <A>(self: TDequeue<A>) => STM.STM<never, never, Chunk.Chunk<A>>
+  <A>(self: TDequeue<A>, min: number, max: number): STM.STM<never, never, Chunk.Chunk<A>>
 } = internal.takeBetween
 
 /**
@@ -408,8 +408,8 @@ export const takeBetween: {
  * @category mutations
  */
 export const takeN: {
-  <A>(self: TDequeue<A>, n: number): STM.STM<never, never, Chunk.Chunk<A>>
   (n: number): <A>(self: TDequeue<A>) => STM.STM<never, never, Chunk.Chunk<A>>
+  <A>(self: TDequeue<A>, n: number): STM.STM<never, never, Chunk.Chunk<A>>
 } = internal.takeN
 
 /**
@@ -419,8 +419,8 @@ export const takeN: {
  * @category mutations
  */
 export const takeUpTo: {
-  <A>(self: TDequeue<A>, max: number): STM.STM<never, never, Chunk.Chunk<A>>
   (max: number): <A>(self: TDequeue<A>) => STM.STM<never, never, Chunk.Chunk<A>>
+  <A>(self: TDequeue<A>, max: number): STM.STM<never, never, Chunk.Chunk<A>>
 } = internal.takeUpTo
 
 /**

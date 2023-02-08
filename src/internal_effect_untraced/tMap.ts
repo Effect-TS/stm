@@ -1,3 +1,7 @@
+import * as Chunk from "@effect/data/Chunk"
+import * as Equal from "@effect/data/Equal"
+import * as Hash from "@effect/data/Hash"
+import * as HashMap from "@effect/data/HashMap"
 import * as Debug from "@effect/io/Debug"
 import * as core from "@effect/stm/internal_effect_untraced/core"
 import * as stm from "@effect/stm/internal_effect_untraced/stm"
@@ -11,10 +15,6 @@ import type * as TRef from "@effect/stm/TRef"
 import type { LazyArg } from "@fp-ts/core/Function"
 import { pipe } from "@fp-ts/core/Function"
 import * as Option from "@fp-ts/core/Option"
-import * as Chunk from "@effect/data/Chunk"
-import * as Equal from "@effect/data/Equal"
-import * as Hash from "@effect/data/Hash"
-import * as HashMap from "@effect/data/HashMap"
 
 /** @internal */
 const TMapSymbolKey = "@effect/stm/TMap"
@@ -95,12 +95,12 @@ export const empty = Debug.methodWithTrace((trace) =>
 /** @internal */
 export const find = Debug.dualWithTrace<
   <K, V, A>(
+    pf: (key: K, value: V) => Option.Option<A>
+  ) => (self: TMap.TMap<K, V>) => STM.STM<never, never, Option.Option<A>>,
+  <K, V, A>(
     self: TMap.TMap<K, V>,
     pf: (key: K, value: V) => Option.Option<A>
-  ) => STM.STM<never, never, Option.Option<A>>,
-  <K, V, A>(
-    pf: (key: K, value: V) => Option.Option<A>
-  ) => (self: TMap.TMap<K, V>) => STM.STM<never, never, Option.Option<A>>
+  ) => STM.STM<never, never, Option.Option<A>>
 >(2, (trace, restore) =>
   (self, pf) =>
     findSTM(self, (key, value) => {
@@ -114,12 +114,12 @@ export const find = Debug.dualWithTrace<
 /** @internal */
 export const findSTM = Debug.dualWithTrace<
   <K, V, R, E, A>(
+    f: (key: K, value: V) => STM.STM<R, Option.Option<E>, A>
+  ) => (self: TMap.TMap<K, V>) => STM.STM<R, E, Option.Option<A>>,
+  <K, V, R, E, A>(
     self: TMap.TMap<K, V>,
     f: (key: K, value: V) => STM.STM<R, Option.Option<E>, A>
-  ) => STM.STM<R, E, Option.Option<A>>,
-  <K, V, R, E, A>(
-    f: (key: K, value: V) => STM.STM<R, Option.Option<E>, A>
-  ) => (self: TMap.TMap<K, V>) => STM.STM<R, E, Option.Option<A>>
+  ) => STM.STM<R, E, Option.Option<A>>
 >(2, (trace, restore) =>
   <K, V, R, E, A>(
     self: TMap.TMap<K, V>,
@@ -140,12 +140,12 @@ export const findSTM = Debug.dualWithTrace<
 /** @internal */
 export const findAll = Debug.dualWithTrace<
   <K, V, A>(
+    pf: (key: K, value: V) => Option.Option<A>
+  ) => (self: TMap.TMap<K, V>) => STM.STM<never, never, Chunk.Chunk<A>>,
+  <K, V, A>(
     self: TMap.TMap<K, V>,
     pf: (key: K, value: V) => Option.Option<A>
-  ) => STM.STM<never, never, Chunk.Chunk<A>>,
-  <K, V, A>(
-    pf: (key: K, value: V) => Option.Option<A>
-  ) => (self: TMap.TMap<K, V>) => STM.STM<never, never, Chunk.Chunk<A>>
+  ) => STM.STM<never, never, Chunk.Chunk<A>>
 >(2, (trace, restore) =>
   (self, pf) =>
     findAllSTM(self, (key, value) => {
@@ -159,12 +159,12 @@ export const findAll = Debug.dualWithTrace<
 /** @internal */
 export const findAllSTM = Debug.dualWithTrace<
   <K, V, R, E, A>(
+    pf: (key: K, value: V) => STM.STM<R, Option.Option<E>, A>
+  ) => (self: TMap.TMap<K, V>) => STM.STM<R, E, Chunk.Chunk<A>>,
+  <K, V, R, E, A>(
     self: TMap.TMap<K, V>,
     pf: (key: K, value: V) => STM.STM<R, Option.Option<E>, A>
-  ) => STM.STM<R, E, Chunk.Chunk<A>>,
-  <K, V, R, E, A>(
-    pf: (key: K, value: V) => STM.STM<R, Option.Option<E>, A>
-  ) => (self: TMap.TMap<K, V>) => STM.STM<R, E, Chunk.Chunk<A>>
+  ) => STM.STM<R, E, Chunk.Chunk<A>>
 >(2, (trace, restore) =>
   <K, V, R, E, A>(
     self: TMap.TMap<K, V>,
@@ -182,8 +182,8 @@ export const findAllSTM = Debug.dualWithTrace<
 
 /** @internal */
 export const forEach = Debug.dualWithTrace<
-  <K, V, R, E, _>(self: TMap.TMap<K, V>, f: (key: K, value: V) => STM.STM<R, E, _>) => STM.STM<R, E, void>,
-  <K, V, R, E, _>(f: (key: K, value: V) => STM.STM<R, E, _>) => (self: TMap.TMap<K, V>) => STM.STM<R, E, void>
+  <K, V, R, E, _>(f: (key: K, value: V) => STM.STM<R, E, _>) => (self: TMap.TMap<K, V>) => STM.STM<R, E, void>,
+  <K, V, R, E, _>(self: TMap.TMap<K, V>, f: (key: K, value: V) => STM.STM<R, E, _>) => STM.STM<R, E, void>
 >(2, (trace, restore) =>
   (self, f) =>
     reduceWithIndexSTM(
@@ -206,8 +206,8 @@ export const fromIterable = Debug.methodWithTrace((trace) =>
 
 /** @internal */
 export const get = Debug.dualWithTrace<
-  <K, V>(self: TMap.TMap<K, V>, key: K) => STM.STM<never, never, Option.Option<V>>,
-  <K>(key: K) => <V>(self: TMap.TMap<K, V>) => STM.STM<never, never, Option.Option<V>>
+  <K>(key: K) => <V>(self: TMap.TMap<K, V>) => STM.STM<never, never, Option.Option<V>>,
+  <K, V>(self: TMap.TMap<K, V>, key: K) => STM.STM<never, never, Option.Option<V>>
 >(2, (trace) =>
   <K, V>(self: TMap.TMap<K, V>, key: K) =>
     core.effect<never, Option.Option<V>>((journal) => {
@@ -222,8 +222,8 @@ export const get = Debug.dualWithTrace<
 
 /** @internal */
 export const getOrElse = Debug.dualWithTrace<
-  <K, V>(self: TMap.TMap<K, V>, key: K, fallback: LazyArg<V>) => STM.STM<never, never, V>,
-  <K, V>(key: K, fallback: LazyArg<V>) => (self: TMap.TMap<K, V>) => STM.STM<never, never, V>
+  <K, V>(key: K, fallback: LazyArg<V>) => (self: TMap.TMap<K, V>) => STM.STM<never, never, V>,
+  <K, V>(self: TMap.TMap<K, V>, key: K, fallback: LazyArg<V>) => STM.STM<never, never, V>
 >(3, (trace, restore) =>
   (self, key, fallback) =>
     core.map(
@@ -233,8 +233,8 @@ export const getOrElse = Debug.dualWithTrace<
 
 /** @internal */
 export const has = Debug.dualWithTrace<
-  <K, V>(self: TMap.TMap<K, V>, key: K) => STM.STM<never, never, boolean>,
-  <K>(key: K) => <V>(self: TMap.TMap<K, V>) => STM.STM<never, never, boolean>
+  <K>(key: K) => <V>(self: TMap.TMap<K, V>) => STM.STM<never, never, boolean>,
+  <K, V>(self: TMap.TMap<K, V>, key: K) => STM.STM<never, never, boolean>
 >(2, (trace) => (self, key) => core.map(get(self, key), Option.isSome).traced(trace))
 
 /** @internal */
@@ -257,8 +257,8 @@ export const make = Debug.methodWithTrace((trace) =>
 
 /** @internal */
 export const merge = Debug.dualWithTrace<
-  <K, V>(self: TMap.TMap<K, V>, key: K, value: V, f: (x: V, y: V) => V) => STM.STM<never, never, V>,
-  <K, V>(key: K, value: V, f: (x: V, y: V) => V) => (self: TMap.TMap<K, V>) => STM.STM<never, never, V>
+  <K, V>(key: K, value: V, f: (x: V, y: V) => V) => (self: TMap.TMap<K, V>) => STM.STM<never, never, V>,
+  <K, V>(self: TMap.TMap<K, V>, key: K, value: V, f: (x: V, y: V) => V) => STM.STM<never, never, V>
 >(4, (trace, restore) =>
   (self, key, value, f) =>
     core.flatMap(
@@ -274,8 +274,8 @@ export const merge = Debug.dualWithTrace<
 
 /** @internal */
 export const reduce = Debug.dualWithTrace<
-  <K, V, Z>(self: TMap.TMap<K, V>, zero: Z, f: (acc: Z, value: V) => Z) => STM.STM<never, never, Z>,
-  <Z, V>(zero: Z, f: (acc: Z, value: V) => Z) => <K>(self: TMap.TMap<K, V>) => STM.STM<never, never, Z>
+  <Z, V>(zero: Z, f: (acc: Z, value: V) => Z) => <K>(self: TMap.TMap<K, V>) => STM.STM<never, never, Z>,
+  <K, V, Z>(self: TMap.TMap<K, V>, zero: Z, f: (acc: Z, value: V) => Z) => STM.STM<never, never, Z>
 >(3, (trace, restore) =>
   (self, zero, f) =>
     reduceWithIndex(
@@ -286,8 +286,8 @@ export const reduce = Debug.dualWithTrace<
 
 /** @internal */
 export const reduceSTM = Debug.dualWithTrace<
-  <K, V, Z, R, E>(self: TMap.TMap<K, V>, zero: Z, f: (acc: Z, value: V) => STM.STM<R, E, Z>) => STM.STM<R, E, Z>,
-  <Z, V, R, E>(zero: Z, f: (acc: Z, value: V) => STM.STM<R, E, Z>) => <K>(self: TMap.TMap<K, V>) => STM.STM<R, E, Z>
+  <Z, V, R, E>(zero: Z, f: (acc: Z, value: V) => STM.STM<R, E, Z>) => <K>(self: TMap.TMap<K, V>) => STM.STM<R, E, Z>,
+  <K, V, Z, R, E>(self: TMap.TMap<K, V>, zero: Z, f: (acc: Z, value: V) => STM.STM<R, E, Z>) => STM.STM<R, E, Z>
 >(3, (trace, restore) =>
   (self, zero, f) =>
     reduceWithIndexSTM(
@@ -298,8 +298,8 @@ export const reduceSTM = Debug.dualWithTrace<
 
 /** @internal */
 export const reduceWithIndex = Debug.dualWithTrace<
-  <K, V, Z>(self: TMap.TMap<K, V>, zero: Z, f: (acc: Z, value: V, key: K) => Z) => STM.STM<never, never, Z>,
-  <Z, K, V>(zero: Z, f: (acc: Z, value: V, key: K) => Z) => (self: TMap.TMap<K, V>) => STM.STM<never, never, Z>
+  <Z, K, V>(zero: Z, f: (acc: Z, value: V, key: K) => Z) => (self: TMap.TMap<K, V>) => STM.STM<never, never, Z>,
+  <K, V, Z>(self: TMap.TMap<K, V>, zero: Z, f: (acc: Z, value: V, key: K) => Z) => STM.STM<never, never, Z>
 >(
   3,
   (trace, restore) =>
@@ -321,14 +321,14 @@ export const reduceWithIndex = Debug.dualWithTrace<
 /** @internal */
 export const reduceWithIndexSTM = Debug.dualWithTrace<
   <Z, V, K, R, E>(
+    zero: Z,
+    f: (acc: Z, value: V, key: K) => STM.STM<R, E, Z>
+  ) => (self: TMap.TMap<K, V>) => STM.STM<R, E, Z>,
+  <Z, V, K, R, E>(
     self: TMap.TMap<K, V>,
     zero: Z,
     f: (acc: Z, value: V, key: K) => STM.STM<R, E, Z>
-  ) => STM.STM<R, E, Z>,
-  <Z, V, K, R, E>(
-    zero: Z,
-    f: (acc: Z, value: V, key: K) => STM.STM<R, E, Z>
-  ) => (self: TMap.TMap<K, V>) => STM.STM<R, E, Z>
+  ) => STM.STM<R, E, Z>
 >(3, (trace, restore) =>
   (self, zero, f) =>
     core.flatMap(
@@ -338,8 +338,8 @@ export const reduceWithIndexSTM = Debug.dualWithTrace<
 
 /** @internal */
 export const remove = Debug.dualWithTrace<
-  <K, V>(self: TMap.TMap<K, V>, key: K) => STM.STM<never, never, void>,
-  <K>(key: K) => <V>(self: TMap.TMap<K, V>) => STM.STM<never, never, void>
+  <K>(key: K) => <V>(self: TMap.TMap<K, V>) => STM.STM<never, never, void>,
+  <K, V>(self: TMap.TMap<K, V>, key: K) => STM.STM<never, never, void>
 >(2, (trace) =>
   (self, key) =>
     core.effect<never, void>((journal) => {
@@ -356,8 +356,8 @@ export const remove = Debug.dualWithTrace<
 
 /** @internal */
 export const removeAll = Debug.dualWithTrace<
-  <K, V>(self: TMap.TMap<K, V>, keys: Iterable<K>) => STM.STM<never, never, void>,
-  <K>(keys: Iterable<K>) => <V>(self: TMap.TMap<K, V>) => STM.STM<never, never, void>
+  <K>(keys: Iterable<K>) => <V>(self: TMap.TMap<K, V>) => STM.STM<never, never, void>,
+  <K, V>(self: TMap.TMap<K, V>, keys: Iterable<K>) => STM.STM<never, never, void>
 >(2, (trace) =>
   <K, V>(self: TMap.TMap<K, V>, keys: Iterable<K>) =>
     core.effect<never, void>((journal) => {
@@ -379,12 +379,12 @@ export const removeAll = Debug.dualWithTrace<
 /** @internal */
 export const removeIf = Debug.dualWithTrace<
   <K, V>(
+    predicate: (key: K, value: V) => boolean
+  ) => (self: TMap.TMap<K, V>) => STM.STM<never, never, Chunk.Chunk<readonly [K, V]>>,
+  <K, V>(
     self: TMap.TMap<K, V>,
     predicate: (key: K, value: V) => boolean
-  ) => STM.STM<never, never, Chunk.Chunk<readonly [K, V]>>,
-  <K, V>(
-    predicate: (key: K, value: V) => boolean
-  ) => (self: TMap.TMap<K, V>) => STM.STM<never, never, Chunk.Chunk<readonly [K, V]>>
+  ) => STM.STM<never, never, Chunk.Chunk<readonly [K, V]>>
 >(2, (trace, restore) =>
   <K, V>(
     self: TMap.TMap<K, V>,
@@ -418,8 +418,8 @@ export const removeIf = Debug.dualWithTrace<
 
 /** @internal */
 export const removeIfDiscard = Debug.dualWithTrace<
-  <K, V>(self: TMap.TMap<K, V>, predicate: (key: K, value: V) => boolean) => STM.STM<never, never, void>,
-  <K, V>(predicate: (key: K, value: V) => boolean) => (self: TMap.TMap<K, V>) => STM.STM<never, never, void>
+  <K, V>(predicate: (key: K, value: V) => boolean) => (self: TMap.TMap<K, V>) => STM.STM<never, never, void>,
+  <K, V>(self: TMap.TMap<K, V>, predicate: (key: K, value: V) => boolean) => STM.STM<never, never, void>
 >(
   2,
   (trace, restore) =>
@@ -450,12 +450,12 @@ export const removeIfDiscard = Debug.dualWithTrace<
 /** @internal */
 export const retainIf = Debug.dualWithTrace<
   <K, V>(
+    predicate: (key: K, value: V) => boolean
+  ) => (self: TMap.TMap<K, V>) => STM.STM<never, never, Chunk.Chunk<readonly [K, V]>>,
+  <K, V>(
     self: TMap.TMap<K, V>,
     predicate: (key: K, value: V) => boolean
-  ) => STM.STM<never, never, Chunk.Chunk<readonly [K, V]>>,
-  <K, V>(
-    predicate: (key: K, value: V) => boolean
-  ) => (self: TMap.TMap<K, V>) => STM.STM<never, never, Chunk.Chunk<readonly [K, V]>>
+  ) => STM.STM<never, never, Chunk.Chunk<readonly [K, V]>>
 >(
   2,
   (trace, restore) => (self, predicate) => removeIf(self, (key, value) => !restore(predicate)(key, value)).traced(trace)
@@ -463,8 +463,8 @@ export const retainIf = Debug.dualWithTrace<
 
 /** @internal */
 export const retainIfDiscard = Debug.dualWithTrace<
-  <K, V>(self: TMap.TMap<K, V>, predicate: (key: K, value: V) => boolean) => STM.STM<never, never, void>,
-  <K, V>(predicate: (key: K, value: V) => boolean) => (self: TMap.TMap<K, V>) => STM.STM<never, never, void>
+  <K, V>(predicate: (key: K, value: V) => boolean) => (self: TMap.TMap<K, V>) => STM.STM<never, never, void>,
+  <K, V>(self: TMap.TMap<K, V>, predicate: (key: K, value: V) => boolean) => STM.STM<never, never, void>
 >(2, (trace, restore) =>
   (self, predicate) =>
     removeIfDiscard(
@@ -474,8 +474,8 @@ export const retainIfDiscard = Debug.dualWithTrace<
 
 /** @internal */
 export const set = Debug.dualWithTrace<
-  <K, V>(self: TMap.TMap<K, V>, key: K, value: V) => STM.STM<never, never, void>,
-  <K, V>(key: K, value: V) => (self: TMap.TMap<K, V>) => STM.STM<never, never, void>
+  <K, V>(key: K, value: V) => (self: TMap.TMap<K, V>) => STM.STM<never, never, void>,
+  <K, V>(self: TMap.TMap<K, V>, key: K, value: V) => STM.STM<never, never, void>
 >(3, (trace) =>
   <K, V>(self: TMap.TMap<K, V>, key: K, value: V) => {
     const resize = (journal: Journal.Journal, buckets: TArray.TArray<Chunk.Chunk<readonly [K, V]>>): void => {
@@ -535,8 +535,8 @@ export const set = Debug.dualWithTrace<
 
 /** @internal */
 export const setIfAbsent = Debug.dualWithTrace<
-  <K, V>(self: TMap.TMap<K, V>, key: K, value: V) => STM.STM<never, never, void>,
-  <K, V>(key: K, value: V) => (self: TMap.TMap<K, V>) => STM.STM<never, never, void>
+  <K, V>(key: K, value: V) => (self: TMap.TMap<K, V>) => STM.STM<never, never, void>,
+  <K, V>(self: TMap.TMap<K, V>, key: K, value: V) => STM.STM<never, never, void>
 >(3, (trace) =>
   (self, key, value) =>
     core.flatMap(
@@ -554,8 +554,8 @@ export const size = Debug.methodWithTrace((trace) =>
 
 /** @internal */
 export const takeFirst = Debug.dualWithTrace<
-  <K, V, A>(self: TMap.TMap<K, V>, pf: (key: K, value: V) => Option.Option<A>) => STM.STM<never, never, A>,
-  <K, V, A>(pf: (key: K, value: V) => Option.Option<A>) => (self: TMap.TMap<K, V>) => STM.STM<never, never, A>
+  <K, V, A>(pf: (key: K, value: V) => Option.Option<A>) => (self: TMap.TMap<K, V>) => STM.STM<never, never, A>,
+  <K, V, A>(self: TMap.TMap<K, V>, pf: (key: K, value: V) => Option.Option<A>) => STM.STM<never, never, A>
 >(2, (trace, restore) =>
   <K, V, A>(self: TMap.TMap<K, V>, pf: (key: K, value: V) => Option.Option<A>) =>
     pipe(
@@ -598,10 +598,10 @@ export const takeFirst = Debug.dualWithTrace<
 
 /** @internal */
 export const takeFirstSTM = Debug.dualWithTrace<
-  <K, V, R, E, A>(self: TMap.TMap<K, V>, pf: (key: K, value: V) => STM.STM<R, Option.Option<E>, A>) => STM.STM<R, E, A>,
   <K, V, R, E, A>(
     pf: (key: K, value: V) => STM.STM<R, Option.Option<E>, A>
-  ) => (self: TMap.TMap<K, V>) => STM.STM<R, E, A>
+  ) => (self: TMap.TMap<K, V>) => STM.STM<R, E, A>,
+  <K, V, R, E, A>(self: TMap.TMap<K, V>, pf: (key: K, value: V) => STM.STM<R, Option.Option<E>, A>) => STM.STM<R, E, A>
 >(2, (trace, restore) =>
   (self, pf) =>
     pipe(
@@ -613,12 +613,12 @@ export const takeFirstSTM = Debug.dualWithTrace<
 /** @internal */
 export const takeSome = Debug.dualWithTrace<
   <K, V, A>(
+    pf: (key: K, value: V) => Option.Option<A>
+  ) => (self: TMap.TMap<K, V>) => STM.STM<never, never, Chunk.NonEmptyChunk<A>>,
+  <K, V, A>(
     self: TMap.TMap<K, V>,
     pf: (key: K, value: V) => Option.Option<A>
-  ) => STM.STM<never, never, Chunk.NonEmptyChunk<A>>,
-  <K, V, A>(
-    pf: (key: K, value: V) => Option.Option<A>
-  ) => (self: TMap.TMap<K, V>) => STM.STM<never, never, Chunk.NonEmptyChunk<A>>
+  ) => STM.STM<never, never, Chunk.NonEmptyChunk<A>>
 >(2, (trace, restore) =>
   <K, V, A>(self: TMap.TMap<K, V>, pf: (key: K, value: V) => Option.Option<A>) =>
     pipe(
@@ -666,12 +666,12 @@ export const takeSome = Debug.dualWithTrace<
 /** @internal */
 export const takeSomeSTM = Debug.dualWithTrace<
   <K, V, R, E, A>(
+    pf: (key: K, value: V) => STM.STM<R, Option.Option<E>, A>
+  ) => (self: TMap.TMap<K, V>) => STM.STM<R, E, Chunk.NonEmptyChunk<A>>,
+  <K, V, R, E, A>(
     self: TMap.TMap<K, V>,
     pf: (key: K, value: V) => STM.STM<R, Option.Option<E>, A>
-  ) => STM.STM<R, E, Chunk.NonEmptyChunk<A>>,
-  <K, V, R, E, A>(
-    pf: (key: K, value: V) => STM.STM<R, Option.Option<E>, A>
-  ) => (self: TMap.TMap<K, V>) => STM.STM<R, E, Chunk.NonEmptyChunk<A>>
+  ) => STM.STM<R, E, Chunk.NonEmptyChunk<A>>
 >(2, (trace, restore) =>
   <K, V, R, E, A>(
     self: TMap.TMap<K, V>,
@@ -750,8 +750,8 @@ export const toReadonlyMap = Debug.methodWithTrace((trace) =>
 
 /** @internal */
 export const transform = Debug.dualWithTrace<
-  <K, V>(self: TMap.TMap<K, V>, f: (key: K, value: V) => readonly [K, V]) => STM.STM<never, never, void>,
-  <K, V>(f: (key: K, value: V) => readonly [K, V]) => (self: TMap.TMap<K, V>) => STM.STM<never, never, void>
+  <K, V>(f: (key: K, value: V) => readonly [K, V]) => (self: TMap.TMap<K, V>) => STM.STM<never, never, void>,
+  <K, V>(self: TMap.TMap<K, V>, f: (key: K, value: V) => readonly [K, V]) => STM.STM<never, never, void>
 >(
   2,
   (trace, restore) =>
@@ -789,10 +789,10 @@ export const transform = Debug.dualWithTrace<
 
 /** @internal */
 export const transformSTM = Debug.dualWithTrace<
-  <K, V, R, E>(self: TMap.TMap<K, V>, f: (key: K, value: V) => STM.STM<R, E, readonly [K, V]>) => STM.STM<R, E, void>,
   <K, V, R, E>(
     f: (key: K, value: V) => STM.STM<R, E, readonly [K, V]>
-  ) => (self: TMap.TMap<K, V>) => STM.STM<R, E, void>
+  ) => (self: TMap.TMap<K, V>) => STM.STM<R, E, void>,
+  <K, V, R, E>(self: TMap.TMap<K, V>, f: (key: K, value: V) => STM.STM<R, E, readonly [K, V]>) => STM.STM<R, E, void>
 >(
   2,
   (trace, restore) =>
@@ -831,14 +831,14 @@ export const transformSTM = Debug.dualWithTrace<
 
 /** @internal */
 export const transformValues = Debug.dualWithTrace<
-  <K, V>(self: TMap.TMap<K, V>, f: (value: V) => V) => STM.STM<never, never, void>,
-  <V>(f: (value: V) => V) => <K>(self: TMap.TMap<K, V>) => STM.STM<never, never, void>
+  <V>(f: (value: V) => V) => <K>(self: TMap.TMap<K, V>) => STM.STM<never, never, void>,
+  <K, V>(self: TMap.TMap<K, V>, f: (value: V) => V) => STM.STM<never, never, void>
 >(2, (trace, restore) => (self, f) => transform(self, (key, value) => [key, restore(f)(value)]).traced(trace))
 
 /** @internal */
 export const transformValuesSTM = Debug.dualWithTrace<
-  <K, V, R, E>(self: TMap.TMap<K, V>, f: (value: V) => STM.STM<R, E, V>) => STM.STM<R, E, void>,
-  <V, R, E>(f: (value: V) => STM.STM<R, E, V>) => <K>(self: TMap.TMap<K, V>) => STM.STM<R, E, void>
+  <V, R, E>(f: (value: V) => STM.STM<R, E, V>) => <K>(self: TMap.TMap<K, V>) => STM.STM<R, E, void>,
+  <K, V, R, E>(self: TMap.TMap<K, V>, f: (value: V) => STM.STM<R, E, V>) => STM.STM<R, E, void>
 >(2, (trace, restore) =>
   (self, f) =>
     transformSTM(
@@ -849,14 +849,14 @@ export const transformValuesSTM = Debug.dualWithTrace<
 /** @internal */
 export const updateWith = Debug.dualWithTrace<
   <K, V>(
+    key: K,
+    f: (value: Option.Option<V>) => Option.Option<V>
+  ) => (self: TMap.TMap<K, V>) => STM.STM<never, never, Option.Option<V>>,
+  <K, V>(
     self: TMap.TMap<K, V>,
     key: K,
     f: (value: Option.Option<V>) => Option.Option<V>
-  ) => STM.STM<never, never, Option.Option<V>>,
-  <K, V>(
-    key: K,
-    f: (value: Option.Option<V>) => Option.Option<V>
-  ) => (self: TMap.TMap<K, V>) => STM.STM<never, never, Option.Option<V>>
+  ) => STM.STM<never, never, Option.Option<V>>
 >(3, (trace, restore) =>
   (self, key, f) =>
     core.flatMap(get(self, key), (option) =>
