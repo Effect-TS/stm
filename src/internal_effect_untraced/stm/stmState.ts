@@ -4,7 +4,7 @@ import * as Exit from "@effect/io/Exit"
 import * as OpCodes from "@effect/stm/internal_effect_untraced/opCodes/stmState"
 import * as TExitOpCodes from "@effect/stm/internal_effect_untraced/opCodes/tExit"
 import type * as TExit from "@effect/stm/internal_effect_untraced/stm/tExit"
-import { pipe } from "@fp-ts/core/Function"
+import { pipe } from "@effect/data/Function"
 
 /** @internal */
 const STMStateSymbolKey = "@effect/io/STM/State"

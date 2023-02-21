@@ -11,7 +11,7 @@ import type * as STM from "@effect/stm/STM"
 import type * as TArray from "@effect/stm/TArray"
 import type * as TRandom from "@effect/stm/TRandom"
 import type * as TRef from "@effect/stm/TRef"
-import { pipe } from "@fp-ts/core/Function"
+import { pipe } from "@effect/data/Function"
 
 const TRandomSymbolKey = "@effect/stm/TRandom"
 

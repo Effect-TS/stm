@@ -20,9 +20,9 @@ import * as TExit from "@effect/stm/internal_effect_untraced/stm/tExit"
 import * as TryCommit from "@effect/stm/internal_effect_untraced/stm/tryCommit"
 import * as TxnId from "@effect/stm/internal_effect_untraced/stm/txnId"
 import type * as STM from "@effect/stm/STM"
-import * as Either from "@fp-ts/core/Either"
-import type { LazyArg } from "@fp-ts/core/Function"
-import { constVoid, pipe } from "@fp-ts/core/Function"
+import * as Either from "@effect/data/Either"
+import type { LazyArg } from "@effect/data/Function"
+import { constVoid, pipe } from "@effect/data/Function"
 
 /** @internal */
 const STMSymbolKey = "@effect/stm/STM"

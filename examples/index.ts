@@ -1,7 +1,7 @@
 import * as Effect from "@effect/io/Effect"
 import * as STM from "@effect/stm/STM"
 import * as TRef from "@effect/stm/TRef"
-import { pipe } from "@fp-ts/core/Function"
+import { pipe } from "@effect/data/Function"
 
 const transfer = (
   receiver: TRef.TRef<number>,

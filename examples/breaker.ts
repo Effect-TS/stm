@@ -5,8 +5,8 @@ import * as Layer from "@effect/io/Layer"
 import * as Schedule from "@effect/io/Schedule"
 import * as STM from "@effect/stm/STM"
 import * as TRef from "@effect/stm/TRef"
-import * as Either from "@fp-ts/core/Either"
-import { pipe } from "@fp-ts/core/Function"
+import * as Either from "@effect/data/Either"
+import { pipe } from "@effect/data/Function"
 
 export class CircuitBreakerError {
   readonly _tag = "CircuitBreakerError"

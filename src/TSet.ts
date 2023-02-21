@@ -6,8 +6,8 @@ import type * as HashSet from "@effect/data/HashSet"
 import * as internal from "@effect/stm/internal_effect_untraced/tSet"
 import type * as STM from "@effect/stm/STM"
 import type * as TMap from "@effect/stm/TMap"
-import type * as Option from "@fp-ts/core/Option"
-import type { Predicate } from "@fp-ts/core/Predicate"
+import type * as Option from "@effect/data/Option"
+import type { Predicate } from "@effect/data/Predicate"
 
 /**
  * @since 1.0.0

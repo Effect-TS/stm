@@ -4,8 +4,8 @@
 import * as internal from "@effect/stm/internal_effect_untraced/tDeferred"
 import type * as STM from "@effect/stm/STM"
 import type * as TRef from "@effect/stm/TRef"
-import type * as Either from "@fp-ts/core/Either"
-import type * as Option from "@fp-ts/core/Option"
+import type * as Either from "@effect/data/Either"
+import type * as Option from "@effect/data/Option"
 
 /**
  * @since 1.0.0

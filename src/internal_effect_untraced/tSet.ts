@@ -6,9 +6,9 @@ import * as tMap from "@effect/stm/internal_effect_untraced/tMap"
 import type * as STM from "@effect/stm/STM"
 import type * as TMap from "@effect/stm/TMap"
 import type * as TSet from "@effect/stm/TSet"
-import { pipe } from "@fp-ts/core/Function"
-import type * as Option from "@fp-ts/core/Option"
-import type { Predicate } from "@fp-ts/core/Predicate"
+import { pipe } from "@effect/data/Function"
+import type * as Option from "@effect/data/Option"
+import type { Predicate } from "@effect/data/Predicate"
 
 /** @internal */
 const TSetSymbolKey = "@effect/stm/TSet"

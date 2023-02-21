@@ -7,8 +7,8 @@ import * as Schedule from "@effect/io/Schedule"
 import * as STM from "@effect/stm/STM"
 import * as it from "@effect/stm/test/utils/extend"
 import * as TReentrantLock from "@effect/stm/TReentrantLock"
-import { pipe } from "@fp-ts/core/Function"
-import * as Option from "@fp-ts/core/Option"
+import { pipe } from "@effect/data/Function"
+import * as Option from "@effect/data/Option"
 import { assert, describe } from "vitest"
 
 const pollSchedule = <E, A>(): Schedule.Schedule<

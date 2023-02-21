@@ -12,9 +12,9 @@ import * as STM from "@effect/stm/STM"
 import type * as TArray from "@effect/stm/TArray"
 import type * as TMap from "@effect/stm/TMap"
 import type * as TRef from "@effect/stm/TRef"
-import type { LazyArg } from "@fp-ts/core/Function"
-import { pipe } from "@fp-ts/core/Function"
-import * as Option from "@fp-ts/core/Option"
+import type { LazyArg } from "@effect/data/Function"
+import { pipe } from "@effect/data/Function"
+import * as Option from "@effect/data/Option"
 
 /** @internal */
 const TMapSymbolKey = "@effect/stm/TMap"

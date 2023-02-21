@@ -5,8 +5,8 @@ import * as tRef from "@effect/stm/internal_effect_untraced/tRef"
 import type * as STM from "@effect/stm/STM"
 import type * as TDeferred from "@effect/stm/TDeferred"
 import type * as TRef from "@effect/stm/TRef"
-import * as Either from "@fp-ts/core/Either"
-import * as Option from "@fp-ts/core/Option"
+import * as Either from "@effect/data/Either"
+import * as Option from "@effect/data/Option"
 
 /** @internal */
 const TDeferredSymbolKey = "@effect/stm/TDeferred"

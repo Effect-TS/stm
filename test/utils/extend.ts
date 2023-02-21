@@ -3,7 +3,7 @@ import * as Effect from "@effect/io/Effect"
 import * as testContext from "@effect/io/internal_effect_untraced/testing/testEnvironment"
 import * as Schedule from "@effect/io/Schedule"
 import type * as Scope from "@effect/io/Scope"
-import { pipe } from "@fp-ts/core/Function"
+import { pipe } from "@effect/data/Function"
 import type { TestAPI } from "vitest"
 import * as V from "vitest"
 

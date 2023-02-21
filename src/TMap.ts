@@ -7,8 +7,8 @@ import * as internal from "@effect/stm/internal_effect_untraced/tMap"
 import type * as STM from "@effect/stm/STM"
 import type * as TArray from "@effect/stm/TArray"
 import type * as TRef from "@effect/stm/TRef"
-import type { LazyArg } from "@fp-ts/core/Function"
-import type * as Option from "@fp-ts/core/Option"
+import type { LazyArg } from "@effect/data/Function"
+import type * as Option from "@effect/data/Option"
 
 /**
  * @since 1.0.0

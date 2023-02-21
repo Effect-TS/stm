@@ -3,7 +3,7 @@ import * as Hash from "@effect/data/Hash"
 import type { StackAnnotation } from "@effect/io/Cause"
 import type * as FiberId from "@effect/io/Fiber/Id"
 import * as OpCodes from "@effect/stm/internal_effect_untraced/opCodes/tExit"
-import { pipe } from "@fp-ts/core/Function"
+import { pipe } from "@effect/data/Function"
 
 /** @internal */
 const TExitSymbolKey = "@effect/io/TExit"
