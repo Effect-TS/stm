@@ -7,9 +7,9 @@ import * as tRef from "@effect/stm/internal_effect_untraced/tRef"
 import * as STM from "@effect/stm/STM"
 import type * as TQueue from "@effect/stm/TQueue"
 import type * as TRef from "@effect/stm/TRef"
-import { pipe } from "@fp-ts/core/Function"
-import * as Option from "@fp-ts/core/Option"
-import type { Predicate } from "@fp-ts/core/Predicate"
+import { pipe } from "@effect/data/Function"
+import * as Option from "@effect/data/Option"
+import type { Predicate } from "@effect/data/Predicate"
 
 const TEnqueueSymbolKey = "@effect/stm/TQueue/TEnqueue"
 

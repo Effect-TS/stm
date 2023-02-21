@@ -13,11 +13,11 @@ import * as Journal from "@effect/stm/internal_effect_untraced/stm/journal"
 import * as STMState from "@effect/stm/internal_effect_untraced/stm/stmState"
 import type { NonEmptyArraySTM, TupleSTM } from "@effect/stm/internal_effect_untraced/types"
 import type * as STM from "@effect/stm/STM"
-import * as Either from "@fp-ts/core/Either"
-import type { LazyArg } from "@fp-ts/core/Function"
-import { constFalse, constTrue, constVoid, dual, identity, pipe } from "@fp-ts/core/Function"
-import * as Option from "@fp-ts/core/Option"
-import type { Predicate } from "@fp-ts/core/Predicate"
+import * as Either from "@effect/data/Either"
+import type { LazyArg } from "@effect/data/Function"
+import { constFalse, constTrue, constVoid, dual, identity, pipe } from "@effect/data/Function"
+import * as Option from "@effect/data/Option"
+import type { Predicate } from "@effect/data/Predicate"
 
 /** @internal */
 export const absolve = Debug.methodWithTrace((trace) =>

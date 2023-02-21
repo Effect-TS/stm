@@ -5,9 +5,9 @@ import type * as Chunk from "@effect/data/Chunk"
 import * as internal from "@effect/stm/internal_effect_untraced/tArray"
 import type * as STM from "@effect/stm/STM"
 import type * as TRef from "@effect/stm/TRef"
-import type * as Option from "@fp-ts/core/Option"
-import type { Predicate } from "@fp-ts/core/Predicate"
-import type * as Order from "@fp-ts/core/typeclass/Order"
+import type * as Option from "@effect/data/Option"
+import type { Predicate } from "@effect/data/Predicate"
+import type * as Order from "@effect/data/typeclass/Order"
 
 /**
  * @since 1.0.0
