@@ -1,5 +1,11 @@
 # @effect/stm
 
+## 0.2.0
+
+### Minor Changes
+
+- [#56](https://github.com/Effect-TS/stm/pull/56) [`5c138d8`](https://github.com/Effect-TS/stm/commit/5c138d8be6caa8cada0b3136827cb3bca2580bf1) Thanks [@IMax153](https://github.com/IMax153)! - remove @fp-ts/core following merge into @effect/data
+
 ## 0.1.4
 
 ### Patch Changes
