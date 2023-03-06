@@ -1,5 +1,8 @@
 import * as Chunk from "@effect/data/Chunk"
 import type * as Context from "@effect/data/Context"
+import * as Either from "@effect/data/Either"
+import type { LazyArg } from "@effect/data/Function"
+import { constVoid, pipe } from "@effect/data/Function"
 import * as MRef from "@effect/data/MutableRef"
 import * as Cause from "@effect/io/Cause"
 import * as Debug from "@effect/io/Debug"
@@ -20,9 +23,6 @@ import * as TExit from "@effect/stm/internal_effect_untraced/stm/tExit"
 import * as TryCommit from "@effect/stm/internal_effect_untraced/stm/tryCommit"
 import * as TxnId from "@effect/stm/internal_effect_untraced/stm/txnId"
 import type * as STM from "@effect/stm/STM"
-import * as Either from "@effect/data/Either"
-import type { LazyArg } from "@effect/data/Function"
-import { constVoid, pipe } from "@effect/data/Function"
 
 /** @internal */
 const STMSymbolKey = "@effect/stm/STM"
@@ -162,6 +162,10 @@ const proto = Object.assign({}, {
     return stm
   }
 })
+
+/** @internal */
+export const isSTM = (u: unknown): u is STM.STM<unknown, unknown, unknown> =>
+  typeof u === "object" && u != null && STMTypeId in u
 
 /** @internal */
 export const commit = Debug.methodWithTrace((trace) =>

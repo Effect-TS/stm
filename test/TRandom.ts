@@ -1,8 +1,8 @@
+import { pipe } from "@effect/data/Function"
 import * as Effect from "@effect/io/Effect"
 import * as STM from "@effect/stm/STM"
 import * as it from "@effect/stm/test/utils/extend"
 import * as TRandom from "@effect/stm/TRandom"
-import { pipe } from "@effect/data/Function"
 import * as fc from "fast-check"
 import { assert, describe } from "vitest"
 

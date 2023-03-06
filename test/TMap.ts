@@ -1,14 +1,14 @@
 import * as Equal from "@effect/data/Equal"
+import { pipe } from "@effect/data/Function"
 import * as Hash from "@effect/data/Hash"
+import * as Option from "@effect/data/Option"
+import * as ReadonlyArray from "@effect/data/ReadonlyArray"
 import * as Effect from "@effect/io/Effect"
 import * as Exit from "@effect/io/Exit"
 import * as STM from "@effect/stm/STM"
 import { equivalentElements } from "@effect/stm/test/utils/equals"
 import * as it from "@effect/stm/test/utils/extend"
 import * as TMap from "@effect/stm/TMap"
-import { pipe } from "@effect/data/Function"
-import * as Option from "@effect/data/Option"
-import * as ReadonlyArray from "@effect/data/ReadonlyArray"
 import * as fc from "fast-check"
 import { assert, describe } from "vitest"
 
@@ -126,7 +126,7 @@ describe.concurrent("TMap", () => {
       const transaction = pipe(
         TMap.make(["a", 1]),
         STM.flatMap((map) =>
-          STM.struct({
+          STM.all({
             result1: pipe(map, TMap.merge("a", 2, (x, y) => x + y)),
             result2: pipe(map, TMap.merge("b", 2, (x, y) => x + y))
           })

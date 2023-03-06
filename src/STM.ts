@@ -3,18 +3,17 @@
  */
 import type * as Chunk from "@effect/data/Chunk"
 import type * as Context from "@effect/data/Context"
-import type * as Cause from "@effect/io/Cause"
-import type * as Debug from "@effect/io/Debug"
-import type * as Effect from "@effect/io/Effect"
-import type * as FiberId from "@effect/io/Fiber/Id"
-import type { EnforceNonEmptyRecord } from "@effect/io/internal_effect_untraced/types"
-import * as core from "@effect/stm/internal_effect_untraced/core"
-import * as stm from "@effect/stm/internal_effect_untraced/stm"
-import type { NonEmptyArraySTM, TupleSTM } from "@effect/stm/internal_effect_untraced/types"
 import type * as Either from "@effect/data/Either"
 import type { LazyArg } from "@effect/data/Function"
 import type * as Option from "@effect/data/Option"
 import type { Predicate } from "@effect/data/Predicate"
+import type * as Cause from "@effect/io/Cause"
+import type * as Debug from "@effect/io/Debug"
+import type * as Effect from "@effect/io/Effect"
+import type * as FiberId from "@effect/io/Fiber/Id"
+import * as core from "@effect/stm/internal_effect_untraced/core"
+import * as stm from "@effect/stm/internal_effect_untraced/stm"
+import type { NonEmptyArraySTM, TupleSTM } from "@effect/stm/internal_effect_untraced/types"
 
 /**
  * @since 1.0.0
@@ -109,6 +108,14 @@ export interface STMGen<R, E, A> {
 }
 
 /**
+ * Returns `true` if the provided value is an `STM`, `false` otherwise.
+ *
+ * @since 1.0.0
+ * @category refinements
+ */
+export const isSTM: (u: unknown) => u is STM<unknown, unknown, unknown> = core.isSTM
+
+/**
  * Returns an effect that submerges the error case of an `Either` into the
  * `STM`. The inverse operation of `STM.either`.
  *
@@ -139,6 +146,58 @@ export const acquireUseRelease: {
     release: (resource: A) => STM<R3, E3, A3>
   ): Effect.Effect<R | R2 | R3, E | E2 | E3, A2>
 } = stm.acquireUseRelease
+
+/**
+ * Runs all the provided transactional effects in sequence respecting the
+ * structure provided in input.
+ *
+ * Supports multiple arguments, a single argument tuple / array or record /
+ * struct.
+ *
+ * @since 1.0.0
+ * @category constructors
+ */
+export const all: {
+  <R, E, A, T extends ReadonlyArray<STM<any, any, any>>>(
+    self: STM<R, E, A>,
+    ...args: T
+  ): STM<
+    R | T["length"] extends 0 ? never
+      : [T[number]] extends [{ [STMTypeId]: { _R: (_: never) => infer R } }] ? R
+      : never,
+    E | T["length"] extends 0 ? never
+      : [T[number]] extends [{ [STMTypeId]: { _E: (_: never) => infer E } }] ? E
+      : never,
+    readonly [
+      A,
+      ...(T["length"] extends 0 ? []
+        : Readonly<{ [K in keyof T]: [T[K]] extends [STM<any, any, infer A>] ? A : never }>)
+    ]
+  >
+  <T extends ReadonlyArray<STM<any, any, any>>>(
+    args: [...T]
+  ): STM<
+    T[number] extends never ? never
+      : [T[number]] extends [{ [STMTypeId]: { _R: (_: never) => infer R } }] ? R
+      : never,
+    T[number] extends never ? never
+      : [T[number]] extends [{ [STMTypeId]: { _E: (_: never) => infer E } }] ? E
+      : never,
+    T[number] extends never ? []
+      : Readonly<{ [K in keyof T]: [T[K]] extends [STM<any, any, infer A>] ? A : never }>
+  >
+  <T extends Readonly<{ [K: string]: STM<any, any, any> }>>(
+    args: T
+  ): STM<
+    T["length"] extends 0 ? never
+      : [T[number]] extends [{ [STMTypeId]: { _R: (_: never) => infer R } }] ? R
+      : never,
+    T["length"] extends 0 ? never
+      : [T[number]] extends [{ [STMTypeId]: { _E: (_: never) => infer E } }] ? E
+      : never,
+    Readonly<{ [K in keyof T]: [T[K]] extends [STM<any, any, infer A>] ? A : never }>
+  >
+} = stm.all
 
 /**
  * Maps the success value of this effect to the specified constant value.
@@ -1403,20 +1462,6 @@ export const someOrFail: {
 export const someOrFailException: <R, E, A>(
   self: STM<R, E, Option.Option<A>>
 ) => STM<R, E | Cause.NoSuchElementException, A> = stm.someOrFailException
-
-/**
- * @since 1.0.0
- * @category constructors
- */
-export const struct: <NER extends Record<string, STM<any, any, any>>>(
-  r: EnforceNonEmptyRecord<NER> | Record<string, STM<any, any, any>>
-) => STM<
-  [NER[keyof NER]] extends [{ [STMTypeId]: { _R: (_: never) => infer R } }] ? R : never,
-  [NER[keyof NER]] extends [{ [STMTypeId]: { _E: (_: never) => infer E } }] ? E : never,
-  {
-    [K in keyof NER]: [NER[K]] extends [{ [STMTypeId]: { _A: (_: never) => infer A } }] ? A : never
-  }
-> = stm.struct
 
 /**
  * Returns an `STM` effect that succeeds with the specified value.

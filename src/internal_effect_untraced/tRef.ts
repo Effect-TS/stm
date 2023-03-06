@@ -1,3 +1,5 @@
+import { dual, pipe } from "@effect/data/Function"
+import * as Option from "@effect/data/Option"
 import * as Debug from "@effect/io/Debug"
 import * as core from "@effect/stm/internal_effect_untraced/core"
 import * as Entry from "@effect/stm/internal_effect_untraced/stm/entry"
@@ -6,8 +8,6 @@ import type * as TxnId from "@effect/stm/internal_effect_untraced/stm/txnId"
 import * as Versioned from "@effect/stm/internal_effect_untraced/stm/versioned"
 import type * as STM from "@effect/stm/STM"
 import type * as TRef from "@effect/stm/TRef"
-import { dual, pipe } from "@effect/data/Function"
-import * as Option from "@effect/data/Option"
 
 /** @internal */
 const TRefSymbolKey = "@effect/stm/TRef"
