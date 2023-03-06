@@ -1,3 +1,5 @@
+import * as Either from "@effect/data/Either"
+import * as Option from "@effect/data/Option"
 import * as Debug from "@effect/io/Debug"
 import * as core from "@effect/stm/internal_effect_untraced/core"
 import * as stm from "@effect/stm/internal_effect_untraced/stm"
@@ -5,8 +7,6 @@ import * as tRef from "@effect/stm/internal_effect_untraced/tRef"
 import type * as STM from "@effect/stm/STM"
 import type * as TDeferred from "@effect/stm/TDeferred"
 import type * as TRef from "@effect/stm/TRef"
-import * as Either from "@effect/data/Either"
-import * as Option from "@effect/data/Option"
 
 /** @internal */
 const TDeferredSymbolKey = "@effect/stm/TDeferred"

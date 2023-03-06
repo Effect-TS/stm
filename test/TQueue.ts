@@ -1,9 +1,9 @@
+import { pipe } from "@effect/data/Function"
+import * as Option from "@effect/data/Option"
 import * as Effect from "@effect/io/Effect"
 import * as STM from "@effect/stm/STM"
 import * as it from "@effect/stm/test/utils/extend"
 import * as TQueue from "@effect/stm/TQueue"
-import { pipe } from "@effect/data/Function"
-import * as Option from "@effect/data/Option"
 import { assert, describe } from "vitest"
 
 describe.concurrent("TQueue", () => {

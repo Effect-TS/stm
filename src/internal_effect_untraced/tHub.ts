@@ -1,5 +1,7 @@
 import * as Chunk from "@effect/data/Chunk"
+import { identity, pipe } from "@effect/data/Function"
 import * as HashSet from "@effect/data/HashSet"
+import * as Option from "@effect/data/Option"
 import * as Debug from "@effect/io/Debug"
 import * as Effect from "@effect/io/Effect"
 import type * as Scope from "@effect/io/Scope"
@@ -12,8 +14,6 @@ import type * as STM from "@effect/stm/STM"
 import type * as THub from "@effect/stm/THub"
 import type * as TQueue from "@effect/stm/TQueue"
 import type * as TRef from "@effect/stm/TRef"
-import { identity, pipe } from "@effect/data/Function"
-import * as Option from "@effect/data/Option"
 
 /** @internal */
 const THubSymbolKey = "@effect/stm/THub"

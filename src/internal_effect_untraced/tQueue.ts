@@ -1,4 +1,7 @@
 import * as Chunk from "@effect/data/Chunk"
+import { pipe } from "@effect/data/Function"
+import * as Option from "@effect/data/Option"
+import type { Predicate } from "@effect/data/Predicate"
 import * as Debug from "@effect/io/Debug"
 import * as core from "@effect/stm/internal_effect_untraced/core"
 import * as OpCodes from "@effect/stm/internal_effect_untraced/opCodes/strategy"
@@ -7,9 +10,6 @@ import * as tRef from "@effect/stm/internal_effect_untraced/tRef"
 import * as STM from "@effect/stm/STM"
 import type * as TQueue from "@effect/stm/TQueue"
 import type * as TRef from "@effect/stm/TRef"
-import { pipe } from "@effect/data/Function"
-import * as Option from "@effect/data/Option"
-import type { Predicate } from "@effect/data/Predicate"
 
 const TEnqueueSymbolKey = "@effect/stm/TQueue/TEnqueue"
 

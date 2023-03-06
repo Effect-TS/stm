@@ -1,5 +1,10 @@
 import * as Chunk from "@effect/data/Chunk"
 import * as Context from "@effect/data/Context"
+import * as Either from "@effect/data/Either"
+import type { LazyArg } from "@effect/data/Function"
+import { constFalse, constTrue, constVoid, dual, identity, pipe } from "@effect/data/Function"
+import * as Option from "@effect/data/Option"
+import type { Predicate } from "@effect/data/Predicate"
 import * as Cause from "@effect/io/Cause"
 import * as Debug from "@effect/io/Debug"
 import * as Effect from "@effect/io/Effect"
@@ -7,17 +12,11 @@ import * as Exit from "@effect/io/Exit"
 import type * as FiberId from "@effect/io/Fiber/Id"
 import * as effectCore from "@effect/io/internal_effect_untraced/core"
 import * as SingleShotGen from "@effect/io/internal_effect_untraced/singleShotGen"
-import type { EnforceNonEmptyRecord } from "@effect/io/internal_effect_untraced/types"
 import * as core from "@effect/stm/internal_effect_untraced/core"
 import * as Journal from "@effect/stm/internal_effect_untraced/stm/journal"
 import * as STMState from "@effect/stm/internal_effect_untraced/stm/stmState"
 import type { NonEmptyArraySTM, TupleSTM } from "@effect/stm/internal_effect_untraced/types"
 import type * as STM from "@effect/stm/STM"
-import * as Either from "@effect/data/Either"
-import type { LazyArg } from "@effect/data/Function"
-import { constFalse, constTrue, constVoid, dual, identity, pipe } from "@effect/data/Function"
-import * as Option from "@effect/data/Option"
-import type { Predicate } from "@effect/data/Predicate"
 
 /** @internal */
 export const absolve = Debug.methodWithTrace((trace) =>
@@ -1251,28 +1250,72 @@ export const someOrFailException = Debug.methodWithTrace((trace) =>
     ).traced(trace)
 )
 
-/** @internal */
-export const struct = Debug.methodWithTrace((trace) =>
-  <NER extends Record<string, STM.STM<any, any, any>>>(
-    r: EnforceNonEmptyRecord<NER> | Record<string, STM.STM<any, any, any>>
+/* @internal */
+export const all = Debug.methodWithTrace((trace): {
+  <R, E, A, T extends ReadonlyArray<Effect.Effect<any, any, any>>>(
+    self: STM.STM<R, E, A>,
+    ...args: T
   ): STM.STM<
-    [NER[keyof NER]] extends [{ [core.STMTypeId]: { _R: (_: never) => infer R } }] ? R : never,
-    [NER[keyof NER]] extends [{ [core.STMTypeId]: { _E: (_: never) => infer E } }] ? E : never,
-    {
-      [K in keyof NER]: [NER[K]] extends [{ [core.STMTypeId]: { _A: (_: never) => infer A } }] ? A : never
+    R | T["length"] extends 0 ? never
+      : [T[number]] extends [{ [STM.STMTypeId]: { _R: (_: never) => infer R } }] ? R
+      : never,
+    E | T["length"] extends 0 ? never
+      : [T[number]] extends [{ [STM.STMTypeId]: { _E: (_: never) => infer E } }] ? E
+      : never,
+    readonly [
+      A,
+      ...(T["length"] extends 0 ? []
+        : Readonly<{ [K in keyof T]: [T[K]] extends [STM.STM<any, any, infer A>] ? A : never }>)
+    ]
+  >
+  <T extends ReadonlyArray<STM.STM<any, any, any>>>(
+    args: [...T]
+  ): STM.STM<
+    T[number] extends never ? never
+      : [T[number]] extends [{ [STM.STMTypeId]: { _R: (_: never) => infer R } }] ? R
+      : never,
+    T[number] extends never ? never
+      : [T[number]] extends [{ [STM.STMTypeId]: { _E: (_: never) => infer E } }] ? E
+      : never,
+    T[number] extends never ? []
+      : Readonly<{ [K in keyof T]: [T[K]] extends [STM.STM<any, any, infer A>] ? A : never }>
+  >
+  <T extends Readonly<{ [K: string]: STM.STM<any, any, any> }>>(
+    args: T
+  ): STM.STM<
+    T["length"] extends 0 ? never
+      : [T[number]] extends [{ [STM.STMTypeId]: { _R: (_: never) => infer R } }] ? R
+      : never,
+    T["length"] extends 0 ? never
+      : [T[number]] extends [{ [STM.STMTypeId]: { _E: (_: never) => infer E } }] ? E
+      : never,
+    Readonly<{ [K in keyof T]: [T[K]] extends [STM.STM<any, any, infer A>] ? A : never }>
+  >
+} =>
+  function() {
+    if (arguments.length === 1) {
+      if (core.isSTM(arguments[0])) {
+        return core.map(arguments[0], (x) => [x])
+      } else if (Array.isArray(arguments[0])) {
+        return core.map(collectAll(arguments[0]), Chunk.toReadonlyArray).traced(trace)
+      } else {
+        return pipe(
+          forEach(
+            Object.entries(arguments[0] as Readonly<{ [K: string]: STM.STM<any, any, any> }>),
+            ([_, e]) => core.map(e, (a) => [_, a] as const)
+          ),
+          core.map((values) => {
+            const res = {}
+            for (const [k, v] of values) {
+              res[k] = v
+            }
+            return res
+          })
+        ).traced(trace) as any
+      }
     }
-  > =>
-    pipe(
-      Object.entries(r),
-      forEach(([_, e]) => pipe(e, core.map((a) => [_, a] as const))),
-      core.map((values) => {
-        const res = {}
-        for (const [k, v] of values) {
-          res[k] = v
-        }
-        return res
-      })
-    ).traced(trace) as any
+    return core.map(collectAll(arguments), Chunk.toReadonlyArray).traced(trace)
+  }
 )
 
 /** @internal */

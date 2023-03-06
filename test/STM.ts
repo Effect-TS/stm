@@ -1,5 +1,8 @@
 import * as Chunk from "@effect/data/Chunk"
 import * as Context from "@effect/data/Context"
+import * as Either from "@effect/data/Either"
+import { constFalse, constTrue, constVoid, pipe } from "@effect/data/Function"
+import * as Option from "@effect/data/Option"
 import * as Cause from "@effect/io/Cause"
 import * as Deferred from "@effect/io/Deferred"
 import * as Effect from "@effect/io/Effect"
@@ -10,9 +13,6 @@ import * as TDeferred from "@effect/stm/TDeferred"
 import * as it from "@effect/stm/test/utils/extend"
 import * as TQueue from "@effect/stm/TQueue"
 import * as TRef from "@effect/stm/TRef"
-import * as Either from "@effect/data/Either"
-import { constFalse, constTrue, constVoid, pipe } from "@effect/data/Function"
-import * as Option from "@effect/data/Option"
 import * as fc from "fast-check"
 import { assert, describe } from "vitest"
 
@@ -449,7 +449,7 @@ describe.concurrent("STM", () => {
 
   it.effect("fold - handles both failure and success", () =>
     Effect.gen(function*($) {
-      const transaction = STM.struct({
+      const transaction = STM.all({
         success: pipe(STM.succeed("yes"), STM.match(() => -1, () => 1)),
         failure: pipe(STM.fail("no"), STM.match(() => -1, () => 1))
       })
@@ -460,7 +460,7 @@ describe.concurrent("STM", () => {
 
   it.effect("foldSTM - folds over the `STM` effect, and handle failure and success", () =>
     Effect.gen(function*($) {
-      const transaction = STM.struct({
+      const transaction = STM.all({
         success: pipe(STM.succeed("yes"), STM.matchSTM(() => STM.succeed("no"), STM.succeed)),
         failure: pipe(STM.fail("no"), STM.matchSTM(STM.succeed, () => STM.succeed("yes")))
       })
@@ -1138,7 +1138,7 @@ describe.concurrent("STM", () => {
       const transaction = pipe(
         STM.tuple(TRef.make(10), TRef.make(0)),
         STM.flatMap(([refA, refB]) =>
-          STM.struct({
+          STM.all({
             result1: pipe(TRef.get(refA), STM.tap((n) => pipe(refB, TRef.set(n + 1)))),
             result2: TRef.get(refB)
           })

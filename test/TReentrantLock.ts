@@ -1,3 +1,5 @@
+import { pipe } from "@effect/data/Function"
+import * as Option from "@effect/data/Option"
 import * as Deferred from "@effect/io/Deferred"
 import * as Effect from "@effect/io/Effect"
 import type * as Exit from "@effect/io/Exit"
@@ -7,8 +9,6 @@ import * as Schedule from "@effect/io/Schedule"
 import * as STM from "@effect/stm/STM"
 import * as it from "@effect/stm/test/utils/extend"
 import * as TReentrantLock from "@effect/stm/TReentrantLock"
-import { pipe } from "@effect/data/Function"
-import * as Option from "@effect/data/Option"
 import { assert, describe } from "vitest"
 
 const pollSchedule = <E, A>(): Schedule.Schedule<
