@@ -1,5 +1,15 @@
 # @effect/stm
 
+## 0.3.0
+
+### Minor Changes
+
+- [#59](https://github.com/Effect-TS/stm/pull/59) [`8763fed`](https://github.com/Effect-TS/stm/commit/8763fed16e30842c626c2caf04f9220a5b0590eb) Thanks [@IMax153](https://github.com/IMax153)! - upgrade dependencies
+
+### Patch Changes
+
+- [#61](https://github.com/Effect-TS/stm/pull/61) [`45c003e`](https://github.com/Effect-TS/stm/commit/45c003ea879003b189e56ba254ec0d149cf31026) Thanks [@IMax153](https://github.com/IMax153)! - remove STM.tuple and upgrade dependencies
+
 ## 0.2.0
 
 ### Minor Changes
