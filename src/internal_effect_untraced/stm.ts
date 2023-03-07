@@ -15,7 +15,6 @@ import * as SingleShotGen from "@effect/io/internal_effect_untraced/singleShotGe
 import * as core from "@effect/stm/internal_effect_untraced/core"
 import * as Journal from "@effect/stm/internal_effect_untraced/stm/journal"
 import * as STMState from "@effect/stm/internal_effect_untraced/stm/stmState"
-import type { NonEmptyArraySTM, TupleSTM } from "@effect/stm/internal_effect_untraced/types"
 import type * as STM from "@effect/stm/STM"
 
 /** @internal */
@@ -1417,17 +1416,6 @@ export const tryCatch = Debug.methodWithTrace((trace, restore) =>
         return core.fail(onThrow(error))
       }
     }).traced(trace)
-)
-
-/** @internal */
-export const tuple = Debug.methodWithTrace((trace) =>
-  <T extends NonEmptyArraySTM>(
-    ...t: T
-  ): STM.STM<
-    [T[number]] extends [{ [core.STMTypeId]: { _R: (_: never) => infer R } }] ? R : never,
-    [T[number]] extends [{ [core.STMTypeId]: { _E: (_: never) => infer E } }] ? E : never,
-    TupleSTM<T>
-  > => pipe(collectAll(t), core.map(Chunk.toReadonlyArray)).traced(trace) as any
 )
 
 /** @internal */

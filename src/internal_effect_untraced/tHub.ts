@@ -467,13 +467,13 @@ const makeHub = Debug.methodWithTrace((trace) =>
     strategy: tQueue.TQueueStrategy
   ): STM.STM<never, never, THub.THub<A>> =>
     pipe(
-      stm.tuple(
+      stm.all(
         tRef.make<Node<A> | undefined>(void 0),
         tRef.make(0)
       ),
       core.flatMap(([empty, hubSize]) =>
         pipe(
-          stm.tuple(
+          stm.all(
             tRef.make(empty),
             tRef.make(empty),
             tRef.make(0),
@@ -507,7 +507,7 @@ const makeSubscription = <A>(
     tRef.get(publisherTail),
     core.flatMap((currentPublisherTail) =>
       pipe(
-        stm.tuple(
+        stm.all(
           tRef.make(currentPublisherTail),
           tRef.get(subscriberCount),
           tRef.get(subscribers)

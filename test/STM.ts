@@ -108,7 +108,7 @@ const compute3TRefN = (
   ref3: TRef.TRef<number>
 ): Effect.Effect<never, never, number> =>
   pipe(
-    STM.tuple(TRef.get(ref1), TRef.get(ref2)),
+    STM.all(TRef.get(ref1), TRef.get(ref2)),
     STM.tap(([v1, v2]) => pipe(ref3, TRef.set(v1 + v2))),
     STM.flatMap(([v1, v2]) =>
       pipe(
@@ -129,7 +129,7 @@ const compute3TRefN = (
 
 const permutation = (ref1: TRef.TRef<number>, ref2: TRef.TRef<number>): STM.STM<never, never, void> =>
   pipe(
-    STM.tuple(TRef.get(ref1), TRef.get(ref2)),
+    STM.all(TRef.get(ref1), TRef.get(ref2)),
     STM.flatMap(([a, b]) =>
       pipe(
         ref1,
@@ -1136,7 +1136,7 @@ describe.concurrent("STM", () => {
   it.effect("tap - applies the function to the result preserving the original result", () =>
     Effect.gen(function*($) {
       const transaction = pipe(
-        STM.tuple(TRef.make(10), TRef.make(0)),
+        STM.all(TRef.make(10), TRef.make(0)),
         STM.flatMap(([refA, refB]) =>
           STM.all({
             result1: pipe(TRef.get(refA), STM.tap((n) => pipe(refB, TRef.set(n + 1)))),
@@ -1522,7 +1522,7 @@ describe.concurrent("STM", () => {
 
     it.effect("compute a `TRef` from 2 variables, increment the first `TRef` and decrement the second `TRef` in different fibers", () =>
       Effect.gen(function*($) {
-        const refs = yield* $(STM.tuple(TRef.make(10_000), TRef.make(0), TRef.make(0)))
+        const refs = yield* $(STM.all(TRef.make(10_000), TRef.make(0), TRef.make(0)))
         const fiber = yield* $(Effect.forkAll(
           Array.from({ length: 10 }, () => compute3TRefN(99, refs[0], refs[1], refs[2]))
         ))
