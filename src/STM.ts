@@ -13,7 +13,6 @@ import type * as Effect from "@effect/io/Effect"
 import type * as FiberId from "@effect/io/Fiber/Id"
 import * as core from "@effect/stm/internal_effect_untraced/core"
 import * as stm from "@effect/stm/internal_effect_untraced/stm"
-import type { NonEmptyArraySTM, TupleSTM } from "@effect/stm/internal_effect_untraced/types"
 
 /**
  * @since 1.0.0
@@ -1592,20 +1591,6 @@ export const tapError: {
  * @category constructors
  */
 export const tryCatch: <E, A>(attempt: () => A, onThrow: (u: unknown) => E) => Effect.Effect<never, E, A> = stm.tryCatch
-
-/**
- * Like `forEach` + `identity` with a tuple type.
- *
- * @since 1.0.0
- * @category constructors
- */
-export const tuple: <T extends NonEmptyArraySTM>(
-  ...t: T
-) => STM<
-  [T[number]] extends [{ [STMTypeId]: { _R: (_: never) => infer R } }] ? R : never,
-  [T[number]] extends [{ [STMTypeId]: { _E: (_: never) => infer E } }] ? E : never,
-  TupleSTM<T>
-> = stm.tuple
 
 /**
  * Converts a `STM<R, Either<E, A>, A2>` into a `STM<R, E, Either<A2, A>>`.
