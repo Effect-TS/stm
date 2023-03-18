@@ -69,40 +69,28 @@ export interface TRandom {
   readonly [TRandomTypeId]: TRandomTypeId
   /**
    * Returns the next numeric value from the pseudo-random number generator.
-   *
-   * @macro traced
    */
   next(): STM.STM<never, never, number>
   /**
    * Returns the next boolean value from the pseudo-random number generator.
-   *
-   * @macro traced
    */
   nextBoolean(): STM.STM<never, never, boolean>
   /**
    * Returns the next integer value from the pseudo-random number generator.
-   *
-   * @macro traced
    */
   nextInt(): STM.STM<never, never, number>
   /**
    * Returns the next numeric value in the specified range from the
    * pseudo-random number generator.
-   *
-   * @macro traced
    */
   nextRange(min: number, max: number): STM.STM<never, never, number>
   /**
    * Returns the next integer value in the specified range from the
    * pseudo-random number generator.
-   *
-   * @macro traced
    */
   nextIntBetween(min: number, max: number): STM.STM<never, never, number>
   /**
    * Uses the pseudo-random number generator to shuffle the specified iterable.
-   *
-   * @macro traced
    */
   shuffle<A>(elements: Iterable<A>): STM.STM<never, never, Chunk.Chunk<A>>
 }

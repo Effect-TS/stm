@@ -233,9 +233,10 @@ Runs the specified workflow with a lock.
 **Signature**
 
 ```ts
-export declare const withLock: <R, E, A>(
-  effect: Effect.Effect<R, E, A>
-) => (self: TReentrantLock) => Effect.Effect<R, E, A>
+export declare const withLock: {
+  (self: TReentrantLock): <R, E, A>(effect: Effect.Effect<R, E, A>) => Effect.Effect<R, E, A>
+  <R, E, A>(effect: Effect.Effect<R, E, A>, self: TReentrantLock): Effect.Effect<R, E, A>
+}
 ```
 
 Added in v1.0.0
@@ -247,9 +248,10 @@ Runs the specified workflow with a read lock.
 **Signature**
 
 ```ts
-export declare const withReadLock: <R, E, A>(
-  effect: Effect.Effect<R, E, A>
-) => (self: TReentrantLock) => Effect.Effect<R, E, A>
+export declare const withReadLock: {
+  (self: TReentrantLock): <R, E, A>(effect: Effect.Effect<R, E, A>) => Effect.Effect<R, E, A>
+  <R, E, A>(effect: Effect.Effect<R, E, A>, self: TReentrantLock): Effect.Effect<R, E, A>
+}
 ```
 
 Added in v1.0.0
@@ -261,9 +263,10 @@ Runs the specified workflow with a write lock.
 **Signature**
 
 ```ts
-export declare const withWriteLock: <R, E, A>(
-  effect: Effect.Effect<R, E, A>
-) => (self: TReentrantLock) => Effect.Effect<R, E, A>
+export declare const withWriteLock: {
+  (self: TReentrantLock): <R, E, A>(effect: Effect.Effect<R, E, A>) => Effect.Effect<R, E, A>
+  <R, E, A>(effect: Effect.Effect<R, E, A>, self: TReentrantLock): Effect.Effect<R, E, A>
+}
 ```
 
 Added in v1.0.0

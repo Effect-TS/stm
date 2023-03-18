@@ -14,18 +14,19 @@ Added in v1.0.0
 
 - [constructors](#constructors)
   - [acquireUseRelease](#acquireuserelease)
+  - [all](#all)
   - [attempt](#attempt)
   - [check](#check)
   - [collectAll](#collectall)
   - [collectAllDiscard](#collectalldiscard)
   - [collectFirst](#collectfirst)
   - [cond](#cond)
+  - [context](#context)
+  - [contextWith](#contextwith)
+  - [contextWithSTM](#contextwithstm)
   - [die](#die)
   - [dieMessage](#diemessage)
   - [dieSync](#diesync)
-  - [environment](#environment)
-  - [environmentWith](#environmentwith)
-  - [environmentWithSTM](#environmentwithstm)
   - [every](#every)
   - [exists](#exists)
   - [fail](#fail)
@@ -37,7 +38,7 @@ Added in v1.0.0
   - [fromOption](#fromoption)
   - [gen](#gen)
   - [interrupt](#interrupt)
-  - [interruptWith](#interruptwith)
+  - [interruptAs](#interruptas)
   - [iterate](#iterate)
   - [loop](#loop)
   - [loopDiscard](#loopdiscard)
@@ -51,7 +52,6 @@ Added in v1.0.0
   - [service](#service)
   - [serviceWith](#servicewith)
   - [serviceWithSTM](#servicewithstm)
-  - [struct](#struct)
   - [succeed](#succeed)
   - [succeedLeft](#succeedleft)
   - [succeedNone](#succeednone)
@@ -60,16 +60,15 @@ Added in v1.0.0
   - [suspend](#suspend)
   - [sync](#sync)
   - [tryCatch](#trycatch)
-  - [tuple](#tuple)
   - [unit](#unit)
 - [destructors](#destructors)
   - [commit](#commit)
   - [commitEither](#commiteither)
-- [environment](#environment-1)
-  - [provideEnvironment](#provideenvironment)
+- [environment](#environment)
+  - [contramapContext](#contramapcontext)
+  - [provideContext](#providecontext)
   - [provideService](#provideservice)
   - [provideServiceSTM](#provideservicestm)
-  - [provideSomeEnvironment](#providesomeenvironment)
 - [error handling](#error-handling)
   - [catchAll](#catchall)
   - [catchSome](#catchsome)
@@ -150,6 +149,8 @@ Added in v1.0.0
   - [whenCase](#whencase)
   - [whenCaseSTM](#whencasestm)
   - [whenSTM](#whenstm)
+- [refinements](#refinements)
+  - [isSTM](#isstm)
 - [sequencing](#sequencing)
   - [flatMap](#flatmap)
   - [flatMapError](#flatmaperror)
@@ -187,11 +188,61 @@ executed uninterruptibly as soon as the `use` workflow completes execution.
 **Signature**
 
 ```ts
-export declare const acquireUseRelease: <R, E, A, R2, E2, A2, R3, E3, A3>(
-  acquire: STM<R, E, A>,
-  use: (resource: A) => STM<R2, E2, A2>,
-  release: (resource: A) => STM<R3, E3, A3>
-) => Effect.Effect<R | R2 | R3, E | E2 | E3, A2>
+export declare const acquireUseRelease: {
+  <A, R2, E2, A2, R3, E3, A3>(use: (resource: A) => STM<R2, E2, A2>, release: (resource: A) => STM<R3, E3, A3>): <R, E>(
+    acquire: STM<R, E, A>
+  ) => Effect.Effect<R2 | R3 | R, E2 | E3 | E, A2>
+  <R, E, A, R2, E2, A2, R3, E3, A3>(
+    acquire: STM<R, E, A>,
+    use: (resource: A) => STM<R2, E2, A2>,
+    release: (resource: A) => STM<R3, E3, A3>
+  ): Effect.Effect<R | R2 | R3, E | E2 | E3, A2>
+}
+```
+
+Added in v1.0.0
+
+## all
+
+Runs all the provided transactional effects in sequence respecting the
+structure provided in input.
+
+Supports multiple arguments, a single argument tuple / array or record /
+struct.
+
+**Signature**
+
+```ts
+export declare const all: {
+  <R, E, A, T extends readonly STM<any, any, any>[]>(self: STM<R, E, A>, ...args: T): STM<
+    R | T['length'] extends 0
+      ? never
+      : [T[number]] extends [{ [STMTypeId]: { _R: (_: never) => infer R } }]
+      ? R
+      : never,
+    E | T['length'] extends 0
+      ? never
+      : [T[number]] extends [{ [STMTypeId]: { _E: (_: never) => infer E } }]
+      ? E
+      : never,
+    readonly [
+      A,
+      ...(T['length'] extends 0
+        ? []
+        : Readonly<{ [K in keyof T]: [T[K]] extends [STM<any, any, infer A>] ? A : never }>)
+    ]
+  >
+  <T extends readonly STM<any, any, any>[]>(args: [...T]): STM<
+    T[number] extends never ? never : [T[number]] extends [{ [STMTypeId]: { _R: (_: never) => infer R } }] ? R : never,
+    T[number] extends never ? never : [T[number]] extends [{ [STMTypeId]: { _E: (_: never) => infer E } }] ? E : never,
+    T[number] extends never ? [] : Readonly<{ [K in keyof T]: [T[K]] extends [STM<any, any, infer A>] ? A : never }>
+  >
+  <T extends Readonly<{ [K: string]: STM<any, any, any> }>>(args: T): STM<
+    keyof T extends never ? never : [T[keyof T]] extends [{ [STMTypeId]: { _R: (_: never) => infer R } }] ? R : never,
+    keyof T extends never ? never : [T[keyof T]] extends [{ [STMTypeId]: { _E: (_: never) => infer E } }] ? E : never,
+    Readonly<{ [K in keyof T]: [T[K]] extends [STM<any, any, infer A>] ? A : never }>
+  >
+}
 ```
 
 Added in v1.0.0
@@ -257,9 +308,10 @@ function `f` returns `Some`.
 **Signature**
 
 ```ts
-export declare const collectFirst: <A, R, E, A2>(
-  pf: (a: A) => STM<R, E, Option.Option<A2>>
-) => (iterable: Iterable<A>) => STM<R, E, Option.Option<A2>>
+export declare const collectFirst: {
+  <A, R, E, A2>(pf: (a: A) => STM<R, E, Option.Option<A2>>): (iterable: Iterable<A>) => STM<R, E, Option.Option<A2>>
+  <A, R, E, A2>(iterable: Iterable<A>, pf: (a: A) => STM<R, E, Option.Option<A2>>): STM<R, E, Option.Option<A2>>
+}
 ```
 
 Added in v1.0.0
@@ -277,6 +329,44 @@ export declare const cond: <E, A>(
   error: LazyArg<E>,
   result: LazyArg<A>
 ) => STM<never, E, A>
+```
+
+Added in v1.0.0
+
+## context
+
+Retrieves the environment inside an stm.
+
+**Signature**
+
+```ts
+export declare const context: <R>() => STM<R, never, Context.Context<R>>
+```
+
+Added in v1.0.0
+
+## contextWith
+
+Accesses the environment of the transaction to perform a transaction.
+
+**Signature**
+
+```ts
+export declare const contextWith: <R0, R>(f: (environment: Context.Context<R0>) => R) => STM<R0, never, R>
+```
+
+Added in v1.0.0
+
+## contextWithSTM
+
+Accesses the environment of the transaction to perform a transaction.
+
+**Signature**
+
+```ts
+export declare const contextWithSTM: <R0, R, E, A>(
+  f: (environment: Context.Context<R0>) => STM<R, E, A>
+) => STM<R0 | R, E, A>
 ```
 
 Added in v1.0.0
@@ -318,44 +408,6 @@ export declare const dieSync: (evaluate: LazyArg<unknown>) => STM<never, never, 
 
 Added in v1.0.0
 
-## environment
-
-Retrieves the environment inside an stm.
-
-**Signature**
-
-```ts
-export declare const environment: <R>() => STM<R, never, Context.Context<R>>
-```
-
-Added in v1.0.0
-
-## environmentWith
-
-Accesses the environment of the transaction to perform a transaction.
-
-**Signature**
-
-```ts
-export declare const environmentWith: <R0, R>(f: (environment: Context.Context<R0>) => R) => STM<R0, never, R>
-```
-
-Added in v1.0.0
-
-## environmentWithSTM
-
-Accesses the environment of the transaction to perform a transaction.
-
-**Signature**
-
-```ts
-export declare const environmentWithSTM: <R0, R, E, A>(
-  f: (environment: Context.Context<R0>) => STM<R, E, A>
-) => STM<R0 | R, E, A>
-```
-
-Added in v1.0.0
-
 ## every
 
 Determines whether all elements of the `Iterable<A>` satisfy the effectual
@@ -364,9 +416,10 @@ predicate.
 **Signature**
 
 ```ts
-export declare const every: <A, R, E>(
-  predicate: (a: A) => STM<R, E, boolean>
-) => (iterable: Iterable<A>) => STM<R, E, boolean>
+export declare const every: {
+  <A, R, E>(predicate: (a: A) => STM<R, E, boolean>): (iterable: Iterable<A>) => STM<R, E, boolean>
+  <A, R, E>(iterable: Iterable<A>, predicate: (a: A) => STM<R, E, boolean>): STM<R, E, boolean>
+}
 ```
 
 Added in v1.0.0
@@ -379,9 +432,10 @@ predicate `f`.
 **Signature**
 
 ```ts
-export declare const exists: <A, R, E>(
-  predicate: (a: A) => STM<R, E, boolean>
-) => (iterable: Iterable<A>) => STM<R, E, boolean>
+export declare const exists: {
+  <A, R, E>(predicate: (a: A) => STM<R, E, boolean>): (iterable: Iterable<A>) => STM<R, E, boolean>
+  <A, R, E>(iterable: Iterable<A>, predicate: (a: A) => STM<R, E, boolean>): STM<R, E, boolean>
+}
 ```
 
 Added in v1.0.0
@@ -429,9 +483,10 @@ Filters the collection using the specified effectual predicate.
 **Signature**
 
 ```ts
-export declare const filter: <A, R, E>(
-  predicate: (a: A) => STM<R, E, boolean>
-) => (iterable: Iterable<A>) => STM<R, E, Chunk.Chunk<A>>
+export declare const filter: {
+  <A, R, E>(predicate: (a: A) => STM<R, E, boolean>): (iterable: Iterable<A>) => STM<R, E, Chunk.Chunk<A>>
+  <A, R, E>(iterable: Iterable<A>, predicate: (a: A) => STM<R, E, boolean>): STM<R, E, Chunk.Chunk<A>>
+}
 ```
 
 Added in v1.0.0
@@ -444,9 +499,10 @@ all elements that satisfy the predicate.
 **Signature**
 
 ```ts
-export declare const filterNot: <A, R, E>(
-  predicate: (a: A) => STM<R, E, boolean>
-) => (iterable: Iterable<A>) => STM<R, E, Chunk.Chunk<A>>
+export declare const filterNot: {
+  <A, R, E>(predicate: (a: A) => STM<R, E, boolean>): (iterable: Iterable<A>) => STM<R, E, Chunk.Chunk<A>>
+  <A, R, E>(iterable: Iterable<A>, predicate: (a: A) => STM<R, E, boolean>): STM<R, E, Chunk.Chunk<A>>
+}
 ```
 
 Added in v1.0.0
@@ -503,14 +559,14 @@ export declare const interrupt: () => STM<never, never, never>
 
 Added in v1.0.0
 
-## interruptWith
+## interruptAs
 
 Interrupts the fiber running the effect with the specified `FiberId`.
 
 **Signature**
 
 ```ts
-export declare const interruptWith: (fiberId: FiberId.FiberId) => STM<never, never, never>
+export declare const interruptAs: (fiberId: FiberId.FiberId) => STM<never, never, never>
 ```
 
 Added in v1.0.0
@@ -533,10 +589,11 @@ return s
 **Signature**
 
 ```ts
-export declare const iterate: <Z>(
+export declare const iterate: <R, E, Z>(
   initial: Z,
-  cont: (z: Z) => boolean
-) => <R, E>(body: (z: Z) => STM<R, E, Z>) => STM<R, E, Z>
+  cont: (z: Z) => boolean,
+  body: (z: Z) => STM<R, E, Z>
+) => STM<R, E, Z>
 ```
 
 Added in v1.0.0
@@ -605,10 +662,10 @@ Merges an `Iterable<STM>` to a single `STM`, working sequentially.
 **Signature**
 
 ```ts
-export declare const mergeAll: <A2, A>(
-  zero: A2,
-  f: (a2: A2, a: A) => A2
-) => <R, E>(iterable: Iterable<STM<R, E, A>>) => STM<R, E, A2>
+export declare const mergeAll: {
+  <A2, A>(zero: A2, f: (a2: A2, a: A) => A2): <R, E>(iterable: Iterable<STM<R, E, A>>) => STM<R, E, A2>
+  <R, E, A2, A>(iterable: Iterable<STM<R, E, A>>, zero: A2, f: (a2: A2, a: A) => A2): STM<R, E, A2>
+}
 ```
 
 Added in v1.0.0
@@ -621,10 +678,10 @@ from left to right.
 **Signature**
 
 ```ts
-export declare const reduce: <S, A, R, E>(
-  zero: S,
-  f: (s: S, a: A) => STM<R, E, S>
-) => (iterable: Iterable<A>) => STM<R, E, S>
+export declare const reduce: {
+  <S, A, R, E>(zero: S, f: (s: S, a: A) => STM<R, E, S>): (iterable: Iterable<A>) => STM<R, E, S>
+  <S, A, R, E>(iterable: Iterable<A>, zero: S, f: (s: S, a: A) => STM<R, E, S>): STM<R, E, S>
+}
 ```
 
 Added in v1.0.0
@@ -636,10 +693,16 @@ Reduces an `Iterable<STM>` to a single `STM`, working sequentially.
 **Signature**
 
 ```ts
-export declare const reduceAll: <R2, E2, A>(
-  initial: STM<R2, E2, A>,
-  f: (x: A, y: A) => A
-) => <R, E>(iterable: Iterable<STM<R, E, A>>) => STM<R2 | R, E2 | E, A>
+export declare const reduceAll: {
+  <R2, E2, A>(initial: STM<R2, E2, A>, f: (x: A, y: A) => A): <R, E>(
+    iterable: Iterable<STM<R, E, A>>
+  ) => STM<R2 | R, E2 | E, A>
+  <R, E, R2, E2, A>(iterable: Iterable<STM<R, E, A>>, initial: STM<R2, E2, A>, f: (x: A, y: A) => A): STM<
+    R | R2,
+    E | E2,
+    A
+  >
+}
 ```
 
 Added in v1.0.0
@@ -652,10 +715,10 @@ from right to left.
 **Signature**
 
 ```ts
-export declare const reduceRight: <S, A, R, E>(
-  zero: S,
-  f: (s: S, a: A) => STM<R, E, S>
-) => (iterable: Iterable<A>) => STM<R, E, S>
+export declare const reduceRight: {
+  <S, A, R, E>(zero: S, f: (s: S, a: A) => STM<R, E, S>): (iterable: Iterable<A>) => STM<R, E, S>
+  <S, A, R, E>(iterable: Iterable<A>, zero: S, f: (s: S, a: A) => STM<R, E, S>): STM<R, E, S>
+}
 ```
 
 Added in v1.0.0
@@ -668,7 +731,10 @@ empty `Chunk` will be returned.
 **Signature**
 
 ```ts
-export declare const replicate: (n: number) => <R, E, A>(self: STM<R, E, A>) => Chunk.Chunk<STM<R, E, A>>
+export declare const replicate: {
+  (n: number): <R, E, A>(self: STM<R, E, A>) => Chunk.Chunk<STM<R, E, A>>
+  <R, E, A>(self: STM<R, E, A>, n: number): Chunk.Chunk<STM<R, E, A>>
+}
 ```
 
 Added in v1.0.0
@@ -681,7 +747,10 @@ results.
 **Signature**
 
 ```ts
-export declare const replicateSTM: (n: number) => <R, E, A>(self: STM<R, E, A>) => STM<R, E, Chunk.Chunk<A>>
+export declare const replicateSTM: {
+  (n: number): <R, E, A>(self: STM<R, E, A>) => STM<R, E, Chunk.Chunk<A>>
+  <R, E, A>(self: STM<R, E, A>, n: number): STM<R, E, Chunk.Chunk<A>>
+}
 ```
 
 Added in v1.0.0
@@ -694,7 +763,10 @@ results.
 **Signature**
 
 ```ts
-export declare const replicateSTMDiscard: (n: number) => <R, E, A>(self: STM<R, E, A>) => STM<R, E, void>
+export declare const replicateSTMDiscard: {
+  (n: number): <R, E, A>(self: STM<R, E, A>) => STM<R, E, void>
+  <R, E, A>(self: STM<R, E, A>, n: number): STM<R, E, void>
+}
 ```
 
 Added in v1.0.0
@@ -719,7 +791,7 @@ effect.
 **Signature**
 
 ```ts
-export declare const serviceWith: <T>(tag: Context.Tag<T>) => <A>(f: (service: T) => A) => STM<T, never, A>
+export declare const serviceWith: <T, A>(tag: Context.Tag<T>, f: (service: T) => A) => STM<T, never, A>
 ```
 
 Added in v1.0.0
@@ -732,25 +804,10 @@ effect.
 **Signature**
 
 ```ts
-export declare const serviceWithSTM: <T>(
-  tag: Context.Tag<T>
-) => <R, E, A>(f: (service: T) => STM<R, E, A>) => STM<T | R, E, A>
-```
-
-Added in v1.0.0
-
-## struct
-
-**Signature**
-
-```ts
-export declare const struct: <NER extends Record<string, STM<any, any, any>>>(
-  r: Record<string, STM<any, any, any>> | EnforceNonEmptyRecord<NER>
-) => STM<
-  [NER[keyof NER]] extends [{ [STMTypeId]: { _R: (_: never) => infer R } }] ? R : never,
-  [NER[keyof NER]] extends [{ [STMTypeId]: { _E: (_: never) => infer E } }] ? E : never,
-  { [K in keyof NER]: [NER[K]] extends [{ [STMTypeId]: { _A: (_: never) => infer A } }] ? A : never }
->
+export declare const serviceWithSTM: <T, R, E, A>(
+  tag: Context.Tag<T>,
+  f: (service: T) => STM<R, E, A>
+) => STM<T | R, E, A>
 ```
 
 Added in v1.0.0
@@ -853,24 +910,6 @@ export declare const tryCatch: <E, A>(attempt: () => A, onThrow: (u: unknown) =>
 
 Added in v1.0.0
 
-## tuple
-
-Like `forEach` + `identity` with a tuple type.
-
-**Signature**
-
-```ts
-export declare const tuple: <T extends [STM<any, any, any>, ...STM<any, any, any>[]]>(
-  ...t: T
-) => STM<
-  [T[number]] extends [{ [STMTypeId]: { _R: (_: never) => infer R } }] ? R : never,
-  [T[number]] extends [{ [STMTypeId]: { _E: (_: never) => infer E } }] ? E : never,
-  TupleSTM<T>
->
-```
-
-Added in v1.0.0
-
 ## unit
 
 Returns an `STM` effect that succeeds with `Unit`.
@@ -912,7 +951,23 @@ Added in v1.0.0
 
 # environment
 
-## provideEnvironment
+## contramapContext
+
+Transforms the environment being provided to this effect with the specified
+function.
+
+**Signature**
+
+```ts
+export declare const contramapContext: {
+  <R0, R>(f: (context: Context.Context<R0>) => Context.Context<R>): <E, A>(self: STM<R, E, A>) => STM<R0, E, A>
+  <E, A, R0, R>(self: STM<R, E, A>, f: (context: Context.Context<R0>) => Context.Context<R>): STM<R0, E, A>
+}
+```
+
+Added in v1.0.0
+
+## provideContext
 
 Provides the transaction its required environment, which eliminates its
 dependency on `R`.
@@ -920,7 +975,10 @@ dependency on `R`.
 **Signature**
 
 ```ts
-export declare const provideEnvironment: <R>(env: Context.Context<R>) => <E, A>(self: STM<R, E, A>) => STM<never, E, A>
+export declare const provideContext: {
+  <R>(env: Context.Context<R>): <E, A>(self: STM<R, E, A>) => STM<never, E, A>
+  <E, A, R>(self: STM<R, E, A>, env: Context.Context<R>): STM<never, E, A>
+}
 ```
 
 Added in v1.0.0
@@ -933,9 +991,16 @@ effect requires more than one service use `provideEnvironment` instead.
 **Signature**
 
 ```ts
-export declare const provideService: <T>(
-  tag: Context.Tag<T>
-) => (resource: T) => <R, E, A>(self: STM<R, E, A>) => STM<Exclude<R, T>, E, A>
+export declare const provideService: {
+  <T extends Context.Tag<any>>(tag: T, resource: Context.Tag.Service<T>): <R, E, A>(
+    self: STM<R, E, A>
+  ) => STM<Exclude<R, Context.Tag.Service<T>>, E, A>
+  <R, E, A, T extends Context.Tag<any>>(self: STM<R, E, A>, tag: T, resource: Context.Tag.Service<T>): STM<
+    Exclude<R, Context.Tag.Service<T>>,
+    E,
+    A
+  >
+}
 ```
 
 Added in v1.0.0
@@ -948,24 +1013,16 @@ effect requires more than one service use `provideEnvironment` instead.
 **Signature**
 
 ```ts
-export declare const provideServiceSTM: <T>(
-  tag: Context.Tag<T>
-) => <R1, E1>(stm: STM<R1, E1, T>) => <R, E, A>(self: STM<R, E, A>) => STM<R1 | Exclude<R, T>, E1 | E, A>
-```
-
-Added in v1.0.0
-
-## provideSomeEnvironment
-
-Transforms the environment being provided to this effect with the specified
-function.
-
-**Signature**
-
-```ts
-export declare const provideSomeEnvironment: <R0, R>(
-  f: (context: Context.Context<R0>) => Context.Context<R>
-) => <E, A>(self: STM<R, E, A>) => STM<R0, E, A>
+export declare const provideServiceSTM: {
+  <T extends Context.Tag<T>, R1, E1>(tag: Context.Tag<T>, stm: STM<R1, E1, Context.Tag.Service<T>>): <R, E, A>(
+    self: STM<R, E, A>
+  ) => STM<R1 | Exclude<R, Context.Tag.Service<T>>, E1 | E, A>
+  <R, E, A, T extends Context.Tag<T>, R1, E1>(
+    self: STM<R, E, A>,
+    tag: T,
+    stm: STM<R1, E1, Context.Tag.Service<T>>
+  ): STM<R1 | Exclude<R, Context.Tag.Service<T>>, E | E1, A>
+}
 ```
 
 Added in v1.0.0
@@ -979,9 +1036,10 @@ Recovers from all errors.
 **Signature**
 
 ```ts
-export declare const catchAll: <E, R1, E1, B>(
-  f: (e: E) => STM<R1, E1, B>
-) => <R, A>(self: STM<R, E, A>) => STM<R1 | R, E1, B | A>
+export declare const catchAll: {
+  <E, R1, E1, B>(f: (e: E) => STM<R1, E1, B>): <R, A>(self: STM<R, E, A>) => STM<R1 | R, E1, B | A>
+  <R, A, E, R1, E1, B>(self: STM<R, E, A>, f: (e: E) => STM<R1, E1, B>): STM<R | R1, E1, A | B>
+}
 ```
 
 Added in v1.0.0
@@ -993,9 +1051,16 @@ Recovers from some or all of the error cases.
 **Signature**
 
 ```ts
-export declare const catchSome: <E, R2, E2, A2>(
-  pf: (error: E) => Option.Option<STM<R2, E2, A2>>
-) => <R, A>(self: STM<R, E, A>) => STM<R2 | R, E | E2, A2 | A>
+export declare const catchSome: {
+  <E, R2, E2, A2>(pf: (error: E) => Option.Option<STM<R2, E2, A2>>): <R, A>(
+    self: STM<R, E, A>
+  ) => STM<R2 | R, E | E2, A2 | A>
+  <R, A, E, R2, E2, A2>(self: STM<R, E, A>, pf: (error: E) => Option.Option<STM<R2, E2, A2>>): STM<
+    R | R2,
+    E | E2,
+    A | A2
+  >
+}
 ```
 
 Added in v1.0.0
@@ -1021,7 +1086,10 @@ with them, using the specified function to convert the `E` into a defect.
 **Signature**
 
 ```ts
-export declare const orDieWith: <E>(f: (error: E) => unknown) => <R, A>(self: STM<R, E, A>) => STM<R, never, A>
+export declare const orDieWith: {
+  <E>(f: (error: E) => unknown): <R, A>(self: STM<R, E, A>) => STM<R, never, A>
+  <R, A, E>(self: STM<R, E, A>, f: (error: E) => unknown): STM<R, never, A>
+}
 ```
 
 Added in v1.0.0
@@ -1034,9 +1102,10 @@ effect.
 **Signature**
 
 ```ts
-export declare const orElse: <R2, E2, A2>(
-  that: LazyArg<STM<R2, E2, A2>>
-) => <R, E, A>(self: STM<R, E, A>) => STM<R2 | R, E2, A2 | A>
+export declare const orElse: {
+  <R2, E2, A2>(that: LazyArg<STM<R2, E2, A2>>): <R, E, A>(self: STM<R, E, A>) => STM<R2 | R, E2, A2 | A>
+  <R, E, A, R2, E2, A2>(self: STM<R, E, A>, that: LazyArg<STM<R2, E2, A2>>): STM<R | R2, E2, A | A2>
+}
 ```
 
 Added in v1.0.0
@@ -1050,9 +1119,10 @@ the value of the specified effect in right side.
 **Signature**
 
 ```ts
-export declare const orElseEither: <R2, E2, A2>(
-  that: LazyArg<STM<R2, E2, A2>>
-) => <R, E, A>(self: STM<R, E, A>) => STM<R2 | R, E2, Either.Either<A, A2>>
+export declare const orElseEither: {
+  <R2, E2, A2>(that: LazyArg<STM<R2, E2, A2>>): <R, E, A>(self: STM<R, E, A>) => STM<R2 | R, E2, Either.Either<A, A2>>
+  <R, E, A, R2, E2, A2>(self: STM<R, E, A>, that: LazyArg<STM<R2, E2, A2>>): STM<R | R2, E2, Either.Either<A, A2>>
+}
 ```
 
 Added in v1.0.0
@@ -1065,7 +1135,10 @@ specified error.
 **Signature**
 
 ```ts
-export declare const orElseFail: <E2>(error: LazyArg<E2>) => <R, E, A>(self: STM<R, E, A>) => STM<R, E2, A>
+export declare const orElseFail: {
+  <E2>(error: LazyArg<E2>): <R, E, A>(self: STM<R, E, A>) => STM<R, E2, A>
+  <R, E, A, E2>(self: STM<R, E, A>, error: LazyArg<E2>): STM<R, E2, A>
+}
 ```
 
 Added in v1.0.0
@@ -1079,9 +1152,16 @@ specified effect.
 **Signature**
 
 ```ts
-export declare const orElseOptional: <R2, E2, A2>(
-  that: LazyArg<STM<R2, Option.Option<E2>, A2>>
-) => <R, E, A>(self: STM<R, Option.Option<E>, A>) => STM<R2 | R, Option.Option<E2 | E>, A2 | A>
+export declare const orElseOptional: {
+  <R2, E2, A2>(that: LazyArg<STM<R2, Option.Option<E2>, A2>>): <R, E, A>(
+    self: STM<R, Option.Option<E>, A>
+  ) => STM<R2 | R, Option.Option<E2 | E>, A2 | A>
+  <R, E, A, R2, E2, A2>(self: STM<R, Option.Option<E>, A>, that: LazyArg<STM<R2, Option.Option<E2>, A2>>): STM<
+    R | R2,
+    Option.Option<E | E2>,
+    A | A2
+  >
+}
 ```
 
 Added in v1.0.0
@@ -1094,7 +1174,10 @@ specified value.
 **Signature**
 
 ```ts
-export declare const orElseSucceed: <A2>(value: LazyArg<A2>) => <R, E, A>(self: STM<R, E, A>) => STM<R, never, A2 | A>
+export declare const orElseSucceed: {
+  <A2>(value: LazyArg<A2>): <R, E, A>(self: STM<R, E, A>) => STM<R, never, A2 | A>
+  <R, E, A, A2>(self: STM<R, E, A>, value: LazyArg<A2>): STM<R, never, A | A2>
+}
 ```
 
 Added in v1.0.0
@@ -1107,9 +1190,10 @@ effect. This is an equivalent of Haskell's orElse.
 **Signature**
 
 ```ts
-export declare const orTry: <R1, E1, A1>(
-  that: () => STM<R1, E1, A1>
-) => <R, E, A>(self: STM<R, E, A>) => STM<R1 | R, E1 | E, A1 | A>
+export declare const orTry: {
+  <R1, E1, A1>(that: LazyArg<STM<R1, E1, A1>>): <R, E, A>(self: STM<R, E, A>) => STM<R1 | R, E1 | E, A1 | A>
+  <R, E, A, R1, E1, A1>(self: STM<R, E, A>, that: LazyArg<STM<R1, E1, A1>>): STM<R | R1, E | E1, A | A1>
+}
 ```
 
 Added in v1.0.0
@@ -1136,10 +1220,10 @@ Dies with specified defect if the predicate fails.
 **Signature**
 
 ```ts
-export declare const filterOrDie: <A>(
-  predicate: Predicate<A>,
-  defect: LazyArg<unknown>
-) => <R, E>(self: STM<R, E, A>) => STM<R, E, A>
+export declare const filterOrDie: {
+  <A>(predicate: Predicate<A>, defect: LazyArg<unknown>): <R, E>(self: STM<R, E, A>) => STM<R, E, A>
+  <R, E, A>(self: STM<R, E, A>, predicate: Predicate<A>, defect: LazyArg<unknown>): STM<R, E, A>
+}
 ```
 
 Added in v1.0.0
@@ -1152,10 +1236,10 @@ predicate fails.
 **Signature**
 
 ```ts
-export declare const filterOrDieMessage: <A>(
-  predicate: Predicate<A>,
-  message: string
-) => <R, E>(self: STM<R, E, A>) => STM<R, E, A>
+export declare const filterOrDieMessage: {
+  <A>(predicate: Predicate<A>, message: string): <R, E>(self: STM<R, E, A>) => STM<R, E, A>
+  <R, E, A>(self: STM<R, E, A>, predicate: Predicate<A>, message: string): STM<R, E, A>
+}
 ```
 
 Added in v1.0.0
@@ -1167,10 +1251,16 @@ Supplies `orElse` if the predicate fails.
 **Signature**
 
 ```ts
-export declare const filterOrElse: <A, R2, E2, A2>(
-  predicate: Predicate<A>,
-  orElse: LazyArg<STM<R2, E2, A2>>
-) => <R, E>(self: STM<R, E, A>) => STM<R2 | R, E2 | E, A | A2>
+export declare const filterOrElse: {
+  <A, R2, E2, A2>(predicate: Predicate<A>, orElse: LazyArg<STM<R2, E2, A2>>): <R, E>(
+    self: STM<R, E, A>
+  ) => STM<R2 | R, E2 | E, A | A2>
+  <R, E, A, R2, E2, A2>(self: STM<R, E, A>, predicate: Predicate<A>, orElse: LazyArg<STM<R2, E2, A2>>): STM<
+    R | R2,
+    E | E2,
+    A | A2
+  >
+}
 ```
 
 Added in v1.0.0
@@ -1182,10 +1272,16 @@ Applies `orElse` if the predicate fails.
 **Signature**
 
 ```ts
-export declare const filterOrElseWith: <A, R2, E2, A2>(
-  predicate: Predicate<A>,
-  orElse: (a: A) => STM<R2, E2, A2>
-) => <R, E>(self: STM<R, E, A>) => STM<R2 | R, E2 | E, A | A2>
+export declare const filterOrElseWith: {
+  <A, R2, E2, A2>(predicate: Predicate<A>, orElse: (a: A) => STM<R2, E2, A2>): <R, E>(
+    self: STM<R, E, A>
+  ) => STM<R2 | R, E2 | E, A | A2>
+  <R, E, A, R2, E2, A2>(self: STM<R, E, A>, predicate: Predicate<A>, orElse: (a: A) => STM<R2, E2, A2>): STM<
+    R | R2,
+    E | E2,
+    A | A2
+  >
+}
 ```
 
 Added in v1.0.0
@@ -1197,10 +1293,10 @@ Fails with the specified error if the predicate fails.
 **Signature**
 
 ```ts
-export declare const filterOrFail: <A, E2>(
-  predicate: Predicate<A>,
-  error: LazyArg<E2>
-) => <R, E>(self: STM<R, E, A>) => STM<R, E2 | E, A>
+export declare const filterOrFail: {
+  <A, E2>(predicate: Predicate<A>, error: LazyArg<E2>): <R, E>(self: STM<R, E, A>) => STM<R, E2 | E, A>
+  <R, E, A, E2>(self: STM<R, E, A>, predicate: Predicate<A>, error: LazyArg<E2>): STM<R, E | E2, A>
+}
 ```
 
 Added in v1.0.0
@@ -1216,9 +1312,10 @@ fails, everything will be rolled back.
 **Signature**
 
 ```ts
-export declare const ensuring: <R1, B>(
-  finalizer: STM<R1, never, B>
-) => <R, E, A>(self: STM<R, E, A>) => STM<R1 | R, E, A>
+export declare const ensuring: {
+  <R1, B>(finalizer: STM<R1, never, B>): <R, E, A>(self: STM<R, E, A>) => STM<R1 | R, E, A>
+  <R, E, A, R1, B>(self: STM<R, E, A>, finalizer: STM<R1, never, B>): STM<R | R1, E, A>
+}
 ```
 
 Added in v1.0.0
@@ -1233,10 +1330,10 @@ retry.
 **Signature**
 
 ```ts
-export declare const match: <E, A2, A, A3>(
-  f: (error: E) => A2,
-  g: (value: A) => A3
-) => <R>(self: STM<R, E, A>) => STM<R, E, A2 | A3>
+export declare const match: {
+  <E, A2, A, A3>(f: (error: E) => A2, g: (value: A) => A3): <R>(self: STM<R, E, A>) => STM<R, never, A2 | A3>
+  <R, E, A2, A, A3>(self: STM<R, E, A>, f: (error: E) => A2, g: (value: A) => A3): STM<R, never, A2 | A3>
+}
 ```
 
 Added in v1.0.0
@@ -1248,10 +1345,16 @@ Effectfully folds over the `STM` effect, handling both failure and success.
 **Signature**
 
 ```ts
-export declare const matchSTM: <E, R1, E1, A1, A, R2, E2, A2>(
-  onFailure: (e: E) => STM<R1, E1, A1>,
-  onSuccess: (a: A) => STM<R2, E2, A2>
-) => <R>(self: STM<R, E, A>) => STM<R1 | R2 | R, E1 | E2, A1 | A2>
+export declare const matchSTM: {
+  <E, R1, E1, A1, A, R2, E2, A2>(onFailure: (e: E) => STM<R1, E1, A1>, onSuccess: (a: A) => STM<R2, E2, A2>): <R>(
+    self: STM<R, E, A>
+  ) => STM<R1 | R2 | R, E1 | E2, A1 | A2>
+  <R, E, R1, E1, A1, A, R2, E2, A2>(
+    self: STM<R, E, A>,
+    onFailure: (e: E) => STM<R1, E1, A1>,
+    onSuccess: (a: A) => STM<R2, E2, A2>
+  ): STM<R | R1 | R2, E1 | E2, A1 | A2>
+}
 ```
 
 Added in v1.0.0
@@ -1340,9 +1443,10 @@ Extracts the optional value, or returns the given 'default'.
 **Signature**
 
 ```ts
-export declare const someOrElse: <A2>(
-  orElse: LazyArg<A2>
-) => <R, E, A>(self: STM<R, E, Option.Option<A>>) => STM<R, E, A2 | A>
+export declare const someOrElse: {
+  <A2>(orElse: LazyArg<A2>): <R, E, A>(self: STM<R, E, Option.Option<A>>) => STM<R, E, A2 | A>
+  <R, E, A, A2>(self: STM<R, E, Option.Option<A>>, orElse: LazyArg<A2>): STM<R, E, A | A2>
+}
 ```
 
 Added in v1.0.0
@@ -1354,9 +1458,16 @@ Extracts the optional value, or executes the effect 'default'.
 **Signature**
 
 ```ts
-export declare const someOrElseSTM: <R2, E2, A2>(
-  orElse: LazyArg<STM<R2, E2, A2>>
-) => <R, E, A>(self: STM<R, E, Option.Option<A>>) => STM<R2 | R, E2 | E, A2 | A>
+export declare const someOrElseSTM: {
+  <R2, E2, A2>(orElse: LazyArg<STM<R2, E2, A2>>): <R, E, A>(
+    self: STM<R, E, Option.Option<A>>
+  ) => STM<R2 | R, E2 | E, A2 | A>
+  <R, E, A, R2, E2, A2>(self: STM<R, E, Option.Option<A>>, orElse: LazyArg<STM<R2, E2, A2>>): STM<
+    R | R2,
+    E | E2,
+    A | A2
+  >
+}
 ```
 
 Added in v1.0.0
@@ -1368,9 +1479,10 @@ Extracts the optional value, or fails with the given error 'e'.
 **Signature**
 
 ```ts
-export declare const someOrFail: <E2>(
-  error: LazyArg<E2>
-) => <R, E, A>(self: STM<R, E, Option.Option<A>>) => STM<R, E2 | E, A>
+export declare const someOrFail: {
+  <E2>(error: LazyArg<E2>): <R, E, A>(self: STM<R, E, Option.Option<A>>) => STM<R, E2 | E, A>
+  <R, E, A, E2>(self: STM<R, E, Option.Option<A>>, error: LazyArg<E2>): STM<R, E | E2, A>
+}
 ```
 
 Added in v1.0.0
@@ -1437,7 +1549,10 @@ Maps the success value of this effect to the specified constant value.
 **Signature**
 
 ```ts
-export declare const as: <A2>(value: A2) => <R, E, A>(self: STM<R, E, A>) => STM<R, E, A2>
+export declare const as: {
+  <A2>(value: A2): <R, E, A>(self: STM<R, E, A>) => STM<R, E, A2>
+  <R, E, A, A2>(self: STM<R, E, A>, value: A2): STM<R, E, A2>
+}
 ```
 
 Added in v1.0.0
@@ -1487,7 +1602,10 @@ Maps the value produced by the effect.
 **Signature**
 
 ```ts
-export declare const map: <A, B>(f: (a: A) => B) => <R, E>(self: STM<R, E, A>) => STM<R, E, B>
+export declare const map: {
+  <A, B>(f: (a: A) => B): <R, E>(self: STM<R, E, A>) => STM<R, E, B>
+  <R, E, A, B>(self: STM<R, E, A>, f: (a: A) => B): STM<R, E, B>
+}
 ```
 
 Added in v1.0.0
@@ -1501,7 +1619,10 @@ into typed failed effects.
 **Signature**
 
 ```ts
-export declare const mapAttempt: <A, B>(f: (a: A) => B) => <R, E>(self: STM<R, E, A>) => STM<R, unknown, B>
+export declare const mapAttempt: {
+  <A, B>(f: (a: A) => B): <R, E>(self: STM<R, E, A>) => STM<R, unknown, B>
+  <R, E, A, B>(self: STM<R, E, A>, f: (a: A) => B): STM<R, unknown, B>
+}
 ```
 
 Added in v1.0.0
@@ -1514,10 +1635,10 @@ by the specified pair of functions, `f` and `g`.
 **Signature**
 
 ```ts
-export declare const mapBoth: <E, E2, A, A2>(
-  f: (error: E) => E2,
-  g: (value: A) => A2
-) => <R>(self: STM<R, E, A>) => STM<R, E2, A2>
+export declare const mapBoth: {
+  <E, E2, A, A2>(f: (error: E) => E2, g: (value: A) => A2): <R>(self: STM<R, E, A>) => STM<R, E2, A2>
+  <R, E, E2, A, A2>(self: STM<R, E, A>, f: (error: E) => E2, g: (value: A) => A2): STM<R, E2, A2>
+}
 ```
 
 Added in v1.0.0
@@ -1529,7 +1650,10 @@ Maps from one error type to another.
 **Signature**
 
 ```ts
-export declare const mapError: <E, E2>(f: (error: E) => E2) => <R, A>(self: STM<R, E, A>) => STM<R, E2, A>
+export declare const mapError: {
+  <E, E2>(f: (error: E) => E2): <R, A>(self: STM<R, E, A>) => STM<R, E2, A>
+  <R, A, E, E2>(self: STM<R, E, A>, f: (error: E) => E2): STM<R, E2, A>
+}
 ```
 
 Added in v1.0.0
@@ -1617,7 +1741,10 @@ Simultaneously filters and maps the value produced by this effect.
 **Signature**
 
 ```ts
-export declare const collect: <A, A2>(pf: (a: A) => Option.Option<A2>) => <R, E>(self: STM<R, E, A>) => STM<R, E, A2>
+export declare const collect: {
+  <A, A2>(pf: (a: A) => Option.Option<A2>): <R, E>(self: STM<R, E, A>) => STM<R, E, A2>
+  <R, E, A, A2>(self: STM<R, E, A>, pf: (a: A) => Option.Option<A2>): STM<R, E, A2>
+}
 ```
 
 Added in v1.0.0
@@ -1629,9 +1756,10 @@ Simultaneously filters and flatMaps the value produced by this effect.
 **Signature**
 
 ```ts
-export declare const collectSTM: <A, R2, E2, A2>(
-  pf: (a: A) => Option.Option<STM<R2, E2, A2>>
-) => <R, E>(self: STM<R, E, A>) => STM<R2 | R, E2 | E, A2>
+export declare const collectSTM: {
+  <A, R2, E2, A2>(pf: (a: A) => Option.Option<STM<R2, E2, A2>>): <R, E>(self: STM<R, E, A>) => STM<R2 | R, E2 | E, A2>
+  <R, E, A, R2, E2, A2>(self: STM<R, E, A>, pf: (a: A) => Option.Option<STM<R2, E2, A2>>): STM<R | R2, E | E2, A2>
+}
 ```
 
 Added in v1.0.0
@@ -1683,9 +1811,10 @@ parameters back
 **Signature**
 
 ```ts
-export declare const flipWith: <R, A, E, R2, A2, E2>(
-  f: (stm: STM<R, A, E>) => STM<R2, A2, E2>
-) => (self: STM<R, E, A>) => STM<R | R2, E | E2, A | A2>
+export declare const flipWith: {
+  <R, A, E, R2, A2, E2>(f: (stm: STM<R, A, E>) => STM<R2, A2, E2>): (self: STM<R, E, A>) => STM<R | R2, E | E2, A | A2>
+  <R, A, E, R2, A2, E2>(self: STM<R, E, A>, f: (stm: STM<R, A, E>) => STM<R2, A2, E2>): STM<R | R2, E | E2, A | A2>
+}
 ```
 
 Added in v1.0.0
@@ -1697,10 +1826,16 @@ Runs `onTrue` if the result of `b` is `true` and `onFalse` otherwise.
 **Signature**
 
 ```ts
-export declare const ifSTM: <R1, R2, E1, E2, A, A1>(
-  onTrue: STM<R1, E1, A>,
-  onFalse: STM<R2, E2, A1>
-) => <R, E>(self: STM<R, E, boolean>) => STM<R1 | R2 | R, E1 | E2 | E, A | A1>
+export declare const ifSTM: {
+  <R1, R2, E1, E2, A, A1>(onTrue: STM<R1, E1, A>, onFalse: STM<R2, E2, A1>): <R, E>(
+    self: STM<R, E, boolean>
+  ) => STM<R1 | R2 | R, E1 | E2 | E, A | A1>
+  <R, E, R1, R2, E1, E2, A, A1>(self: STM<R, E, boolean>, onTrue: STM<R1, E1, A>, onFalse: STM<R2, E2, A1>): STM<
+    R | R1 | R2,
+    E | E1 | E2,
+    A | A1
+  >
+}
 ```
 
 Added in v1.0.0
@@ -1773,9 +1908,10 @@ Keeps some of the errors, and terminates the fiber with the rest.
 **Signature**
 
 ```ts
-export declare const refineOrDie: <E, E2>(
-  pf: (error: E) => Option.Option<E2>
-) => <R, A>(self: STM<R, E, A>) => STM<R, E2, A>
+export declare const refineOrDie: {
+  <E, E2>(pf: (error: E) => Option.Option<E2>): <R, A>(self: STM<R, E, A>) => STM<R, E2, A>
+  <R, A, E, E2>(self: STM<R, E, A>, pf: (error: E) => Option.Option<E2>): STM<R, E2, A>
+}
 ```
 
 Added in v1.0.0
@@ -1788,10 +1924,10 @@ specified function to convert the `E` into a `Throwable`.
 **Signature**
 
 ```ts
-export declare const refineOrDieWith: <E, E2>(
-  pf: (error: E) => Option.Option<E2>,
-  f: (error: E) => unknown
-) => <R, A>(self: STM<R, E, A>) => STM<R, E2, A>
+export declare const refineOrDieWith: {
+  <E, E2>(pf: (error: E) => Option.Option<E2>, f: (error: E) => unknown): <R, A>(self: STM<R, E, A>) => STM<R, E2, A>
+  <R, A, E, E2>(self: STM<R, E, A>, pf: (error: E) => Option.Option<E2>, f: (error: E) => unknown): STM<R, E2, A>
+}
 ```
 
 Added in v1.0.0
@@ -1804,7 +1940,10 @@ continue with our held value.
 **Signature**
 
 ```ts
-export declare const reject: <A, E2>(pf: (a: A) => Option.Option<E2>) => <R, E>(self: STM<R, E, A>) => STM<R, E2 | E, A>
+export declare const reject: {
+  <A, E2>(pf: (a: A) => Option.Option<E2>): <R, E>(self: STM<R, E, A>) => STM<R, E2 | E, A>
+  <R, E, A, E2>(self: STM<R, E, A>, pf: (a: A) => Option.Option<E2>): STM<R, E | E2, A>
+}
 ```
 
 Added in v1.0.0
@@ -1818,9 +1957,10 @@ with our held value.
 **Signature**
 
 ```ts
-export declare const rejectSTM: <A, R2, E2>(
-  pf: (a: A) => Option.Option<STM<R2, E2, E2>>
-) => <R, E>(self: STM<R, E, A>) => STM<R2 | R, E2 | E, A>
+export declare const rejectSTM: {
+  <A, R2, E2>(pf: (a: A) => Option.Option<STM<R2, E2, E2>>): <R, E>(self: STM<R, E, A>) => STM<R2 | R, E2 | E, A>
+  <R, E, A, R2, E2>(self: STM<R, E, A>, pf: (a: A) => Option.Option<STM<R2, E2, E2>>): STM<R | R2, E | E2, A>
+}
 ```
 
 Added in v1.0.0
@@ -1842,7 +1982,10 @@ fail a transaction before yielding back to the Effect runtime.
 **Signature**
 
 ```ts
-export declare const repeatUntil: <A>(predicate: Predicate<A>) => <R, E>(self: STM<R, E, A>) => STM<R, E, A>
+export declare const repeatUntil: {
+  <A>(predicate: Predicate<A>): <R, E>(self: STM<R, E, A>) => STM<R, E, A>
+  <R, E, A>(self: STM<R, E, A>, predicate: Predicate<A>): STM<R, E, A>
+}
 ```
 
 Added in v1.0.0
@@ -1865,7 +2008,10 @@ fail a transaction before yielding back to the Effect runtime.
 **Signature**
 
 ```ts
-export declare const repeatWhile: <A>(predicate: Predicate<A>) => <R, E>(self: STM<R, E, A>) => STM<R, E, A>
+export declare const repeatWhile: {
+  <A>(predicate: Predicate<A>): <R, E>(self: STM<R, E, A>) => STM<R, E, A>
+  <R, E, A>(self: STM<R, E, A>, predicate: Predicate<A>): STM<R, E, A>
+}
 ```
 
 Added in v1.0.0
@@ -1878,7 +2024,10 @@ the predicate returns `true` for the value.
 **Signature**
 
 ```ts
-export declare const retryUntil: <A>(predicate: Predicate<A>) => <R, E>(self: STM<R, E, A>) => STM<R, E, A>
+export declare const retryUntil: {
+  <A>(predicate: Predicate<A>): <R, E>(self: STM<R, E, A>) => STM<R, E, A>
+  <R, E, A>(self: STM<R, E, A>, predicate: Predicate<A>): STM<R, E, A>
+}
 ```
 
 Added in v1.0.0
@@ -1891,7 +2040,10 @@ the predicate returns `true` for the value.
 **Signature**
 
 ```ts
-export declare const retryWhile: <A>(predicate: Predicate<A>) => <R, E>(self: STM<R, E, A>) => STM<R, E, A>
+export declare const retryWhile: {
+  <A>(predicate: Predicate<A>): <R, E>(self: STM<R, E, A>) => STM<R, E, A>
+  <R, E, A>(self: STM<R, E, A>, predicate: Predicate<A>): STM<R, E, A>
+}
 ```
 
 Added in v1.0.0
@@ -1905,10 +2057,16 @@ with the result of execution.
 **Signature**
 
 ```ts
-export declare const summarized: <R2, E2, A2, A3>(
-  summary: STM<R2, E2, A2>,
-  f: (before: A2, after: A2) => A3
-) => <R, E, A>(self: STM<R, E, A>) => STM<R2 | R, E2 | E, readonly [A3, A]>
+export declare const summarized: {
+  <R2, E2, A2, A3>(summary: STM<R2, E2, A2>, f: (before: A2, after: A2) => A3): <R, E, A>(
+    self: STM<R, E, A>
+  ) => STM<R2 | R, E2 | E, readonly [A3, A]>
+  <R, E, A, R2, E2, A2, A3>(self: STM<R, E, A>, summary: STM<R2, E2, A2>, f: (before: A2, after: A2) => A3): STM<
+    R | R2,
+    E | E2,
+    readonly [A3, A]
+  >
+}
 ```
 
 Added in v1.0.0
@@ -1920,9 +2078,10 @@ The moral equivalent of `if (!p) exp`
 **Signature**
 
 ```ts
-export declare const unless: (
-  predicate: LazyArg<boolean>
-) => <R, E, A>(self: STM<R, E, A>) => STM<R, E, Option.Option<A>>
+export declare const unless: {
+  (predicate: LazyArg<boolean>): <R, E, A>(self: STM<R, E, A>) => STM<R, E, Option.Option<A>>
+  <R, E, A>(self: STM<R, E, A>, predicate: LazyArg<boolean>): STM<R, E, Option.Option<A>>
+}
 ```
 
 Added in v1.0.0
@@ -1934,9 +2093,10 @@ The moral equivalent of `if (!p) exp` when `p` has side-effects
 **Signature**
 
 ```ts
-export declare const unlessSTM: <R2, E2>(
-  predicate: STM<R2, E2, boolean>
-) => <R, E, A>(self: STM<R, E, A>) => STM<R2 | R, E2 | E, Option.Option<A>>
+export declare const unlessSTM: {
+  <R2, E2>(predicate: STM<R2, E2, boolean>): <R, E, A>(self: STM<R, E, A>) => STM<R2 | R, E2 | E, Option.Option<A>>
+  <R, E, A, R2, E2>(self: STM<R, E, A>, predicate: STM<R2, E2, boolean>): STM<R | R2, E | E2, Option.Option<A>>
+}
 ```
 
 Added in v1.0.0
@@ -1952,9 +2112,10 @@ will be lost. To retain all information please use `STM.partition`.
 **Signature**
 
 ```ts
-export declare const validateAll: <R, E, A, B>(
-  f: (a: A) => STM<R, E, B>
-) => (elements: Iterable<A>) => STM<R, Chunk.NonEmptyChunk<E>, Chunk.Chunk<B>>
+export declare const validateAll: {
+  <R, E, A, B>(f: (a: A) => STM<R, E, B>): (elements: Iterable<A>) => STM<R, Chunk.NonEmptyChunk<E>, Chunk.Chunk<B>>
+  <R, E, A, B>(elements: Iterable<A>, f: (a: A) => STM<R, E, B>): STM<R, Chunk.NonEmptyChunk<E>, Chunk.Chunk<B>>
+}
 ```
 
 Added in v1.0.0
@@ -1967,9 +2128,10 @@ or the accumulation of all errors.
 **Signature**
 
 ```ts
-export declare const validateFirst: <R, E, A, B>(
-  f: (a: A) => STM<R, E, B>
-) => (elements: Iterable<A>) => STM<R, Chunk.Chunk<E>, B>
+export declare const validateFirst: {
+  <R, E, A, B>(f: (a: A) => STM<R, E, B>): (elements: Iterable<A>) => STM<R, Chunk.Chunk<E>, B>
+  <R, E, A, B>(elements: Iterable<A>, f: (a: A) => STM<R, E, B>): STM<R, Chunk.Chunk<E>, B>
+}
 ```
 
 Added in v1.0.0
@@ -1981,7 +2143,10 @@ The moral equivalent of `if (p) exp`.
 **Signature**
 
 ```ts
-export declare const when: (predicate: LazyArg<boolean>) => <R, E, A>(self: STM<R, E, A>) => STM<R, E, Option.Option<A>>
+export declare const when: {
+  (predicate: LazyArg<boolean>): <R, E, A>(self: STM<R, E, A>) => STM<R, E, Option.Option<A>>
+  <R, E, A>(self: STM<R, E, A>, predicate: LazyArg<boolean>): STM<R, E, Option.Option<A>>
+}
 ```
 
 Added in v1.0.0
@@ -1995,7 +2160,7 @@ value, otherwise does nothing.
 
 ```ts
 export declare const whenCase: <R, E, A, B>(
-  evaluate: () => A,
+  evaluate: LazyArg<A>,
   pf: (a: A) => Option.Option<STM<R, E, B>>
 ) => STM<R, E, Option.Option<B>>
 ```
@@ -2010,9 +2175,16 @@ effectful value, otherwise does nothing.
 **Signature**
 
 ```ts
-export declare const whenCaseSTM: <A, R2, E2, A2>(
-  pf: (a: A) => Option.Option<STM<R2, E2, A2>>
-) => <R, E>(self: STM<R, E, A>) => STM<R2 | R, E2 | E, Option.Option<A2>>
+export declare const whenCaseSTM: {
+  <A, R2, E2, A2>(pf: (a: A) => Option.Option<STM<R2, E2, A2>>): <R, E>(
+    self: STM<R, E, A>
+  ) => STM<R2 | R, E2 | E, Option.Option<A2>>
+  <R, E, A, R2, E2, A2>(self: STM<R, E, A>, pf: (a: A) => Option.Option<STM<R2, E2, A2>>): STM<
+    R | R2,
+    E | E2,
+    Option.Option<A2>
+  >
+}
 ```
 
 Added in v1.0.0
@@ -2024,9 +2196,24 @@ The moral equivalent of `if (p) exp` when `p` has side-effects.
 **Signature**
 
 ```ts
-export declare const whenSTM: <R2, E2>(
-  predicate: STM<R2, E2, boolean>
-) => <R, E, A>(self: STM<R, E, A>) => STM<R2 | R, E2 | E, Option.Option<A>>
+export declare const whenSTM: {
+  <R2, E2>(predicate: STM<R2, E2, boolean>): <R, E, A>(self: STM<R, E, A>) => STM<R2 | R, E2 | E, Option.Option<A>>
+  <R, E, A, R2, E2>(self: STM<R, E, A>, predicate: STM<R2, E2, boolean>): STM<R | R2, E | E2, Option.Option<A>>
+}
+```
+
+Added in v1.0.0
+
+# refinements
+
+## isSTM
+
+Returns `true` if the provided value is an `STM`, `false` otherwise.
+
+**Signature**
+
+```ts
+export declare const isSTM: (u: unknown) => u is STM<unknown, unknown, unknown>
 ```
 
 Added in v1.0.0
@@ -2041,9 +2228,10 @@ runs the returned effect as well to produce its results.
 **Signature**
 
 ```ts
-export declare const flatMap: <A, R1, E1, A2>(
-  f: (a: A) => STM<R1, E1, A2>
-) => <R, E>(self: STM<R, E, A>) => STM<R1 | R, E1 | E, A2>
+export declare const flatMap: {
+  <A, R1, E1, A2>(f: (a: A) => STM<R1, E1, A2>): <R, E>(self: STM<R, E, A>) => STM<R1 | R, E1 | E, A2>
+  <R, E, A, R1, E1, A2>(self: STM<R, E, A>, f: (a: A) => STM<R1, E1, A2>): STM<R | R1, E | E1, A2>
+}
 ```
 
 Added in v1.0.0
@@ -2056,9 +2244,10 @@ one that may depend on the error produced by this one.
 **Signature**
 
 ```ts
-export declare const flatMapError: <E, R2, E2>(
-  f: (error: E) => STM<R2, never, E2>
-) => <R, A>(self: STM<R, E, A>) => STM<R2 | R, E2, A>
+export declare const flatMapError: {
+  <E, R2, E2>(f: (error: E) => STM<R2, never, E2>): <R, A>(self: STM<R, E, A>) => STM<R2 | R, E2, A>
+  <R, A, E, R2, E2>(self: STM<R, E, A>, f: (error: E) => STM<R2, never, E2>): STM<R | R2, E2, A>
+}
 ```
 
 Added in v1.0.0
@@ -2082,9 +2271,10 @@ Unwraps the optional error, defaulting to the provided value.
 **Signature**
 
 ```ts
-export declare const flattenErrorOption: <E2>(
-  fallback: LazyArg<E2>
-) => <R, E, A>(self: STM<R, Option.Option<E>, A>) => STM<R, E2 | E, A>
+export declare const flattenErrorOption: {
+  <R, E, A, E2>(self: STM<R, Option.Option<E>, A>, fallback: LazyArg<E2>): STM<R, E | E2, A>
+  <E2>(fallback: LazyArg<E2>): <R, E, A>(self: STM<R, Option.Option<E>, A>) => STM<R, E2 | E, A>
+}
 ```
 
 Added in v1.0.0
@@ -2096,9 +2286,10 @@ Added in v1.0.0
 **Signature**
 
 ```ts
-export declare const tap: <A, R2, E2, _>(
-  f: (a: A) => STM<R2, E2, _>
-) => <R, E>(self: STM<R, E, A>) => STM<R2 | R, E2 | E, A>
+export declare const tap: {
+  <A, R2, E2, _>(f: (a: A) => STM<R2, E2, _>): <R, E>(self: STM<R, E, A>) => STM<R2 | R, E2 | E, A>
+  <R, E, A, R2, E2, _>(self: STM<R, E, A>, f: (a: A) => STM<R2, E2, _>): STM<R | R2, E | E2, A>
+}
 ```
 
 Added in v1.0.0
@@ -2110,10 +2301,16 @@ Added in v1.0.0
 **Signature**
 
 ```ts
-export declare const tapBoth: <E, R2, E2, A2, A, R3, E3, A3>(
-  f: (error: E) => STM<R2, E2, A2>,
-  g: (value: A) => STM<R3, E3, A3>
-) => <R>(self: STM<R, E, A>) => STM<R2 | R3 | R, E | E2 | E3, A>
+export declare const tapBoth: {
+  <E, R2, E2, A2, A, R3, E3, A3>(f: (error: E) => STM<R2, E2, A2>, g: (value: A) => STM<R3, E3, A3>): <R>(
+    self: STM<R, E, A>
+  ) => STM<R2 | R3 | R, E | E2 | E3, A>
+  <R, E, R2, E2, A2, A, R3, E3, A3>(
+    self: STM<R, E, A>,
+    f: (error: E) => STM<R2, E2, A2>,
+    g: (value: A) => STM<R3, E3, A3>
+  ): STM<R | R2 | R3, E | E2 | E3, A>
+}
 ```
 
 Added in v1.0.0
@@ -2125,9 +2322,10 @@ Added in v1.0.0
 **Signature**
 
 ```ts
-export declare const tapError: <E, R2, E2, _>(
-  f: (error: E) => STM<R2, E2, _>
-) => <R, A>(self: STM<R, E, A>) => STM<R2 | R, E | E2, A>
+export declare const tapError: {
+  <E, R2, E2, _>(f: (error: E) => STM<R2, E2, _>): <R, A>(self: STM<R, E, A>) => STM<R2 | R, E | E2, A>
+  <R, A, E, R2, E2, _>(self: STM<R, E, A>, f: (error: E) => STM<R2, E2, _>): STM<R | R2, E | E2, A>
+}
 ```
 
 Added in v1.0.0
@@ -2164,9 +2362,10 @@ a transactional effect that produces a new `Chunk<A2>`.
 **Signature**
 
 ```ts
-export declare const forEach: <A, R, E, A2>(
-  f: (a: A) => STM<R, E, A2>
-) => (elements: Iterable<A>) => STM<R, E, Chunk.Chunk<A2>>
+export declare const forEach: {
+  <A, R, E, A2>(f: (a: A) => STM<R, E, A2>): (elements: Iterable<A>) => STM<R, E, Chunk.Chunk<A2>>
+  <A, R, E, A2>(elements: Iterable<A>, f: (a: A) => STM<R, E, A2>): STM<R, E, Chunk.Chunk<A2>>
+}
 ```
 
 Added in v1.0.0
@@ -2182,9 +2381,10 @@ building the list of results.
 **Signature**
 
 ```ts
-export declare const forEachDiscard: <A, R, E, _>(
-  f: (a: A) => STM<R, E, _>
-) => (iterable: Iterable<A>) => STM<R, E, void>
+export declare const forEachDiscard: {
+  <A, R, E, _>(f: (a: A) => STM<R, E, _>): (iterable: Iterable<A>) => STM<R, E, void>
+  <A, R, E, _>(iterable: Iterable<A>, f: (a: A) => STM<R, E, _>): STM<R, E, void>
+}
 ```
 
 Added in v1.0.0
@@ -2197,9 +2397,16 @@ Collects all successes and failures in a tupled fashion.
 **Signature**
 
 ```ts
-export declare const partition: <R, E, A, A2>(
-  f: (a: A) => STM<R, E, A2>
-) => (elements: Iterable<A>) => STM<R, E, readonly [Chunk.Chunk<E>, Chunk.Chunk<A2>]>
+export declare const partition: {
+  <R, E, A, A2>(f: (a: A) => STM<R, E, A2>): (
+    elements: Iterable<A>
+  ) => STM<R, never, readonly [Chunk.Chunk<E>, Chunk.Chunk<A2>]>
+  <R, E, A, A2>(elements: Iterable<A>, f: (a: A) => STM<R, E, A2>): STM<
+    R,
+    never,
+    readonly [Chunk.Chunk<E>, Chunk.Chunk<A2>]
+  >
+}
 ```
 
 Added in v1.0.0
@@ -2213,9 +2420,9 @@ Added in v1.0.0
 ```ts
 export interface STM<R, E, A> {
   /** @internal */
-  trace: string | undefined
+  trace: Debug.Trace
   /** @internal */
-  traced(trace: string | undefined): STM<R, E, A>
+  traced(trace: Debug.Trace): STM<R, E, A>
   /** @internal */
   commit(): Effect.Effect<R, E, A>
 }
@@ -2232,9 +2439,10 @@ Sequentially zips this value with the specified one.
 **Signature**
 
 ```ts
-export declare const zip: <R1, E1, A1>(
-  that: STM<R1, E1, A1>
-) => <R, E, A>(self: STM<R, E, A>) => STM<R1 | R, E1 | E, readonly [A, A1]>
+export declare const zip: {
+  <R1, E1, A1>(that: STM<R1, E1, A1>): <R, E, A>(self: STM<R, E, A>) => STM<R1 | R, E1 | E, readonly [A, A1]>
+  <R, E, A, R1, E1, A1>(self: STM<R, E, A>, that: STM<R1, E1, A1>): STM<R | R1, E | E1, readonly [A, A1]>
+}
 ```
 
 Added in v1.0.0
@@ -2247,9 +2455,10 @@ element of the tuple.
 **Signature**
 
 ```ts
-export declare const zipLeft: <R1, E1, A1>(
-  that: STM<R1, E1, A1>
-) => <R, E, A>(self: STM<R, E, A>) => STM<R1 | R, E1 | E, A>
+export declare const zipLeft: {
+  <R1, E1, A1>(that: STM<R1, E1, A1>): <R, E, A>(self: STM<R, E, A>) => STM<R1 | R, E1 | E, A>
+  <R, E, A, R1, E1, A1>(self: STM<R, E, A>, that: STM<R1, E1, A1>): STM<R | R1, E | E1, A>
+}
 ```
 
 Added in v1.0.0
@@ -2262,9 +2471,10 @@ element of the tuple.
 **Signature**
 
 ```ts
-export declare const zipRight: <R1, E1, A1>(
-  that: STM<R1, E1, A1>
-) => <R, E, A>(self: STM<R, E, A>) => STM<R1 | R, E1 | E, A1>
+export declare const zipRight: {
+  <R1, E1, A1>(that: STM<R1, E1, A1>): <R, E, A>(self: STM<R, E, A>) => STM<R1 | R, E1 | E, A1>
+  <R, E, A, R1, E1, A1>(self: STM<R, E, A>, that: STM<R1, E1, A1>): STM<R | R1, E | E1, A1>
+}
 ```
 
 Added in v1.0.0
@@ -2277,10 +2487,12 @@ using the specified combiner function.
 **Signature**
 
 ```ts
-export declare const zipWith: <R1, E1, A1, A, A2>(
-  that: STM<R1, E1, A1>,
-  f: (a: A, b: A1) => A2
-) => <R, E>(self: STM<R, E, A>) => STM<R1 | R, E1 | E, A2>
+export declare const zipWith: {
+  <R1, E1, A1, A, A2>(that: STM<R1, E1, A1>, f: (a: A, b: A1) => A2): <R, E>(
+    self: STM<R, E, A>
+  ) => STM<R1 | R, E1 | E, A2>
+  <R, E, R1, E1, A1, A, A2>(self: STM<R, E, A>, that: STM<R1, E1, A1>, f: (a: A, b: A1) => A2): STM<R | R1, E | E1, A2>
+}
 ```
 
 Added in v1.0.0

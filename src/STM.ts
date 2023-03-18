@@ -188,11 +188,11 @@ export const all: {
   <T extends Readonly<{ [K: string]: STM<any, any, any> }>>(
     args: T
   ): STM<
-    T["length"] extends 0 ? never
-      : [T[number]] extends [{ [STMTypeId]: { _R: (_: never) => infer R } }] ? R
+    keyof T extends never ? never
+      : [T[keyof T]] extends [{ [STMTypeId]: { _R: (_: never) => infer R } }] ? R
       : never,
-    T["length"] extends 0 ? never
-      : [T[number]] extends [{ [STMTypeId]: { _E: (_: never) => infer E } }] ? E
+    keyof T extends never ? never
+      : [T[keyof T]] extends [{ [STMTypeId]: { _E: (_: never) => infer E } }] ? E
       : never,
     Readonly<{ [K in keyof T]: [T[K]] extends [STM<any, any, infer A>] ? A : never }>
   >
