@@ -237,38 +237,28 @@ export interface BaseTQueue {
    * Retrieves the size of the queue, which is equal to the number of elements
    * in the queue. This may be negative if fibers are suspended waiting for
    * elements to be added to the queue.
-   *
-   * @macro traced
    */
   size(): STM.STM<never, never, number>
 
   /**
    * Returns `true` if the `TQueue` contains at least one element, `false`
    * otherwise.
-   *
-   * @macro traced
    */
   isFull(): STM.STM<never, never, boolean>
 
   /**
    * Returns `true` if the `TQueue` contains zero elements, `false` otherwise.
-   *
-   * @macro traced
    */
   isEmpty(): STM.STM<never, never, boolean>
 
   /**
    * Interrupts any fibers that are suspended on `offer` or `take`. Future calls
    * to `offer*` and `take*` will be interrupted immediately.
-   *
-   * @macro traced
    */
   shutdown(): STM.STM<never, never, void>
 
   /**
    * Returns `true` if `shutdown` has been called, otherwise returns `false`.
-   *
-   * @macro traced
    */
   isShutdown(): STM.STM<never, never, boolean>
 
@@ -276,8 +266,6 @@ export interface BaseTQueue {
    * Waits until the queue is shutdown. The `STM` returned by this method will
    * not resume until the queue has been shutdown. If the queue is already
    * shutdown, the `STM` will resume right away.
-   *
-   * @macro traced
    */
   awaitShutdown(): STM.STM<never, never, void>
 }
@@ -294,39 +282,29 @@ export interface TDequeue<A> extends TQueue.TDequeueVariance<A>, BaseTQueue {
   /**
    * Views the next element in the queue without removing it, retrying if the
    * queue is empty.
-   *
-   * @macro traced
    */
   peek(): STM.STM<never, never, A>
 
   /**
    * Views the next element in the queue without removing it, returning `None`
    * if the queue is empty.
-   *
-   * @macro traced
    */
   peekOption(): STM.STM<never, never, Option.Option<A>>
 
   /**
    * Takes the oldest value in the queue. If the queue is empty, this will return
    * a computation that resumes when an item has been added to the queue.
-   *
-   * @macro traced
    */
   take(): STM.STM<never, never, A>
 
   /**
    * Takes all the values in the queue and returns the values. If the queue is
    * empty returns an empty collection.
-   *
-   * @macro traced
    */
   takeAll(): STM.STM<never, never, Chunk.Chunk<A>>
 
   /**
    * Takes up to max number of values from the queue.
-   *
-   * @macro traced
    */
   takeUpTo(max: number): STM.STM<never, never, Chunk.Chunk<A>>
 }
@@ -342,8 +320,6 @@ Added in v1.0.0
 export interface TEnqueue<A> extends TQueue.TEnqueueVariance<A>, BaseTQueue {
   /**
    * Places one value in the queue.
-   *
-   * @macro traced
    */
   offer(value: A): STM.STM<never, never, boolean>
 
@@ -361,8 +337,6 @@ export interface TEnqueue<A> extends TQueue.TEnqueueVariance<A>, BaseTQueue {
    *
    * For Dropping TQueue: uses `Dropping` Strategy, It places the values in the
    * queue but if there is no room it will not enqueue them and return false.
-   *
-   * @macro traced
    */
   offerAll(iterable: Iterable<A>): STM.STM<never, never, boolean>
 }
@@ -403,7 +377,10 @@ Places one value in the queue.
 **Signature**
 
 ```ts
-export declare const offer: <A>(value: A) => (self: TEnqueue<A>) => STM.STM<never, never, void>
+export declare const offer: {
+  <A>(value: A): (self: TEnqueue<A>) => STM.STM<never, never, void>
+  <A>(self: TEnqueue<A>, value: A): STM.STM<never, never, void>
+}
 ```
 
 Added in v1.0.0
@@ -427,7 +404,10 @@ queue but if there is no room it will not enqueue them and return false.
 **Signature**
 
 ```ts
-export declare const offerAll: <A>(iterable: Iterable<A>) => (self: TEnqueue<A>) => STM.STM<never, never, boolean>
+export declare const offerAll: {
+  <A>(iterable: Iterable<A>): (self: TEnqueue<A>) => STM.STM<never, never, boolean>
+  <A>(self: TEnqueue<A>, iterable: Iterable<A>): STM.STM<never, never, boolean>
+}
 ```
 
 Added in v1.0.0
@@ -441,7 +421,10 @@ Retries if no elements satisfy the predicate.
 **Signature**
 
 ```ts
-export declare const seek: <A>(predicate: Predicate<A>) => (self: TDequeue<A>) => STM.STM<never, never, A>
+export declare const seek: {
+  <A>(predicate: Predicate<A>): (self: TDequeue<A>) => STM.STM<never, never, A>
+  <A>(self: TDequeue<A>, predicate: Predicate<A>): STM.STM<never, never, A>
+}
 ```
 
 Added in v1.0.0
@@ -494,10 +477,10 @@ retries until at least the minimum number of elements have been collected.
 **Signature**
 
 ```ts
-export declare const takeBetween: (
-  min: number,
-  max: number
-) => <A>(self: TDequeue<A>) => STM.STM<never, never, Chunk.Chunk<A>>
+export declare const takeBetween: {
+  (min: number, max: number): <A>(self: TDequeue<A>) => STM.STM<never, never, Chunk.Chunk<A>>
+  <A>(self: TDequeue<A>, min: number, max: number): STM.STM<never, never, Chunk.Chunk<A>>
+}
 ```
 
 Added in v1.0.0
@@ -511,7 +494,10 @@ become available.
 **Signature**
 
 ```ts
-export declare const takeN: (n: number) => <A>(self: TDequeue<A>) => STM.STM<never, never, Chunk.Chunk<A>>
+export declare const takeN: {
+  (n: number): <A>(self: TDequeue<A>) => STM.STM<never, never, Chunk.Chunk<A>>
+  <A>(self: TDequeue<A>, n: number): STM.STM<never, never, Chunk.Chunk<A>>
+}
 ```
 
 Added in v1.0.0
@@ -523,7 +509,10 @@ Takes up to max number of values from the queue.
 **Signature**
 
 ```ts
-export declare const takeUpTo: (max: number) => <A>(self: TDequeue<A>) => STM.STM<never, never, Chunk.Chunk<A>>
+export declare const takeUpTo: {
+  (max: number): <A>(self: TDequeue<A>) => STM.STM<never, never, Chunk.Chunk<A>>
+  <A>(self: TDequeue<A>, max: number): STM.STM<never, never, Chunk.Chunk<A>>
+}
 ```
 
 Added in v1.0.0

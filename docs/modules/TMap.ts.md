@@ -167,9 +167,10 @@ provided function to extract a value out of it.
 **Signature**
 
 ```ts
-export declare const find: <K, V, A>(
-  pf: (key: K, value: V) => Option.Option<A>
-) => (self: TMap<K, V>) => STM.STM<never, never, Option.Option<A>>
+export declare const find: {
+  <K, V, A>(pf: (key: K, value: V) => Option.Option<A>): (self: TMap<K, V>) => STM.STM<never, never, Option.Option<A>>
+  <K, V, A>(self: TMap<K, V>, pf: (key: K, value: V) => Option.Option<A>): STM.STM<never, never, Option.Option<A>>
+}
 ```
 
 Added in v1.0.0
@@ -182,9 +183,10 @@ the provided function to extract values out them.
 **Signature**
 
 ```ts
-export declare const findAll: <K, V, A>(
-  pf: (key: K, value: V) => Option.Option<A>
-) => (self: TMap<K, V>) => STM.STM<never, never, Chunk.Chunk<A>>
+export declare const findAll: {
+  <K, V, A>(pf: (key: K, value: V) => Option.Option<A>): (self: TMap<K, V>) => STM.STM<never, never, Chunk.Chunk<A>>
+  <K, V, A>(self: TMap<K, V>, pf: (key: K, value: V) => Option.Option<A>): STM.STM<never, never, Chunk.Chunk<A>>
+}
 ```
 
 Added in v1.0.0
@@ -197,9 +199,16 @@ the provided effectful function to extract values out of them..
 **Signature**
 
 ```ts
-export declare const findAllSTM: <K, V, R, E, A>(
-  pf: (key: K, value: V) => STM.STM<R, Option.Option<E>, A>
-) => (self: TMap<K, V>) => STM.STM<R, E, Chunk.Chunk<A>>
+export declare const findAllSTM: {
+  <K, V, R, E, A>(pf: (key: K, value: V) => STM.STM<R, Option.Option<E>, A>): (
+    self: TMap<K, V>
+  ) => STM.STM<R, E, Chunk.Chunk<A>>
+  <K, V, R, E, A>(self: TMap<K, V>, pf: (key: K, value: V) => STM.STM<R, Option.Option<E>, A>): STM.STM<
+    R,
+    E,
+    Chunk.Chunk<A>
+  >
+}
 ```
 
 Added in v1.0.0
@@ -212,9 +221,16 @@ provided effectful function to extract a value out of it.
 **Signature**
 
 ```ts
-export declare const findSTM: <K, V, R, E, A>(
-  f: (key: K, value: V) => STM.STM<R, Option.Option<E>, A>
-) => (self: TMap<K, V>) => STM.STM<R, E, Option.Option<A>>
+export declare const findSTM: {
+  <K, V, R, E, A>(f: (key: K, value: V) => STM.STM<R, Option.Option<E>, A>): (
+    self: TMap<K, V>
+  ) => STM.STM<R, E, Option.Option<A>>
+  <K, V, R, E, A>(self: TMap<K, V>, f: (key: K, value: V) => STM.STM<R, Option.Option<E>, A>): STM.STM<
+    R,
+    E,
+    Option.Option<A>
+  >
+}
 ```
 
 Added in v1.0.0
@@ -226,9 +242,10 @@ Atomically performs transactional-effect for each binding present in map.
 **Signature**
 
 ```ts
-export declare const forEach: <K, V, R, E, _>(
-  f: (key: K, value: V) => STM.STM<R, E, _>
-) => (self: TMap<K, V>) => STM.STM<R, E, void>
+export declare const forEach: {
+  <K, V, R, E, _>(f: (key: K, value: V) => STM.STM<R, E, _>): (self: TMap<K, V>) => STM.STM<R, E, void>
+  <K, V, R, E, _>(self: TMap<K, V>, f: (key: K, value: V) => STM.STM<R, E, _>): STM.STM<R, E, void>
+}
 ```
 
 Added in v1.0.0
@@ -240,7 +257,10 @@ Retrieves value associated with given key.
 **Signature**
 
 ```ts
-export declare const get: <K>(key: K) => <V>(self: TMap<K, V>) => STM.STM<never, never, Option.Option<V>>
+export declare const get: {
+  <K>(key: K): <V>(self: TMap<K, V>) => STM.STM<never, never, Option.Option<V>>
+  <K, V>(self: TMap<K, V>, key: K): STM.STM<never, never, Option.Option<V>>
+}
 ```
 
 Added in v1.0.0
@@ -253,7 +273,10 @@ isn't present.
 **Signature**
 
 ```ts
-export declare const getOrElse: <K, V>(key: K, fallback: LazyArg<V>) => (self: TMap<K, V>) => STM.STM<never, never, V>
+export declare const getOrElse: {
+  <K, V>(key: K, fallback: LazyArg<V>): (self: TMap<K, V>) => STM.STM<never, never, V>
+  <K, V>(self: TMap<K, V>, key: K, fallback: LazyArg<V>): STM.STM<never, never, V>
+}
 ```
 
 Added in v1.0.0
@@ -265,7 +288,10 @@ Tests whether or not map contains a key.
 **Signature**
 
 ```ts
-export declare const has: <K>(key: K) => <V>(self: TMap<K, V>) => STM.STM<never, never, boolean>
+export declare const has: {
+  <K>(key: K): <V>(self: TMap<K, V>) => STM.STM<never, never, boolean>
+  <K, V>(self: TMap<K, V>, key: K): STM.STM<never, never, boolean>
+}
 ```
 
 Added in v1.0.0
@@ -303,10 +329,10 @@ Atomically folds using a pure function.
 **Signature**
 
 ```ts
-export declare const reduce: <Z, V>(
-  zero: Z,
-  f: (acc: Z, value: V) => Z
-) => <K>(self: TMap<K, V>) => STM.STM<never, never, Z>
+export declare const reduce: {
+  <Z, V>(zero: Z, f: (acc: Z, value: V) => Z): <K>(self: TMap<K, V>) => STM.STM<never, never, Z>
+  <K, V, Z>(self: TMap<K, V>, zero: Z, f: (acc: Z, value: V) => Z): STM.STM<never, never, Z>
+}
 ```
 
 Added in v1.0.0
@@ -318,10 +344,10 @@ Atomically folds using a transactional function.
 **Signature**
 
 ```ts
-export declare const reduceSTM: <Z, V, R, E>(
-  zero: Z,
-  f: (acc: Z, value: V) => STM.STM<R, E, Z>
-) => <K>(self: TMap<K, V>) => STM.STM<R, E, Z>
+export declare const reduceSTM: {
+  <Z, V, R, E>(zero: Z, f: (acc: Z, value: V) => STM.STM<R, E, Z>): <K>(self: TMap<K, V>) => STM.STM<R, E, Z>
+  <K, V, Z, R, E>(self: TMap<K, V>, zero: Z, f: (acc: Z, value: V) => STM.STM<R, E, Z>): STM.STM<R, E, Z>
+}
 ```
 
 Added in v1.0.0
@@ -333,10 +359,10 @@ Atomically folds using a pure function.
 **Signature**
 
 ```ts
-export declare const reduceWithIndex: <Z, K, V>(
-  zero: Z,
-  f: (acc: Z, value: V, key: K) => Z
-) => (self: TMap<K, V>) => STM.STM<never, never, Z>
+export declare const reduceWithIndex: {
+  <Z, K, V>(zero: Z, f: (acc: Z, value: V, key: K) => Z): (self: TMap<K, V>) => STM.STM<never, never, Z>
+  <K, V, Z>(self: TMap<K, V>, zero: Z, f: (acc: Z, value: V, key: K) => Z): STM.STM<never, never, Z>
+}
 ```
 
 Added in v1.0.0
@@ -348,10 +374,10 @@ Atomically folds using a transactional function.
 **Signature**
 
 ```ts
-export declare const reduceWithIndexSTM: <Z, V, K, R, E>(
-  zero: Z,
-  f: (acc: Z, value: V, key: K) => STM.STM<R, E, Z>
-) => (self: TMap<K, V>) => STM.STM<R, E, Z>
+export declare const reduceWithIndexSTM: {
+  <Z, V, K, R, E>(zero: Z, f: (acc: Z, value: V, key: K) => STM.STM<R, E, Z>): (self: TMap<K, V>) => STM.STM<R, E, Z>
+  <Z, V, K, R, E>(self: TMap<K, V>, zero: Z, f: (acc: Z, value: V, key: K) => STM.STM<R, E, Z>): STM.STM<R, E, Z>
+}
 ```
 
 Added in v1.0.0
@@ -408,11 +434,10 @@ store the result.
 **Signature**
 
 ```ts
-export declare const merge: <K, V>(
-  key: K,
-  value: V,
-  f: (x: V, y: V) => V
-) => (self: TMap<K, V>) => STM.STM<never, never, V>
+export declare const merge: {
+  <K, V>(key: K, value: V, f: (x: V, y: V) => V): (self: TMap<K, V>) => STM.STM<never, never, V>
+  <K, V>(self: TMap<K, V>, key: K, value: V, f: (x: V, y: V) => V): STM.STM<never, never, V>
+}
 ```
 
 Added in v1.0.0
@@ -424,7 +449,10 @@ Removes binding for given key.
 **Signature**
 
 ```ts
-export declare const remove: <K>(key: K) => <V>(self: TMap<K, V>) => STM.STM<never, never, void>
+export declare const remove: {
+  <K>(key: K): <V>(self: TMap<K, V>) => STM.STM<never, never, void>
+  <K, V>(self: TMap<K, V>, key: K): STM.STM<never, never, void>
+}
 ```
 
 Added in v1.0.0
@@ -436,7 +464,10 @@ Deletes all entries associated with the specified keys.
 **Signature**
 
 ```ts
-export declare const removeAll: <K>(keys: Iterable<K>) => <V>(self: TMap<K, V>) => STM.STM<never, never, void>
+export declare const removeAll: {
+  <K>(keys: Iterable<K>): <V>(self: TMap<K, V>) => STM.STM<never, never, void>
+  <K, V>(self: TMap<K, V>, keys: Iterable<K>): STM.STM<never, never, void>
+}
 ```
 
 Added in v1.0.0
@@ -448,9 +479,16 @@ Removes bindings matching predicate and returns the removed entries.
 **Signature**
 
 ```ts
-export declare const removeIf: <K, V>(
-  predicate: (key: K, value: V) => boolean
-) => (self: TMap<K, V>) => STM.STM<never, never, Chunk.Chunk<readonly [K, V]>>
+export declare const removeIf: {
+  <K, V>(predicate: (key: K, value: V) => boolean): (
+    self: TMap<K, V>
+  ) => STM.STM<never, never, Chunk.Chunk<readonly [K, V]>>
+  <K, V>(self: TMap<K, V>, predicate: (key: K, value: V) => boolean): STM.STM<
+    never,
+    never,
+    Chunk.Chunk<readonly [K, V]>
+  >
+}
 ```
 
 Added in v1.0.0
@@ -462,9 +500,10 @@ Removes bindings matching predicate.
 **Signature**
 
 ```ts
-export declare const removeIfDiscard: <K, V>(
-  predicate: (key: K, value: V) => boolean
-) => (self: TMap<K, V>) => STM.STM<never, never, void>
+export declare const removeIfDiscard: {
+  <K, V>(predicate: (key: K, value: V) => boolean): (self: TMap<K, V>) => STM.STM<never, never, void>
+  <K, V>(self: TMap<K, V>, predicate: (key: K, value: V) => boolean): STM.STM<never, never, void>
+}
 ```
 
 Added in v1.0.0
@@ -476,9 +515,16 @@ Retains bindings matching predicate and returns removed bindings.
 **Signature**
 
 ```ts
-export declare const retainIf: <K, V>(
-  predicate: (key: K, value: V) => boolean
-) => (self: TMap<K, V>) => STM.STM<never, never, Chunk.Chunk<readonly [K, V]>>
+export declare const retainIf: {
+  <K, V>(predicate: (key: K, value: V) => boolean): (
+    self: TMap<K, V>
+  ) => STM.STM<never, never, Chunk.Chunk<readonly [K, V]>>
+  <K, V>(self: TMap<K, V>, predicate: (key: K, value: V) => boolean): STM.STM<
+    never,
+    never,
+    Chunk.Chunk<readonly [K, V]>
+  >
+}
 ```
 
 Added in v1.0.0
@@ -490,9 +536,10 @@ Retains bindings matching predicate.
 **Signature**
 
 ```ts
-export declare const retainIfDiscard: <K, V>(
-  predicate: (key: K, value: V) => boolean
-) => (self: TMap<K, V>) => STM.STM<never, never, void>
+export declare const retainIfDiscard: {
+  <K, V>(predicate: (key: K, value: V) => boolean): (self: TMap<K, V>) => STM.STM<never, never, void>
+  <K, V>(self: TMap<K, V>, predicate: (key: K, value: V) => boolean): STM.STM<never, never, void>
+}
 ```
 
 Added in v1.0.0
@@ -504,7 +551,10 @@ Stores new binding into the map.
 **Signature**
 
 ```ts
-export declare const set: <K, V>(key: K, value: V) => (self: TMap<K, V>) => STM.STM<never, never, void>
+export declare const set: {
+  <K, V>(key: K, value: V): (self: TMap<K, V>) => STM.STM<never, never, void>
+  <K, V>(self: TMap<K, V>, key: K, value: V): STM.STM<never, never, void>
+}
 ```
 
 Added in v1.0.0
@@ -516,7 +566,10 @@ Stores new binding in the map if it does not already exist.
 **Signature**
 
 ```ts
-export declare const setIfAbsent: <K, V>(key: K, value: V) => (self: TMap<K, V>) => STM.STM<never, never, void>
+export declare const setIfAbsent: {
+  <K, V>(key: K, value: V): (self: TMap<K, V>) => STM.STM<never, never, void>
+  <K, V>(self: TMap<K, V>, key: K, value: V): STM.STM<never, never, void>
+}
 ```
 
 Added in v1.0.0
@@ -528,9 +581,10 @@ Takes the first matching value, or retries until there is one.
 **Signature**
 
 ```ts
-export declare const takeFirst: <K, V, A>(
-  pf: (key: K, value: V) => Option.Option<A>
-) => (self: TMap<K, V>) => STM.STM<never, never, A>
+export declare const takeFirst: {
+  <K, V, A>(pf: (key: K, value: V) => Option.Option<A>): (self: TMap<K, V>) => STM.STM<never, never, A>
+  <K, V, A>(self: TMap<K, V>, pf: (key: K, value: V) => Option.Option<A>): STM.STM<never, never, A>
+}
 ```
 
 Added in v1.0.0
@@ -542,9 +596,10 @@ Takes the first matching value, or retries until there is one.
 **Signature**
 
 ```ts
-export declare const takeFirstSTM: <K, V, R, E, A>(
-  pf: (key: K, value: V) => STM.STM<R, Option.Option<E>, A>
-) => (self: TMap<K, V>) => STM.STM<R, E, A>
+export declare const takeFirstSTM: {
+  <K, V, R, E, A>(pf: (key: K, value: V) => STM.STM<R, Option.Option<E>, A>): (self: TMap<K, V>) => STM.STM<R, E, A>
+  <K, V, R, E, A>(self: TMap<K, V>, pf: (key: K, value: V) => STM.STM<R, Option.Option<E>, A>): STM.STM<R, E, A>
+}
 ```
 
 Added in v1.0.0
@@ -556,9 +611,12 @@ Takes all matching values, or retries until there is at least one.
 **Signature**
 
 ```ts
-export declare const takeSome: <K, V, A>(
-  pf: (key: K, value: V) => Option.Option<A>
-) => (self: TMap<K, V>) => STM.STM<never, never, Chunk.NonEmptyChunk<A>>
+export declare const takeSome: {
+  <K, V, A>(pf: (key: K, value: V) => Option.Option<A>): (
+    self: TMap<K, V>
+  ) => STM.STM<never, never, Chunk.NonEmptyChunk<A>>
+  <K, V, A>(self: TMap<K, V>, pf: (key: K, value: V) => Option.Option<A>): STM.STM<never, never, Chunk.NonEmptyChunk<A>>
+}
 ```
 
 Added in v1.0.0
@@ -570,9 +628,16 @@ Takes all matching values, or retries until there is at least one.
 **Signature**
 
 ```ts
-export declare const takeSomeSTM: <K, V, R, E, A>(
-  pf: (key: K, value: V) => STM.STM<R, Option.Option<E>, A>
-) => (self: TMap<K, V>) => STM.STM<R, E, Chunk.NonEmptyChunk<A>>
+export declare const takeSomeSTM: {
+  <K, V, R, E, A>(pf: (key: K, value: V) => STM.STM<R, Option.Option<E>, A>): (
+    self: TMap<K, V>
+  ) => STM.STM<R, E, Chunk.NonEmptyChunk<A>>
+  <K, V, R, E, A>(self: TMap<K, V>, pf: (key: K, value: V) => STM.STM<R, Option.Option<E>, A>): STM.STM<
+    R,
+    E,
+    Chunk.NonEmptyChunk<A>
+  >
+}
 ```
 
 Added in v1.0.0
@@ -584,9 +649,10 @@ Atomically updates all bindings using a pure function.
 **Signature**
 
 ```ts
-export declare const transform: <K, V>(
-  f: (key: K, value: V) => readonly [K, V]
-) => (self: TMap<K, V>) => STM.STM<never, never, void>
+export declare const transform: {
+  <K, V>(f: (key: K, value: V) => readonly [K, V]): (self: TMap<K, V>) => STM.STM<never, never, void>
+  <K, V>(self: TMap<K, V>, f: (key: K, value: V) => readonly [K, V]): STM.STM<never, never, void>
+}
 ```
 
 Added in v1.0.0
@@ -598,9 +664,10 @@ Atomically updates all bindings using a transactional function.
 **Signature**
 
 ```ts
-export declare const transformSTM: <K, V, R, E>(
-  f: (key: K, value: V) => STM.STM<R, E, readonly [K, V]>
-) => (self: TMap<K, V>) => STM.STM<R, E, void>
+export declare const transformSTM: {
+  <K, V, R, E>(f: (key: K, value: V) => STM.STM<R, E, readonly [K, V]>): (self: TMap<K, V>) => STM.STM<R, E, void>
+  <K, V, R, E>(self: TMap<K, V>, f: (key: K, value: V) => STM.STM<R, E, readonly [K, V]>): STM.STM<R, E, void>
+}
 ```
 
 Added in v1.0.0
@@ -612,7 +679,10 @@ Atomically updates all values using a pure function.
 **Signature**
 
 ```ts
-export declare const transformValues: <V>(f: (value: V) => V) => <K>(self: TMap<K, V>) => STM.STM<never, never, void>
+export declare const transformValues: {
+  <V>(f: (value: V) => V): <K>(self: TMap<K, V>) => STM.STM<never, never, void>
+  <K, V>(self: TMap<K, V>, f: (value: V) => V): STM.STM<never, never, void>
+}
 ```
 
 Added in v1.0.0
@@ -624,9 +694,10 @@ Atomically updates all values using a transactional function.
 **Signature**
 
 ```ts
-export declare const transformValuesSTM: <V, R, E>(
-  f: (value: V) => STM.STM<R, E, V>
-) => <K>(self: TMap<K, V>) => STM.STM<R, E, void>
+export declare const transformValuesSTM: {
+  <V, R, E>(f: (value: V) => STM.STM<R, E, V>): <K>(self: TMap<K, V>) => STM.STM<R, E, void>
+  <K, V, R, E>(self: TMap<K, V>, f: (value: V) => STM.STM<R, E, V>): STM.STM<R, E, void>
+}
 ```
 
 Added in v1.0.0
@@ -642,10 +713,16 @@ updated value or `None` if the value was removed from the map.
 **Signature**
 
 ```ts
-export declare const updateWith: <K, V>(
-  key: K,
-  f: (value: Option.Option<V>) => Option.Option<V>
-) => (self: TMap<K, V>) => STM.STM<never, never, Option.Option<V>>
+export declare const updateWith: {
+  <K, V>(key: K, f: (value: Option.Option<V>) => Option.Option<V>): (
+    self: TMap<K, V>
+  ) => STM.STM<never, never, Option.Option<V>>
+  <K, V>(self: TMap<K, V>, key: K, f: (value: Option.Option<V>) => Option.Option<V>): STM.STM<
+    never,
+    never,
+    Option.Option<V>
+  >
+}
 ```
 
 Added in v1.0.0

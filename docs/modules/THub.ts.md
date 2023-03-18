@@ -196,7 +196,10 @@ to the hub.
 **Signature**
 
 ```ts
-export declare const publish: <A>(value: A) => (self: THub<A>) => STM.STM<never, never, boolean>
+export declare const publish: {
+  <A>(value: A): (self: THub<A>) => STM.STM<never, never, boolean>
+  <A>(self: THub<A>, value: A): STM.STM<never, never, boolean>
+}
 ```
 
 Added in v1.0.0
@@ -209,7 +212,10 @@ were published to the hub.
 **Signature**
 
 ```ts
-export declare const publishAll: <A>(iterable: Iterable<A>) => (self: THub<A>) => STM.STM<never, never, boolean>
+export declare const publishAll: {
+  <A>(iterable: Iterable<A>): (self: THub<A>) => STM.STM<never, never, boolean>
+  <A>(self: THub<A>, iterable: Iterable<A>): STM.STM<never, never, boolean>
+}
 ```
 
 Added in v1.0.0

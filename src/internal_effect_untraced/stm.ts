@@ -1251,7 +1251,7 @@ export const someOrFailException = Debug.methodWithTrace((trace) =>
 
 /* @internal */
 export const all = Debug.methodWithTrace((trace): {
-  <R, E, A, T extends ReadonlyArray<Effect.Effect<any, any, any>>>(
+  <R, E, A, T extends ReadonlyArray<STM.STM<any, any, any>>>(
     self: STM.STM<R, E, A>,
     ...args: T
   ): STM.STM<
@@ -1282,11 +1282,11 @@ export const all = Debug.methodWithTrace((trace): {
   <T extends Readonly<{ [K: string]: STM.STM<any, any, any> }>>(
     args: T
   ): STM.STM<
-    T["length"] extends 0 ? never
-      : [T[number]] extends [{ [STM.STMTypeId]: { _R: (_: never) => infer R } }] ? R
+    keyof T extends never ? never
+      : [T[keyof T]] extends [{ [STM.STMTypeId]: { _R: (_: never) => infer R } }] ? R
       : never,
-    T["length"] extends 0 ? never
-      : [T[number]] extends [{ [STM.STMTypeId]: { _E: (_: never) => infer E } }] ? E
+    keyof T extends never ? never
+      : [T[keyof T]] extends [{ [STM.STMTypeId]: { _E: (_: never) => infer E } }] ? E
       : never,
     Readonly<{ [K in keyof T]: [T[K]] extends [STM.STM<any, any, infer A>] ? A : never }>
   >
@@ -1306,7 +1306,7 @@ export const all = Debug.methodWithTrace((trace): {
           core.map((values) => {
             const res = {}
             for (const [k, v] of values) {
-              res[k] = v
+              ;(res as any)[k] = v
             }
             return res
           })

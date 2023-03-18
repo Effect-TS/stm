@@ -26,11 +26,15 @@ Added in v1.0.0
   - [everySTM](#everystm)
   - [findFirst](#findfirst)
   - [findFirstIndex](#findfirstindex)
+  - [findFirstIndexFrom](#findfirstindexfrom)
   - [findFirstIndexWhere](#findfirstindexwhere)
+  - [findFirstIndexWhereFrom](#findfirstindexwherefrom)
+  - [findFirstIndexWhereFromSTM](#findfirstindexwherefromstm)
   - [findFirstIndexWhereSTM](#findfirstindexwherestm)
   - [findFirstSTM](#findfirststm)
   - [findLast](#findlast)
   - [findLastIndex](#findlastindex)
+  - [findLastIndexFrom](#findlastindexfrom)
   - [findLastSTM](#findlaststm)
   - [forEach](#foreach)
   - [get](#get)
@@ -127,9 +131,10 @@ domain.
 **Signature**
 
 ```ts
-export declare const collectFirst: <A, B>(
-  pf: (a: A) => Option.Option<B>
-) => (self: TArray<A>) => STM.STM<never, never, Option.Option<B>>
+export declare const collectFirst: {
+  <A, B>(pf: (a: A) => Option.Option<B>): (self: TArray<A>) => STM.STM<never, never, Option.Option<B>>
+  <A, B>(self: TArray<A>, pf: (a: A) => Option.Option<B>): STM.STM<never, never, Option.Option<B>>
+}
 ```
 
 Added in v1.0.0
@@ -142,9 +147,10 @@ value in its domain.
 **Signature**
 
 ```ts
-export declare const collectFirstSTM: <A, R, E, B>(
-  pf: (a: A) => Option.Option<STM.STM<R, E, B>>
-) => (self: TArray<A>) => STM.STM<R, E, Option.Option<B>>
+export declare const collectFirstSTM: {
+  <A, R, E, B>(pf: (a: A) => Option.Option<STM.STM<R, E, B>>): (self: TArray<A>) => STM.STM<R, E, Option.Option<B>>
+  <A, R, E, B>(self: TArray<A>, pf: (a: A) => Option.Option<STM.STM<R, E, B>>): STM.STM<R, E, Option.Option<B>>
+}
 ```
 
 Added in v1.0.0
@@ -156,7 +162,10 @@ Determine if the array contains a specified value.
 **Signature**
 
 ```ts
-export declare const contains: <A>(value: A) => (self: TArray<A>) => STM.STM<never, never, boolean>
+export declare const contains: {
+  <A>(value: A): (self: TArray<A>) => STM.STM<never, never, boolean>
+  <A>(self: TArray<A>, value: A): STM.STM<never, never, boolean>
+}
 ```
 
 Added in v1.0.0
@@ -169,7 +178,10 @@ the array.
 **Signature**
 
 ```ts
-export declare const every: <A>(predicate: Predicate<A>) => (self: TArray<A>) => STM.STM<never, never, boolean>
+export declare const every: {
+  <A>(predicate: Predicate<A>): (self: TArray<A>) => STM.STM<never, never, boolean>
+  <A>(self: TArray<A>, predicate: Predicate<A>): STM.STM<never, never, boolean>
+}
 ```
 
 Added in v1.0.0
@@ -182,9 +194,10 @@ members of the array.
 **Signature**
 
 ```ts
-export declare const everySTM: <A, R, E>(
-  predicate: (value: A) => STM.STM<R, E, boolean>
-) => (self: TArray<A>) => STM.STM<R, E, boolean>
+export declare const everySTM: {
+  <A, R, E>(predicate: (value: A) => STM.STM<R, E, boolean>): (self: TArray<A>) => STM.STM<R, E, boolean>
+  <A, R, E>(self: TArray<A>, predicate: (value: A) => STM.STM<R, E, boolean>): STM.STM<R, E, boolean>
+}
 ```
 
 Added in v1.0.0
@@ -196,46 +209,77 @@ Find the first element in the array matching the specified predicate.
 **Signature**
 
 ```ts
-export declare const findFirst: <A>(
-  predicate: Predicate<A>
-) => (self: TArray<A>) => STM.STM<never, never, Option.Option<A>>
+export declare const findFirst: {
+  <A>(predicate: Predicate<A>): (self: TArray<A>) => STM.STM<never, never, Option.Option<A>>
+  <A>(self: TArray<A>, predicate: Predicate<A>): STM.STM<never, never, Option.Option<A>>
+}
 ```
 
 Added in v1.0.0
 
 ## findFirstIndex
 
-Get the first index of a specific value in the array, optionally starting
-from the specified index.
+Get the first index of a specific value in the array.
 
 **Signature**
 
 ```ts
-export declare const findFirstIndex: <A>(
-  value: A,
-  from?: number | undefined
-) => (self: TArray<A>) => STM.STM<never, never, Option.Option<number>>
+export declare const findFirstIndex: {
+  <A>(value: A): (self: TArray<A>) => STM.STM<never, never, Option.Option<number>>
+  <A>(self: TArray<A>, value: A): STM.STM<never, never, Option.Option<number>>
+}
+```
+
+Added in v1.0.0
+
+## findFirstIndexFrom
+
+Get the first index of a specific value in the array starting from the
+specified index.
+
+**Signature**
+
+```ts
+export declare const findFirstIndexFrom: {
+  <A>(value: A, from: number): (self: TArray<A>) => STM.STM<never, never, Option.Option<number>>
+  <A>(self: TArray<A>, value: A, from: number): STM.STM<never, never, Option.Option<number>>
+}
 ```
 
 Added in v1.0.0
 
 ## findFirstIndexWhere
 
-Get the index of the first entry in the array, optionally starting from the
-specified index, matching a predicate.
+Get the index of the first entry in the array matching a predicate.
 
 **Signature**
 
 ```ts
-export declare const findFirstIndexWhere: <A>(
-  predicate: Predicate<A>,
-  from?: number | undefined
-) => (self: TArray<A>) => STM.STM<never, never, Option.Option<number>>
+export declare const findFirstIndexWhere: {
+  <A>(predicate: Predicate<A>): (self: TArray<A>) => STM.STM<never, never, Option.Option<number>>
+  <A>(self: TArray<A>, predicate: Predicate<A>): STM.STM<never, never, Option.Option<number>>
+}
 ```
 
 Added in v1.0.0
 
-## findFirstIndexWhereSTM
+## findFirstIndexWhereFrom
+
+Get the index of the first entry in the array starting from the specified
+index, matching a predicate.
+
+**Signature**
+
+```ts
+export declare const findFirstIndexWhereFrom: {
+  <A>(predicate: Predicate<A>, from: number): (self: TArray<A>) => STM.STM<never, never, Option.Option<number>>
+  <A>(self: TArray<A>, predicate: Predicate<A>, from: number): STM.STM<never, never, Option.Option<number>>
+}
+```
+
+Added in v1.0.0
+
+## findFirstIndexWhereFromSTM
 
 Starting at specified index, get the index of the next entry that matches a
 transactional predicate.
@@ -243,10 +287,31 @@ transactional predicate.
 **Signature**
 
 ```ts
-export declare const findFirstIndexWhereSTM: <A, R, E>(
-  predicate: (value: A) => STM.STM<R, E, boolean>,
-  from?: number | undefined
-) => (self: TArray<A>) => STM.STM<R, E, Option.Option<number>>
+export declare const findFirstIndexWhereFromSTM: {
+  <A, R, E>(predicate: (value: A) => STM.STM<R, E, boolean>, from: number): (
+    self: TArray<A>
+  ) => STM.STM<R, E, Option.Option<number>>
+  <A, R, E>(self: TArray<A>, predicate: (value: A) => STM.STM<R, E, boolean>, from: number): STM.STM<
+    R,
+    E,
+    Option.Option<number>
+  >
+}
+```
+
+Added in v1.0.0
+
+## findFirstIndexWhereSTM
+
+Get the index of the next entry that matches a transactional predicate.
+
+**Signature**
+
+```ts
+export declare const findFirstIndexWhereSTM: {
+  <A, R, E>(predicate: (value: A) => STM.STM<R, E, boolean>): (self: TArray<A>) => STM.STM<R, E, Option.Option<number>>
+  <A, R, E>(self: TArray<A>, predicate: (value: A) => STM.STM<R, E, boolean>): STM.STM<R, E, Option.Option<number>>
+}
 ```
 
 Added in v1.0.0
@@ -258,9 +323,10 @@ Find the first element in the array matching a transactional predicate.
 **Signature**
 
 ```ts
-export declare const findFirstSTM: <A, R, E>(
-  predicate: (value: A) => STM.STM<R, E, boolean>
-) => (self: TArray<A>) => STM.STM<R, E, Option.Option<A>>
+export declare const findFirstSTM: {
+  <A, R, E>(predicate: (value: A) => STM.STM<R, E, boolean>): (self: TArray<A>) => STM.STM<R, E, Option.Option<A>>
+  <A, R, E>(self: TArray<A>, predicate: (value: A) => STM.STM<R, E, boolean>): STM.STM<R, E, Option.Option<A>>
+}
 ```
 
 Added in v1.0.0
@@ -272,25 +338,42 @@ Find the last element in the array matching a predicate.
 **Signature**
 
 ```ts
-export declare const findLast: <A>(
-  predicate: Predicate<A>
-) => (self: TArray<A>) => STM.STM<never, never, Option.Option<A>>
+export declare const findLast: {
+  <A>(predicate: Predicate<A>): (self: TArray<A>) => STM.STM<never, never, Option.Option<A>>
+  <A>(self: TArray<A>, predicate: Predicate<A>): STM.STM<never, never, Option.Option<A>>
+}
 ```
 
 Added in v1.0.0
 
 ## findLastIndex
 
-Get the first index of a specific value in the array, bounded above by a
+Get the last index of a specific value in the array bounded above by a
 specific index.
 
 **Signature**
 
 ```ts
-export declare const findLastIndex: <A>(
-  value: A,
-  end?: number | undefined
-) => (self: TArray<A>) => STM.STM<never, never, Option.Option<number>>
+export declare const findLastIndex: {
+  <A>(value: A): (self: TArray<A>) => STM.STM<never, never, Option.Option<number>>
+  <A>(self: TArray<A>, value: A): STM.STM<never, never, Option.Option<number>>
+}
+```
+
+Added in v1.0.0
+
+## findLastIndexFrom
+
+Get the last index of a specific value in the array bounded above by a
+specific index.
+
+**Signature**
+
+```ts
+export declare const findLastIndexFrom: {
+  <A>(value: A, end: number): (self: TArray<A>) => STM.STM<never, never, Option.Option<number>>
+  <A>(self: TArray<A>, value: A, end: number): STM.STM<never, never, Option.Option<number>>
+}
 ```
 
 Added in v1.0.0
@@ -302,9 +385,10 @@ Find the last element in the array matching a transactional predicate.
 **Signature**
 
 ```ts
-export declare const findLastSTM: <A, R, E>(
-  predicate: (value: A) => STM.STM<R, E, boolean>
-) => (self: TArray<A>) => STM.STM<R, E, Option.Option<A>>
+export declare const findLastSTM: {
+  <A, R, E>(predicate: (value: A) => STM.STM<R, E, boolean>): (self: TArray<A>) => STM.STM<R, E, Option.Option<A>>
+  <A, R, E>(self: TArray<A>, predicate: (value: A) => STM.STM<R, E, boolean>): STM.STM<R, E, Option.Option<A>>
+}
 ```
 
 Added in v1.0.0
@@ -316,9 +400,10 @@ Atomically performs transactional effect for each item in array.
 **Signature**
 
 ```ts
-export declare const forEach: <A, R, E>(
-  f: (value: A) => STM.STM<R, E, void>
-) => (self: TArray<A>) => STM.STM<R, E, void>
+export declare const forEach: {
+  <A, R, E>(f: (value: A) => STM.STM<R, E, void>): (self: TArray<A>) => STM.STM<R, E, void>
+  <A, R, E>(self: TArray<A>, f: (value: A) => STM.STM<R, E, void>): STM.STM<R, E, void>
+}
 ```
 
 Added in v1.0.0
@@ -330,7 +415,10 @@ Extracts value from ref in array.
 **Signature**
 
 ```ts
-export declare const get: (index: number) => <A>(self: TArray<A>) => STM.STM<never, never, A>
+export declare const get: {
+  (index: number): <A>(self: TArray<A>) => STM.STM<never, never, A>
+  <A>(self: TArray<A>, index: number): STM.STM<never, never, A>
+}
 ```
 
 Added in v1.0.0
@@ -366,9 +454,10 @@ Atomically compute the greatest element in the array, if it exists.
 **Signature**
 
 ```ts
-export declare const maxOption: <A>(
-  order: Order.Order<A>
-) => (self: TArray<A>) => STM.STM<never, never, Option.Option<A>>
+export declare const maxOption: {
+  <A>(order: Order.Order<A>): (self: TArray<A>) => STM.STM<never, never, Option.Option<A>>
+  <A>(self: TArray<A>, order: Order.Order<A>): STM.STM<never, never, Option.Option<A>>
+}
 ```
 
 Added in v1.0.0
@@ -380,9 +469,10 @@ Atomically compute the least element in the array, if it exists.
 **Signature**
 
 ```ts
-export declare const minOption: <A>(
-  order: Order.Order<A>
-) => (self: TArray<A>) => STM.STM<never, never, Option.Option<A>>
+export declare const minOption: {
+  <A>(order: Order.Order<A>): (self: TArray<A>) => STM.STM<never, never, Option.Option<A>>
+  <A>(self: TArray<A>, order: Order.Order<A>): STM.STM<never, never, Option.Option<A>>
+}
 ```
 
 Added in v1.0.0
@@ -394,9 +484,10 @@ Atomically reduce the array, if non-empty, by a binary operator.
 **Signature**
 
 ```ts
-export declare const reduceOption: <A>(
-  f: (x: A, y: A) => A
-) => (self: TArray<A>) => STM.STM<never, never, Option.Option<A>>
+export declare const reduceOption: {
+  <A>(f: (x: A, y: A) => A): (self: TArray<A>) => STM.STM<never, never, Option.Option<A>>
+  <A>(self: TArray<A>, f: (x: A, y: A) => A): STM.STM<never, never, Option.Option<A>>
+}
 ```
 
 Added in v1.0.0
@@ -409,9 +500,10 @@ operator.
 **Signature**
 
 ```ts
-export declare const reduceOptionSTM: <A, R, E>(
-  f: (x: A, y: A) => STM.STM<R, E, A>
-) => (self: TArray<A>) => STM.STM<R, E, Option.Option<A>>
+export declare const reduceOptionSTM: {
+  <A, R, E>(f: (x: A, y: A) => STM.STM<R, E, A>): (self: TArray<A>) => STM.STM<R, E, Option.Option<A>>
+  <A, R, E>(self: TArray<A>, f: (x: A, y: A) => STM.STM<R, E, A>): STM.STM<R, E, Option.Option<A>>
+}
 ```
 
 Added in v1.0.0
@@ -423,7 +515,10 @@ Determine if the array contains a value satisfying a predicate.
 **Signature**
 
 ```ts
-export declare const some: <A>(predicate: Predicate<A>) => (self: TArray<A>) => STM.STM<never, never, boolean>
+export declare const some: {
+  <A>(predicate: Predicate<A>): (self: TArray<A>) => STM.STM<never, never, boolean>
+  <A>(self: TArray<A>, predicate: Predicate<A>): STM.STM<never, never, boolean>
+}
 ```
 
 Added in v1.0.0
@@ -436,9 +531,10 @@ predicate.
 **Signature**
 
 ```ts
-export declare const someSTM: <A, R, E>(
-  predicate: (value: A) => STM.STM<R, E, boolean>
-) => (self: TArray<A>) => STM.STM<R, E, boolean>
+export declare const someSTM: {
+  <A, R, E>(predicate: (value: A) => STM.STM<R, E, boolean>): (self: TArray<A>) => STM.STM<R, E, boolean>
+  <A, R, E>(self: TArray<A>, predicate: (value: A) => STM.STM<R, E, boolean>): STM.STM<R, E, boolean>
+}
 ```
 
 Added in v1.0.0
@@ -450,7 +546,10 @@ Atomically updates all elements using a pure function.
 **Signature**
 
 ```ts
-export declare const transform: <A>(f: (value: A) => A) => (self: TArray<A>) => STM.STM<never, never, void>
+export declare const transform: {
+  <A>(f: (value: A) => A): (self: TArray<A>) => STM.STM<never, never, void>
+  <A>(self: TArray<A>, f: (value: A) => A): STM.STM<never, never, void>
+}
 ```
 
 Added in v1.0.0
@@ -462,9 +561,10 @@ Atomically updates all elements using a transactional effect.
 **Signature**
 
 ```ts
-export declare const transformSTM: <A, R, E>(
-  f: (value: A) => STM.STM<R, E, A>
-) => (self: TArray<A>) => STM.STM<R, E, void>
+export declare const transformSTM: {
+  <A, R, E>(f: (value: A) => STM.STM<R, E, A>): (self: TArray<A>) => STM.STM<R, E, void>
+  <A, R, E>(self: TArray<A>, f: (value: A) => STM.STM<R, E, A>): STM.STM<R, E, void>
+}
 ```
 
 Added in v1.0.0
@@ -476,7 +576,10 @@ Updates element in the array with given function.
 **Signature**
 
 ```ts
-export declare const update: <A>(index: number, f: (value: A) => A) => (self: TArray<A>) => STM.STM<never, never, void>
+export declare const update: {
+  <A>(index: number, f: (value: A) => A): (self: TArray<A>) => STM.STM<never, never, void>
+  <A>(self: TArray<A>, index: number, f: (value: A) => A): STM.STM<never, never, void>
+}
 ```
 
 Added in v1.0.0
@@ -488,10 +591,10 @@ Atomically updates element in the array with given transactional effect.
 **Signature**
 
 ```ts
-export declare const updateSTM: <A, R, E>(
-  index: number,
-  f: (value: A) => STM.STM<R, E, A>
-) => (self: TArray<A>) => STM.STM<R, E, void>
+export declare const updateSTM: {
+  <A, R, E>(index: number, f: (value: A) => STM.STM<R, E, A>): (self: TArray<A>) => STM.STM<R, E, void>
+  <A, R, E>(self: TArray<A>, index: number, f: (value: A) => STM.STM<R, E, A>): STM.STM<R, E, void>
+}
 ```
 
 Added in v1.0.0
@@ -505,7 +608,10 @@ Count the values in the array matching a predicate.
 **Signature**
 
 ```ts
-export declare const count: <A>(predicate: Predicate<A>) => (self: TArray<A>) => STM.STM<never, never, number>
+export declare const count: {
+  <A>(predicate: Predicate<A>): (self: TArray<A>) => STM.STM<never, never, number>
+  <A>(self: TArray<A>, predicate: Predicate<A>): STM.STM<never, never, number>
+}
 ```
 
 Added in v1.0.0
@@ -517,9 +623,10 @@ Count the values in the array matching a transactional predicate.
 **Signature**
 
 ```ts
-export declare const countSTM: <A, R, E>(
-  predicate: (value: A) => STM.STM<R, E, boolean>
-) => (self: TArray<A>) => STM.STM<R, E, number>
+export declare const countSTM: {
+  <A, R, E>(predicate: (value: A) => STM.STM<R, E, boolean>): (self: TArray<A>) => STM.STM<R, E, number>
+  <A, R, E>(self: TArray<A>, predicate: (value: A) => STM.STM<R, E, boolean>): STM.STM<R, E, number>
+}
 ```
 
 Added in v1.0.0
@@ -531,10 +638,10 @@ Atomically folds using a pure function.
 **Signature**
 
 ```ts
-export declare const reduce: <Z, A>(
-  zero: Z,
-  f: (accumulator: Z, current: A) => Z
-) => (self: TArray<A>) => STM.STM<never, never, Z>
+export declare const reduce: {
+  <Z, A>(zero: Z, f: (accumulator: Z, current: A) => Z): (self: TArray<A>) => STM.STM<never, never, Z>
+  <Z, A>(self: TArray<A>, zero: Z, f: (accumulator: Z, current: A) => Z): STM.STM<never, never, Z>
+}
 ```
 
 Added in v1.0.0
@@ -546,10 +653,10 @@ Atomically folds using a transactional function.
 **Signature**
 
 ```ts
-export declare const reduceSTM: <Z, A, R, E>(
-  zero: Z,
-  f: (accumulator: Z, current: A) => STM.STM<R, E, Z>
-) => (self: TArray<A>) => STM.STM<R, E, Z>
+export declare const reduceSTM: {
+  <Z, A, R, E>(zero: Z, f: (accumulator: Z, current: A) => STM.STM<R, E, Z>): (self: TArray<A>) => STM.STM<R, E, Z>
+  <Z, A, R, E>(self: TArray<A>, zero: Z, f: (accumulator: Z, current: A) => STM.STM<R, E, Z>): STM.STM<R, E, Z>
+}
 ```
 
 Added in v1.0.0

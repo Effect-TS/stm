@@ -84,9 +84,10 @@ Added in v1.0.0
 **Signature**
 
 ```ts
-export declare const done: <E, A>(
-  either: Either.Either<E, A>
-) => (self: TDeferred<E, A>) => STM.STM<never, never, boolean>
+export declare const done: {
+  <E, A>(either: Either.Either<E, A>): (self: TDeferred<E, A>) => STM.STM<never, never, boolean>
+  <E, A>(self: TDeferred<E, A>, either: Either.Either<E, A>): STM.STM<never, never, boolean>
+}
 ```
 
 Added in v1.0.0
@@ -96,7 +97,10 @@ Added in v1.0.0
 **Signature**
 
 ```ts
-export declare const fail: <E>(error: E) => <A>(self: TDeferred<E, A>) => STM.STM<never, never, boolean>
+export declare const fail: {
+  <E>(error: E): <A>(self: TDeferred<E, A>) => STM.STM<never, never, boolean>
+  <E, A>(self: TDeferred<E, A>, error: E): STM.STM<never, never, boolean>
+}
 ```
 
 Added in v1.0.0
@@ -106,7 +110,10 @@ Added in v1.0.0
 **Signature**
 
 ```ts
-export declare const succeed: <A>(value: A) => <E>(self: TDeferred<E, A>) => STM.STM<never, never, boolean>
+export declare const succeed: {
+  <A>(value: A): <E>(self: TDeferred<E, A>) => STM.STM<never, never, boolean>
+  <E, A>(self: TDeferred<E, A>, value: A): STM.STM<never, never, boolean>
+}
 ```
 
 Added in v1.0.0

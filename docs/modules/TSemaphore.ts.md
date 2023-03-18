@@ -90,7 +90,10 @@ Added in v1.0.0
 **Signature**
 
 ```ts
-export declare const acquireN: (n: number) => (self: TSemaphore) => STM.STM<never, never, void>
+export declare const acquireN: {
+  (n: number): (self: TSemaphore) => STM.STM<never, never, void>
+  (self: TSemaphore, n: number): STM.STM<never, never, void>
+}
 ```
 
 Added in v1.0.0
@@ -110,7 +113,10 @@ Added in v1.0.0
 **Signature**
 
 ```ts
-export declare const releaseN: (n: number) => (self: TSemaphore) => STM.STM<never, never, void>
+export declare const releaseN: {
+  (n: number): (self: TSemaphore) => STM.STM<never, never, void>
+  (self: TSemaphore, n: number): STM.STM<never, never, void>
+}
 ```
 
 Added in v1.0.0
@@ -120,9 +126,10 @@ Added in v1.0.0
 **Signature**
 
 ```ts
-export declare const withPermit: (
-  semaphore: TSemaphore
-) => <R, E, A>(self: Effect.Effect<R, E, A>) => Effect.Effect<R, E, A>
+export declare const withPermit: {
+  (semaphore: TSemaphore): <R, E, A>(self: Effect.Effect<R, E, A>) => Effect.Effect<R, E, A>
+  <R, E, A>(self: Effect.Effect<R, E, A>, semaphore: TSemaphore): Effect.Effect<R, E, A>
+}
 ```
 
 Added in v1.0.0
@@ -142,9 +149,10 @@ Added in v1.0.0
 **Signature**
 
 ```ts
-export declare const withPermits: (
-  permits: number
-) => (semaphore: TSemaphore) => <R, E, A>(self: Effect.Effect<R, E, A>) => Effect.Effect<R, E, A>
+export declare const withPermits: {
+  (semaphore: TSemaphore, permits: number): <R, E, A>(self: Effect.Effect<R, E, A>) => Effect.Effect<R, E, A>
+  <R, E, A>(self: Effect.Effect<R, E, A>, semaphore: TSemaphore, permits: number): Effect.Effect<R, E, A>
+}
 ```
 
 Added in v1.0.0
@@ -154,9 +162,10 @@ Added in v1.0.0
 **Signature**
 
 ```ts
-export declare const withPermitsScoped: (
-  permits: number
-) => (self: TSemaphore) => Effect.Effect<Scope.Scope, never, void>
+export declare const withPermitsScoped: {
+  (permits: number): (self: TSemaphore) => Effect.Effect<Scope.Scope, never, void>
+  (self: TSemaphore, permits: number): Effect.Effect<Scope.Scope, never, void>
+}
 ```
 
 Added in v1.0.0

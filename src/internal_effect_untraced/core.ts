@@ -1,8 +1,10 @@
 import * as Chunk from "@effect/data/Chunk"
 import type * as Context from "@effect/data/Context"
 import * as Either from "@effect/data/Either"
+import * as Equal from "@effect/data/Equal"
 import type { LazyArg } from "@effect/data/Function"
 import { constVoid, pipe } from "@effect/data/Function"
+import * as Hash from "@effect/data/Hash"
 import * as MRef from "@effect/data/MutableRef"
 import * as Cause from "@effect/io/Cause"
 import * as Debug from "@effect/io/Debug"
@@ -11,7 +13,7 @@ import * as Exit from "@effect/io/Exit"
 import type * as FiberId from "@effect/io/Fiber/Id"
 import * as FiberRef from "@effect/io/FiberRef"
 import * as internalCause from "@effect/io/internal_effect_untraced/cause"
-import { proto as effectProto, withFiberRuntime } from "@effect/io/internal_effect_untraced/core"
+import { withFiberRuntime } from "@effect/io/internal_effect_untraced/core"
 import { OP_COMMIT } from "@effect/io/internal_effect_untraced/opCodes/effect"
 import type * as Scheduler from "@effect/io/Scheduler"
 import * as OpCodes from "@effect/stm/internal_effect_untraced/opCodes/stm"
@@ -50,13 +52,13 @@ export type Primitive =
 /** @internal */
 type Op<Tag extends string, Body = {}> = STM.STM<never, never, never> & Body & {
   readonly _tag: OP_COMMIT
-  readonly _stmTag: Tag
+  readonly i0: Tag
 }
 
 /** @internal */
 interface STMEffect extends
   Op<OpCodes.OP_WITH_STM_RUNTIME, {
-    readonly evaluate: (
+    readonly i1: (
       runtime: STMDriver<unknown, unknown, unknown>
     ) => STM.STM<unknown, unknown, unknown>
   }>
@@ -65,46 +67,46 @@ interface STMEffect extends
 /** @internal */
 interface STMOnFailure extends
   Op<OpCodes.OP_ON_FAILURE, {
-    readonly first: STM.STM<unknown, unknown, unknown>
-    readonly failK: (error: unknown) => STM.STM<unknown, unknown, unknown>
+    readonly i1: STM.STM<unknown, unknown, unknown>
+    readonly i2: (error: unknown) => STM.STM<unknown, unknown, unknown>
   }>
 {}
 
 /** @internal */
 interface STMOnRetry extends
   Op<OpCodes.OP_ON_RETRY, {
-    readonly first: STM.STM<unknown, unknown, unknown>
-    readonly retryK: () => STM.STM<unknown, unknown, unknown>
+    readonly i1: STM.STM<unknown, unknown, unknown>
+    readonly i2: () => STM.STM<unknown, unknown, unknown>
   }>
 {}
 
 /** @internal */
 interface STMOnSuccess extends
   Op<OpCodes.OP_ON_SUCCESS, {
-    readonly first: STM.STM<unknown, unknown, unknown>
-    readonly successK: (a: unknown) => STM.STM<unknown, unknown, unknown>
+    readonly i1: STM.STM<unknown, unknown, unknown>
+    readonly i2: (a: unknown) => STM.STM<unknown, unknown, unknown>
   }>
 {}
 
 /** @internal */
 interface STMProvide extends
   Op<OpCodes.OP_PROVIDE, {
-    readonly stm: STM.STM<unknown, unknown, unknown>
-    readonly provide: (context: Context.Context<unknown>) => Context.Context<unknown>
+    readonly i1: STM.STM<unknown, unknown, unknown>
+    readonly i2: (context: Context.Context<unknown>) => Context.Context<unknown>
   }>
 {}
 
 /** @internal */
 interface STMSync extends
   Op<OpCodes.OP_SYNC, {
-    readonly evaluate: () => unknown
+    readonly i1: () => unknown
   }>
 {}
 
 /** @internal */
 interface STMSucceed extends
   Op<OpCodes.OP_SUCCEED, {
-    readonly value: unknown
+    readonly i1: unknown
   }>
 {}
 
@@ -114,27 +116,31 @@ interface STMRetry extends Op<OpCodes.OP_RETRY, {}> {}
 /** @internal */
 interface STMFail extends
   Op<OpCodes.OP_FAIL, {
-    readonly error: LazyArg<unknown>
+    readonly i1: LazyArg<unknown>
   }>
 {}
 
 /** @internal */
 interface STMDie extends
   Op<OpCodes.OP_DIE, {
-    readonly defect: LazyArg<unknown>
+    readonly i1: LazyArg<unknown>
   }>
 {}
 
 /** @internal */
 interface STMTraced extends
   Op<OpCodes.OP_TRACED, {
-    readonly stm: STM.STM<unknown, unknown, unknown>
+    readonly i1: STM.STM<unknown, unknown, unknown>
     readonly trace: Debug.Trace
   }>
 {}
 
 /** @internal */
-interface STMInterrupt extends Op<OpCodes.OP_INTERRUPT, {}> {}
+interface STMInterrupt extends
+  Op<OpCodes.OP_INTERRUPT, {
+    readonly i1: FiberId.Runtime
+  }>
+{}
 
 /** @internal */
 const stmVariance = {
@@ -144,24 +150,35 @@ const stmVariance = {
 }
 
 /** @internal */
-const proto = Object.assign({}, {
-  ...effectProto,
-  [STMTypeId]: stmVariance,
-  _tag: OP_COMMIT,
+class STMPrimitive implements STM.STM<any, any, any> {
+  public _tag = OP_COMMIT
+  public i1: any = undefined
+  public i2: any = undefined
+  public trace = undefined;
+  [Effect.EffectTypeId] = stmVariance
+  get [STMTypeId]() {
+    return stmVariance
+  }
+  constructor(readonly i0: Primitive["i0"]) {}
+  [Equal.symbol](this: {}, that: unknown) {
+    return this === that
+  }
+  [Hash.symbol](this: {}) {
+    return Hash.random(this)
+  }
   commit(this: STM.STM<any, any, any>): Effect.Effect<any, any, any> {
     return Debug.untraced(() => commit(this))
-  },
-  traced(this: STM.STM<any, any, any>, trace: string | undefined): STM.STM<any, any, any> {
-    if (!trace) {
-      return this
-    }
-    const stm = Object.create(proto)
-    stm._stmTag = OpCodes.OP_TRACED
-    stm.stm = this
-    stm.trace = trace
-    return stm
   }
-})
+  traced(this: STM.STM<any, any, any>, trace: Debug.Trace): STM.STM<any, any, any> {
+    if (trace) {
+      const effect = new STMPrimitive(OpCodes.OP_TRACED) as any
+      effect.i1 = this
+      effect.trace = trace
+      return effect
+    }
+    return this
+  }
+}
 
 /** @internal */
 export const isSTM = (u: unknown): u is STM.STM<unknown, unknown, unknown> =>
@@ -459,7 +476,7 @@ export class STMDriver<R, E, A> {
 
   nextSuccess() {
     let current = this.popStack()
-    while (current !== undefined && current._stmTag !== OpCodes.OP_ON_SUCCESS) {
+    while (current !== undefined && current.i0 !== OpCodes.OP_ON_SUCCESS) {
       current = this.popStack()
     }
     return current
@@ -467,7 +484,7 @@ export class STMDriver<R, E, A> {
 
   nextFailure() {
     let current = this.popStack()
-    while (current !== undefined && current._stmTag !== OpCodes.OP_ON_FAILURE) {
+    while (current !== undefined && current.i0 !== OpCodes.OP_ON_FAILURE) {
       current = this.popStack()
     }
     return current
@@ -475,7 +492,7 @@ export class STMDriver<R, E, A> {
 
   nextRetry() {
     let current = this.popStack()
-    while (current !== undefined && current._stmTag !== OpCodes.OP_ON_RETRY) {
+    while (current !== undefined && current.i0 !== OpCodes.OP_ON_RETRY) {
       current = this.popStack()
     }
     return current
@@ -487,10 +504,10 @@ export class STMDriver<R, E, A> {
     while (exit === undefined && curr !== undefined) {
       try {
         const current = curr
-        switch (current._stmTag) {
+        switch (current.i0) {
           case OpCodes.OP_TRACED: {
             this.pushStack(current)
-            curr = current.stm as Primitive
+            curr = current.i1 as Primitive
             break
           }
           case OpCodes.OP_DIE: {
@@ -498,7 +515,7 @@ export class STMDriver<R, E, A> {
               this.stackToLines(),
               MRef.incrementAndGet(Cause.globalErrorSeq)
             )
-            exit = TExit.die(current.defect(), annotation)
+            exit = TExit.die(current.i1(), annotation)
             break
           }
           case OpCodes.OP_FAIL: {
@@ -508,9 +525,9 @@ export class STMDriver<R, E, A> {
             )
             const cont = this.nextFailure()
             if (cont === undefined) {
-              exit = TExit.fail(current.error(), annotation)
+              exit = TExit.fail(current.i1(), annotation)
             } else {
-              curr = cont.failK(current.error()) as Primitive
+              curr = cont.i2(current.i1()) as Primitive
             }
             break
           }
@@ -519,7 +536,7 @@ export class STMDriver<R, E, A> {
             if (cont === undefined) {
               exit = TExit.retry
             } else {
-              curr = cont.retryK() as Primitive
+              curr = cont.i2() as Primitive
             }
             break
           }
@@ -532,42 +549,42 @@ export class STMDriver<R, E, A> {
             break
           }
           case OpCodes.OP_WITH_STM_RUNTIME: {
-            curr = current.evaluate(this as STMDriver<unknown, unknown, unknown>) as Primitive
+            curr = current.i1(this as STMDriver<unknown, unknown, unknown>) as Primitive
             break
           }
           case OpCodes.OP_ON_SUCCESS:
           case OpCodes.OP_ON_FAILURE:
           case OpCodes.OP_ON_RETRY: {
             this.pushStack(current)
-            curr = current.first as Primitive
+            curr = current.i1 as Primitive
             break
           }
           case OpCodes.OP_PROVIDE: {
             const env = this.env
-            this.env = current.provide(env)
+            this.env = current.i2(env)
             curr = pipe(
-              current.stm,
+              current.i1,
               ensuring(sync(() => (this.env = env)))
             ) as Primitive
             break
           }
           case OpCodes.OP_SUCCEED: {
-            const value = current.value
+            const value = current.i1
             const cont = this.nextSuccess()
             if (cont === undefined) {
               exit = TExit.succeed(value)
             } else {
-              curr = cont.successK(value) as Primitive
+              curr = cont.i2(value) as Primitive
             }
             break
           }
           case OpCodes.OP_SYNC: {
-            const value = current.evaluate()
+            const value = current.i1()
             const cont = this.nextSuccess()
             if (cont === undefined) {
               exit = TExit.succeed(value)
             } else {
-              curr = cont.successK(value) as Primitive
+              curr = cont.i2(value) as Primitive
             }
             break
           }
@@ -593,11 +610,9 @@ export const catchAll = Debug.dualWithTrace<
   ) => STM.STM<R1 | R, E1, B | A>
 >(2, (trace, restore) =>
   (self, f) => {
-    const stm = Object.create(proto)
-    stm._stmTag = OpCodes.OP_ON_FAILURE
-    stm.first = self
-    stm.failK = restore(f)
-    stm.trace = void 0
+    const stm = new STMPrimitive(OpCodes.OP_ON_FAILURE)
+    stm.i1 = self
+    stm.i2 = restore(f)
     if (trace) {
       return stm.traced(trace)
     }
@@ -617,11 +632,9 @@ export const contramapContext = Debug.dualWithTrace<
   ) => STM.STM<R0, E, A>
 >(2, (trace, restore) =>
   (self, f) => {
-    const stm = Object.create(proto)
-    stm._stmTag = OpCodes.OP_PROVIDE
-    stm.stm = self
-    stm.provide = restore(f)
-    stm.trace = void 0
+    const stm = new STMPrimitive(OpCodes.OP_PROVIDE)
+    stm.i1 = self
+    stm.i2 = restore(f)
     if (trace) {
       return stm.traced(trace)
     }
@@ -641,14 +654,12 @@ export const dieMessage = Debug.methodWithTrace((trace) =>
 /** @internal */
 export const dieSync = Debug.methodWithTrace((trace, restore) =>
   (evaluate: LazyArg<unknown>): STM.STM<never, never, never> => {
-    const stm = Object.create(proto)
-    stm._stmTag = OpCodes.OP_DIE
-    stm.defect = restore(evaluate)
-    stm.trace = void 0
+    const stm = new STMPrimitive(OpCodes.OP_DIE)
+    stm.i1 = restore(evaluate)
     if (trace) {
-      return stm.traced(trace)
+      return stm.traced(trace) as any
     }
-    return stm
+    return stm as any
   }
 )
 
@@ -679,14 +690,12 @@ export const fail = Debug.methodWithTrace((trace) =>
 /** @internal */
 export const failSync = Debug.methodWithTrace((trace, restore) =>
   <E>(evaluate: LazyArg<E>): STM.STM<never, E, never> => {
-    const stm = Object.create(proto)
-    stm._stmTag = OpCodes.OP_FAIL
-    stm.error = restore(evaluate)
-    stm.trace = void 0
+    const stm = new STMPrimitive(OpCodes.OP_FAIL)
+    stm.i1 = restore(evaluate)
     if (trace) {
-      return stm.traced(trace)
+      return stm.traced(trace) as any
     }
-    return stm
+    return stm as any
   }
 )
 
@@ -696,11 +705,9 @@ export const flatMap = Debug.dualWithTrace<
   <R, E, A, R1, E1, A2>(self: STM.STM<R, E, A>, f: (a: A) => STM.STM<R1, E1, A2>) => STM.STM<R1 | R, E1 | E, A2>
 >(2, (trace, restore) =>
   (self, f) => {
-    const stm = Object.create(proto)
-    stm._stmTag = OpCodes.OP_ON_SUCCESS
-    stm.first = self
-    stm.successK = restore(f)
-    stm.trace = void 0
+    const stm = new STMPrimitive(OpCodes.OP_ON_SUCCESS)
+    stm.i1 = self
+    stm.i2 = restore(f)
     if (trace) {
       return stm.traced(trace)
     }
@@ -744,28 +751,25 @@ export const matchSTM = Debug.dualWithTrace<
 export const interrupt = Debug.methodWithTrace((trace) =>
   (): STM.STM<never, never, never> =>
     withSTMRuntime((_) => {
-      const stm = Object.create(proto)
-      stm._stmTag = OpCodes.OP_INTERRUPT
-      stm.fiberId = _.fiberId
-      stm.trace = void 0
+      const stm = new STMPrimitive(OpCodes.OP_INTERRUPT)
+      stm.i1 = _.fiberId
       if (trace) {
-        return stm.traced(trace)
+        return stm.traced(trace) as any
       }
-      return stm
+      return stm as any
     })
 )
 
 /** @internal */
 export const interruptAs = Debug.methodWithTrace((trace) =>
   (fiberId: FiberId.FiberId): STM.STM<never, never, never> => {
-    const stm = Object.create(proto)
-    stm._stmTag = OpCodes.OP_INTERRUPT
-    stm.fiberId = fiberId
+    const stm = new STMPrimitive(OpCodes.OP_INTERRUPT)
+    stm.i1 = fiberId
     stm.trace = void 0
     if (trace) {
-      return stm.traced(trace)
+      return stm.traced(trace) as any
     }
-    return stm
+    return stm as any
   }
 )
 
@@ -788,11 +792,9 @@ export const orTry = Debug.dualWithTrace<
   ) => STM.STM<R1 | R, E1 | E, A1 | A>
 >(2, (trace, restore) =>
   (self, that) => {
-    const stm = Object.create(proto)
-    stm._stmTag = OpCodes.OP_ON_RETRY
-    stm.first = self
-    stm.retryK = restore(that)
-    stm.trace = void 0
+    const stm = new STMPrimitive(OpCodes.OP_ON_RETRY)
+    stm.i1 = self
+    stm.i2 = restore(that)
     if (trace) {
       return stm.traced(trace)
     }
@@ -802,41 +804,35 @@ export const orTry = Debug.dualWithTrace<
 /** @internal */
 export const retry = Debug.methodWithTrace((trace) =>
   (): STM.STM<never, never, never> => {
-    const stm = Object.create(proto)
-    stm._stmTag = OpCodes.OP_RETRY
-    stm.trace = void 0
+    const stm = new STMPrimitive(OpCodes.OP_RETRY)
     if (trace) {
-      return stm.traced(trace)
+      return stm.traced(trace) as any
     }
-    return stm
+    return stm as any
   }
 )
 
 /** @internal */
 export const succeed = Debug.methodWithTrace((trace) =>
   <A>(value: A): STM.STM<never, never, A> => {
-    const stm = Object.create(proto)
-    stm._stmTag = OpCodes.OP_SUCCEED
-    stm.value = value
-    stm.trace = void 0
+    const stm = new STMPrimitive(OpCodes.OP_SUCCEED)
+    stm.i1 = value
     if (trace) {
-      return stm.traced(trace)
+      return stm.traced(trace) as any
     }
-    return stm
+    return stm as any
   }
 )
 
 /** @internal */
 export const sync = Debug.methodWithTrace((trace, restore) =>
   <A>(evaluate: () => A): STM.STM<never, never, A> => {
-    const stm = Object.create(proto)
-    stm._stmTag = OpCodes.OP_SYNC
-    stm.evaluate = restore(evaluate)
-    stm.trace = void 0
+    const stm = new STMPrimitive(OpCodes.OP_SYNC)
+    stm.i1 = restore(evaluate)
     if (trace) {
-      return stm.traced(trace)
+      return stm.traced(trace) as any
     }
-    return stm
+    return stm as any
   }
 )
 
@@ -845,10 +841,8 @@ export const withSTMRuntime = Debug.methodWithTrace((trace, restore) =>
   <R, E, A>(
     f: (runtime: STMDriver<unknown, unknown, unknown>) => STM.STM<R, E, A>
   ): STM.STM<R, E, A> => {
-    const stm = Object.create(proto)
-    stm._stmTag = OpCodes.OP_WITH_STM_RUNTIME
-    stm.evaluate = restore(f)
-    stm.trace = void 0
+    const stm = new STMPrimitive(OpCodes.OP_WITH_STM_RUNTIME)
+    stm.i1 = restore(f)
     if (trace) {
       return stm.traced(trace)
     }

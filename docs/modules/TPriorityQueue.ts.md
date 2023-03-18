@@ -169,7 +169,10 @@ Removes all elements from the queue matching the specified predicate.
 **Signature**
 
 ```ts
-export declare const removeIf: <A>(predicate: Predicate<A>) => (self: TPriorityQueue<A>) => STM.STM<never, never, void>
+export declare const removeIf: {
+  <A>(predicate: Predicate<A>): (self: TPriorityQueue<A>) => STM.STM<never, never, void>
+  <A>(self: TPriorityQueue<A>, predicate: Predicate<A>): STM.STM<never, never, void>
+}
 ```
 
 Added in v1.0.0
@@ -181,7 +184,10 @@ Retains only elements from the queue matching the specified predicate.
 **Signature**
 
 ```ts
-export declare const retainIf: <A>(predicate: Predicate<A>) => (self: TPriorityQueue<A>) => STM.STM<never, never, void>
+export declare const retainIf: {
+  <A>(predicate: Predicate<A>): (self: TPriorityQueue<A>) => STM.STM<never, never, void>
+  <A>(self: TPriorityQueue<A>, predicate: Predicate<A>): STM.STM<never, never, void>
+}
 ```
 
 Added in v1.0.0
@@ -225,7 +231,10 @@ Offers the specified value to the queue.
 **Signature**
 
 ```ts
-export declare const offer: <A>(value: A) => (self: TPriorityQueue<A>) => STM.STM<never, never, void>
+export declare const offer: {
+  <A>(value: A): (self: TPriorityQueue<A>) => STM.STM<never, never, void>
+  <A>(self: TPriorityQueue<A>, value: A): STM.STM<never, never, void>
+}
 ```
 
 Added in v1.0.0
@@ -237,7 +246,10 @@ Offers all of the elements in the specified collection to the queue.
 **Signature**
 
 ```ts
-export declare const offerAll: <A>(values: Iterable<A>) => (self: TPriorityQueue<A>) => STM.STM<never, never, void>
+export declare const offerAll: {
+  <A>(values: Iterable<A>): (self: TPriorityQueue<A>) => STM.STM<never, never, void>
+  <A>(self: TPriorityQueue<A>, values: Iterable<A>): STM.STM<never, never, void>
+}
 ```
 
 Added in v1.0.0
@@ -286,7 +298,10 @@ Takes up to the specified maximum number of elements from the queue.
 **Signature**
 
 ```ts
-export declare const takeUpTo: (n: number) => <A>(self: TPriorityQueue<A>) => STM.STM<never, never, Chunk.Chunk<A>>
+export declare const takeUpTo: {
+  (n: number): <A>(self: TPriorityQueue<A>) => STM.STM<never, never, Chunk.Chunk<A>>
+  <A>(self: TPriorityQueue<A>, n: number): STM.STM<never, never, Chunk.Chunk<A>>
+}
 ```
 
 Added in v1.0.0
