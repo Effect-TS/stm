@@ -1,5 +1,11 @@
 # @effect/stm
 
+## 0.4.0
+
+### Minor Changes
+
+- [#62](https://github.com/Effect-TS/stm/pull/62) [`ca50b22`](https://github.com/Effect-TS/stm/commit/ca50b22fbb58153fa516d29055cc27c181dab275) Thanks [@mikearnaldi](https://github.com/mikearnaldi)! - Update TS, introduce STM.all, update Effect/io
+
 ## 0.3.0
 
 ### Minor Changes
