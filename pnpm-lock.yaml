@@ -2,7 +2,7 @@ lockfileVersion: 5.4
 
 patchedDependencies:
   docs-ts@0.6.10:
-    hash: fjlv4brdgecpqw4g6cwpxih3x4
+    hash: i6octjyvtovbdrdcrmitwygbw4
     path: patches/docs-ts@0.6.10.patch
 
 importers:
@@ -18,8 +18,8 @@ importers:
       '@effect-ts/core': ^0.60.5
       '@effect/babel-plugin': ^0.2.0
       '@effect/core': ^0.0.16
-      '@effect/data': ~0.4.1
-      '@effect/io': ~0.9.1
+      '@effect/data': ~0.5.0
+      '@effect/io': ~0.10.0
       '@effect/language-service': ^0.0.19
       '@effect/vite-plugin': ^0.0.1
       '@repo-tooling/eslint-plugin-dprint': ^0.0.4
@@ -59,8 +59,8 @@ importers:
       vite: ^4.2.0
       vitest: 0.29.3
     dependencies:
-      '@effect/data': 0.4.1
-      '@effect/io': 0.9.1
+      '@effect/data': 0.5.0
+      '@effect/io': 0.10.0
     devDependencies:
       '@babel/cli': 7.21.0_@babel+core@7.21.3
       '@babel/core': 7.21.3
@@ -89,7 +89,7 @@ importers:
       babel-plugin-annotate-pure-calls: 0.4.0_@babel+core@7.21.3
       concurrently: 7.6.0
       cpx: 1.5.0
-      docs-ts: 0.6.10_fjlv4brdgecpqw4g6cwpxih3x4_za2cb7z32ksq5gw6txs6br4sn4
+      docs-ts: 0.6.10_i6octjyvtovbdrdcrmitwygbw4_za2cb7z32ksq5gw6txs6br4sn4
       eslint: 8.36.0
       eslint-import-resolver-typescript: 3.5.3_eakrjjutlgqjxe5ydhtnd4qdmy
       eslint-plugin-codegen: 0.17.0
@@ -711,14 +711,14 @@ packages:
       '@tsplus/stdlib': 0.2.8
     dev: true
 
-  /@effect/data/0.4.1:
-    resolution: {integrity: sha512-FdQ0qbYL7t+GP5eWdAPC+oeN2w3zqnujrdDLp/sj58UtMxFSHg21crprmbmiAJAWsL5EdB9aZzcisBGn382xHg==}
+  /@effect/data/0.5.0:
+    resolution: {integrity: sha512-9yuEyx19MCt4cCUlqJMgtiDxuAVlm9oA14IS4AtsG7Xip/8uKcmxSfynKfiDuPWJukA2QHR54blUzewqBxupvQ==}
     dev: false
 
-  /@effect/io/0.9.1:
-    resolution: {integrity: sha512-Ae57RQBaz5xyoqhdvgtxSU0FtoJLGWhFFLxzRr8WHs9Vv9wWyGtbOvNtoIgSQzdpZZqs3oe2BSBySCzN5kt2OA==}
+  /@effect/io/0.10.0:
+    resolution: {integrity: sha512-zNST2PjJlbpzle/zCUpui3Ttp8By8Z9gDfRpy6o//ejgL2CCd0G4VflZ74Hy3L8w/GLCVUXput52DfB5bxEsqA==}
     dependencies:
-      '@effect/data': 0.4.1
+      '@effect/data': 0.5.0
     dev: false
 
   /@effect/language-service/0.0.19:
@@ -2849,7 +2849,7 @@ packages:
       path-type: 4.0.0
     dev: true
 
-  /docs-ts/0.6.10_fjlv4brdgecpqw4g6cwpxih3x4_za2cb7z32ksq5gw6txs6br4sn4:
+  /docs-ts/0.6.10_i6octjyvtovbdrdcrmitwygbw4_za2cb7z32ksq5gw6txs6br4sn4:
     resolution: {integrity: sha512-DTX9c5AJ92ojMOKqqvwF8t77C8Gdgs9FPB8seymHs+F+Wl6aapc3ZkHUM+p8o+jwcBmPoihxssdK903dfwQ1JQ==}
     hasBin: true
     peerDependencies:
@@ -4671,7 +4671,7 @@ packages:
   /jsonfile/4.0.0:
     resolution: {integrity: sha512-m6F1R3z8jjlf2imQHS2Qez5sjKWQzbuuhuJ/FKYFRZvPE3PuHcSMVZzfsLhGVOkfd20obL5SWEBew5ShlquNxg==}
     optionalDependencies:
-      graceful-fs: 4.2.10
+      graceful-fs: 4.2.11
     dev: true
 
   /kind-of/3.2.2:
