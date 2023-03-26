@@ -1,5 +1,11 @@
 # @effect/stm
 
+## 0.7.0
+
+### Minor Changes
+
+- [#68](https://github.com/Effect-TS/stm/pull/68) [`f8d7c18`](https://github.com/Effect-TS/stm/commit/f8d7c188f7b7e623e307f37469cc8aa64d8a9037) Thanks [@mikearnaldi](https://github.com/mikearnaldi)! - Update effect/io
+
 ## 0.6.0
 
 ### Minor Changes
