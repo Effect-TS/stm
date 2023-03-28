@@ -1,5 +1,5 @@
+import * as Debug from "@effect/data/Debug"
 import * as Cause from "@effect/io/Cause"
-import * as Debug from "@effect/io/Debug"
 import * as Effect from "@effect/io/Effect"
 import type * as Scope from "@effect/io/Scope"
 import * as core from "@effect/stm/internal_effect_untraced/core"

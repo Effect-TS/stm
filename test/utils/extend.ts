@@ -13,7 +13,7 @@ export type API = TestAPI<{}>
 export const it: API = V.it
 
 export const runTest = <E, A>(self: Effect.Effect<never, E, A>) =>
-  Effect.runPromiseExit(Effect.withReportUnhandled(self, false)).then((exit) => {
+  Effect.runPromiseExit(self).then((exit) => {
     if (exit._tag === "Failure") {
       return Promise.reject(makeFiberFailure(exit.cause))
     }

@@ -49,9 +49,6 @@ Added in v1.0.0
   - [replicate](#replicate)
   - [replicateSTM](#replicatestm)
   - [replicateSTMDiscard](#replicatestmdiscard)
-  - [service](#service)
-  - [serviceWith](#servicewith)
-  - [serviceWithSTM](#servicewithstm)
   - [succeed](#succeed)
   - [succeedLeft](#succeedleft)
   - [succeedNone](#succeednone)
@@ -771,47 +768,6 @@ export declare const replicateSTMDiscard: {
 
 Added in v1.0.0
 
-## service
-
-Accesses the specified service in the environment of the effect.
-
-**Signature**
-
-```ts
-export declare const service: <T>(tag: Context.Tag<T>) => STM<T, never, T>
-```
-
-Added in v1.0.0
-
-## serviceWith
-
-Effectfully accesses the specified service in the environment of the
-effect.
-
-**Signature**
-
-```ts
-export declare const serviceWith: <T, A>(tag: Context.Tag<T>, f: (service: T) => A) => STM<T, never, A>
-```
-
-Added in v1.0.0
-
-## serviceWithSTM
-
-Effectfully accesses the specified service in the environment of the
-effect.
-
-**Signature**
-
-```ts
-export declare const serviceWithSTM: <T, R, E, A>(
-  tag: Context.Tag<T>,
-  f: (service: T) => STM<R, E, A>
-) => STM<T | R, E, A>
-```
-
-Added in v1.0.0
-
 ## succeed
 
 Returns an `STM` effect that succeeds with the specified value.
@@ -992,11 +948,11 @@ effect requires more than one service use `provideEnvironment` instead.
 
 ```ts
 export declare const provideService: {
-  <T extends Context.Tag<any>>(tag: T, resource: Context.Tag.Service<T>): <R, E, A>(
+  <T extends Context.Tag<any, any>>(tag: T, resource: Context.Tag.Service<T>): <R, E, A>(
     self: STM<R, E, A>
-  ) => STM<Exclude<R, Context.Tag.Service<T>>, E, A>
-  <R, E, A, T extends Context.Tag<any>>(self: STM<R, E, A>, tag: T, resource: Context.Tag.Service<T>): STM<
-    Exclude<R, Context.Tag.Service<T>>,
+  ) => STM<Exclude<R, Context.Tag.Identifier<T>>, E, A>
+  <R, E, A, T extends Context.Tag<any, any>>(self: STM<R, E, A>, tag: T, resource: Context.Tag.Service<T>): STM<
+    Exclude<R, Context.Tag.Identifier<T>>,
     E,
     A
   >
@@ -1014,14 +970,14 @@ effect requires more than one service use `provideEnvironment` instead.
 
 ```ts
 export declare const provideServiceSTM: {
-  <T extends Context.Tag<T>, R1, E1>(tag: Context.Tag<T>, stm: STM<R1, E1, Context.Tag.Service<T>>): <R, E, A>(
+  <T extends Context.Tag<any, any>, R1, E1>(tag: T, stm: STM<R1, E1, Context.Tag.Service<T>>): <R, E, A>(
     self: STM<R, E, A>
-  ) => STM<R1 | Exclude<R, Context.Tag.Service<T>>, E1 | E, A>
-  <R, E, A, T extends Context.Tag<T>, R1, E1>(
+  ) => STM<R1 | Exclude<R, Context.Tag.Identifier<T>>, E1 | E, A>
+  <R, E, A, T extends Context.Tag<any, any>, R1, E1>(
     self: STM<R, E, A>,
     tag: T,
     stm: STM<R1, E1, Context.Tag.Service<T>>
-  ): STM<R1 | Exclude<R, Context.Tag.Service<T>>, E | E1, A>
+  ): STM<R1 | Exclude<R, Context.Tag.Identifier<T>>, E | E1, A>
 }
 ```
 
@@ -2419,12 +2375,7 @@ Added in v1.0.0
 
 ```ts
 export interface STM<R, E, A> {
-  /** @internal */
-  trace: Debug.Trace
-  /** @internal */
   traced(trace: Debug.Trace): STM<R, E, A>
-  /** @internal */
-  commit(): Effect.Effect<R, E, A>
 }
 ```
 

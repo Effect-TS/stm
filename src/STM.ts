@@ -3,12 +3,12 @@
  */
 import type * as Chunk from "@effect/data/Chunk"
 import type * as Context from "@effect/data/Context"
+import type * as Debug from "@effect/data/Debug"
 import type * as Either from "@effect/data/Either"
 import type { LazyArg } from "@effect/data/Function"
 import type * as Option from "@effect/data/Option"
 import type { Predicate } from "@effect/data/Predicate"
 import type * as Cause from "@effect/io/Cause"
-import type * as Debug from "@effect/io/Debug"
 import type * as Effect from "@effect/io/Effect"
 import type * as FiberId from "@effect/io/Fiber/Id"
 import * as core from "@effect/stm/internal_effect_untraced/core"
@@ -64,17 +64,22 @@ export type STMTypeId = typeof STMTypeId
  * @category models
  */
 export interface STM<R, E, A> extends STM.Variance<R, E, A>, Effect.Effect<R, E, A> {}
+
+/**
+ * @since 1.0.0
+ * @category models
+ */
+declare module "@effect/data/Context" {
+  interface Tag<Identifier, Service> extends STM<Identifier, never, Service> {}
+  interface TracedTag<Identifier, Service> extends STM<Identifier, never, Service> {}
+}
+
 /**
  * @internal
  * @since 1.0.0
  */
 export interface STM<R, E, A> {
-  /** @internal */
-  trace: Debug.Trace
-  /** @internal */
   traced(trace: Debug.Trace): STM<R, E, A>
-  /** @internal */
-  commit(): Effect.Effect<R, E, A>
 }
 
 /**
@@ -368,7 +373,7 @@ export const cond: <E, A>(predicate: LazyArg<boolean>, error: LazyArg<E>, result
  * @since 1.0.0
  * @category constructors
  */
-export const context: <R>() => STM<R, never, Context.Context<R>> = stm.context
+export const context: <R>() => STM<R, never, Context.Context<R>> = core.context
 
 /**
  * Accesses the environment of the transaction to perform a transaction.
@@ -376,7 +381,7 @@ export const context: <R>() => STM<R, never, Context.Context<R>> = stm.context
  * @since 1.0.0
  * @category constructors
  */
-export const contextWith: <R0, R>(f: (environment: Context.Context<R0>) => R) => STM<R0, never, R> = stm.contextWith
+export const contextWith: <R0, R>(f: (environment: Context.Context<R0>) => R) => STM<R0, never, R> = core.contextWith
 
 /**
  * Accesses the environment of the transaction to perform a transaction.
@@ -386,7 +391,7 @@ export const contextWith: <R0, R>(f: (environment: Context.Context<R0>) => R) =>
  */
 export const contextWithSTM: <R0, R, E, A>(
   f: (environment: Context.Context<R0>) => STM<R, E, A>
-) => STM<R0 | R, E, A> = stm.contextWithSTM
+) => STM<R0 | R, E, A> = core.contextWithSTM
 
 /**
  * Transforms the environment being provided to this effect with the specified
@@ -1131,17 +1136,15 @@ export const provideContext: {
  * @category environment
  */
 export const provideService: {
-  <T extends Context.Tag<any>>(
+  <T extends Context.Tag<any, any>>(
     tag: T,
     resource: Context.Tag.Service<T>
-  ): <R, E, A>(
-    self: STM<R, E, A>
-  ) => STM<Exclude<R, Context.Tag.Service<T>>, E, A>
-  <R, E, A, T extends Context.Tag<any>>(
+  ): <R, E, A>(self: STM<R, E, A>) => STM<Exclude<R, Context.Tag.Identifier<T>>, E, A>
+  <R, E, A, T extends Context.Tag<any, any>>(
     self: STM<R, E, A>,
     tag: T,
     resource: Context.Tag.Service<T>
-  ): STM<Exclude<R, Context.Tag.Service<T>>, E, A>
+  ): STM<Exclude<R, Context.Tag.Identifier<T>>, E, A>
 } = stm.provideService
 
 /**
@@ -1152,17 +1155,15 @@ export const provideService: {
  * @category environment
  */
 export const provideServiceSTM: {
-  <T extends Context.Tag<T>, R1, E1>(
-    tag: Context.Tag<T>,
+  <T extends Context.Tag<any, any>, R1, E1>(
+    tag: T,
     stm: STM<R1, E1, Context.Tag.Service<T>>
-  ): <R, E, A>(
-    self: STM<R, E, A>
-  ) => STM<R1 | Exclude<R, Context.Tag.Service<T>>, E1 | E, A>
-  <R, E, A, T extends Context.Tag<T>, R1, E1>(
+  ): <R, E, A>(self: STM<R, E, A>) => STM<R1 | Exclude<R, Context.Tag.Identifier<T>>, E1 | E, A>
+  <R, E, A, T extends Context.Tag<any, any>, R1, E1>(
     self: STM<R, E, A>,
     tag: T,
     stm: STM<R1, E1, Context.Tag.Service<T>>
-  ): STM<R1 | Exclude<R, Context.Tag.Service<T>>, E | E1, A>
+  ): STM<R1 | Exclude<R, Context.Tag.Identifier<T>>, E | E1, A>
 } = stm.provideServiceSTM
 
 /**
@@ -1375,33 +1376,6 @@ export const retryWhile: {
  * @category getters
  */
 export const right: <R, E, A, A2>(self: STM<R, E, Either.Either<A, A2>>) => STM<R, Either.Either<A, E>, A2> = stm.right
-
-/**
- * Accesses the specified service in the environment of the effect.
- *
- * @since 1.0.0
- * @category constructors
- */
-export const service: <T>(tag: Context.Tag<T>) => STM<T, never, T> = stm.service
-
-/**
- * Effectfully accesses the specified service in the environment of the
- * effect.
- *
- * @since 1.0.0
- * @category constructors
- */
-export const serviceWith: <T, A>(tag: Context.Tag<T>, f: (service: T) => A) => STM<T, never, A> = stm.serviceWith
-
-/**
- * Effectfully accesses the specified service in the environment of the
- * effect.
- *
- * @since 1.0.0
- * @category constructors
- */
-export const serviceWithSTM: <T, R, E, A>(tag: Context.Tag<T>, f: (service: T) => STM<R, E, A>) => STM<T | R, E, A> =
-  stm.serviceWithSTM
 
 /**
  * Converts an option on values into an option on errors.

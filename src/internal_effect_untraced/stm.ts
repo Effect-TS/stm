@@ -1,12 +1,12 @@
 import * as Chunk from "@effect/data/Chunk"
 import * as Context from "@effect/data/Context"
+import * as Debug from "@effect/data/Debug"
 import * as Either from "@effect/data/Either"
 import type { LazyArg } from "@effect/data/Function"
 import { constFalse, constTrue, constVoid, dual, identity, pipe } from "@effect/data/Function"
 import * as Option from "@effect/data/Option"
 import type { Predicate } from "@effect/data/Predicate"
 import * as Cause from "@effect/io/Cause"
-import * as Debug from "@effect/io/Debug"
 import * as Effect from "@effect/io/Effect"
 import * as Exit from "@effect/io/Exit"
 import type * as FiberId from "@effect/io/Fiber/Id"
@@ -239,24 +239,6 @@ export const cond = Debug.methodWithTrace((trace, restore) =>
 export const either = Debug.methodWithTrace((trace) =>
   <R, E, A>(self: STM.STM<R, E, A>): STM.STM<R, never, Either.Either<E, A>> =>
     match(self, Either.left, Either.right).traced(trace)
-)
-
-/** @internal */
-export const context = Debug.methodWithTrace((trace) =>
-  <R>(): STM.STM<R, never, Context.Context<R>> => core.effect<R, Context.Context<R>>((_, __, env) => env).traced(trace)
-)
-
-/** @internal */
-export const contextWith = Debug.methodWithTrace((trace, restore) =>
-  <R0, R>(f: (environment: Context.Context<R0>) => R): STM.STM<R0, never, R> =>
-    core.map(context<R0>(), restore(f)).traced(trace)
-)
-
-/** @internal */
-export const contextWithSTM = Debug.methodWithTrace((trace, restore) =>
-  <R0, R, E, A>(
-    f: (environment: Context.Context<R0>) => STM.STM<R, E, A>
-  ): STM.STM<R0 | R, E, A> => core.flatMap(context<R0>(), restore(f)).traced(trace)
 )
 
 /** @internal */
@@ -916,39 +898,39 @@ export const provideContext = Debug.dualWithTrace<
 
 /** @internal */
 export const provideService = Debug.dualWithTrace<
-  <T extends Context.Tag<any>>(
+  <T extends Context.Tag<any, any>>(
     tag: T,
     resource: Context.Tag.Service<T>
   ) => <R, E, A>(
     self: STM.STM<R, E, A>
-  ) => STM.STM<Exclude<R, Context.Tag.Service<T>>, E, A>,
-  <R, E, A, T extends Context.Tag<any>>(
+  ) => STM.STM<Exclude<R, Context.Tag.Identifier<T>>, E, A>,
+  <R, E, A, T extends Context.Tag<any, any>>(
     self: STM.STM<R, E, A>,
     tag: T,
     resource: Context.Tag.Service<T>
-  ) => STM.STM<Exclude<R, Context.Tag.Service<T>>, E, A>
+  ) => STM.STM<Exclude<R, Context.Tag.Identifier<T>>, E, A>
 >(3, (trace) => (self, tag, resource) => provideServiceSTM(self, tag, core.succeed(resource)).traced(trace))
 
 /** @internal */
 export const provideServiceSTM = Debug.dualWithTrace<
-  <T extends Context.Tag<T>, R1, E1>(
-    tag: Context.Tag<T>,
+  <T extends Context.Tag<any, any>, R1, E1>(
+    tag: T,
     stm: STM.STM<R1, E1, Context.Tag.Service<T>>
   ) => <R, E, A>(
     self: STM.STM<R, E, A>
-  ) => STM.STM<R1 | Exclude<R, Context.Tag.Service<T>>, E1 | E, A>,
-  <R, E, A, T extends Context.Tag<T>, R1, E1>(
+  ) => STM.STM<R1 | Exclude<R, Context.Tag.Identifier<T>>, E1 | E, A>,
+  <R, E, A, T extends Context.Tag<any, any>, R1, E1>(
     self: STM.STM<R, E, A>,
     tag: T,
     stm: STM.STM<R1, E1, Context.Tag.Service<T>>
-  ) => STM.STM<R1 | Exclude<R, Context.Tag.Service<T>>, E1 | E, A>
+  ) => STM.STM<R1 | Exclude<R, Context.Tag.Identifier<T>>, E1 | E, A>
 >(3, (trace) =>
-  <R, E, A, T extends Context.Tag<T>, R1, E1>(
+  <R, E, A, T extends Context.Tag<any, any>, R1, E1>(
     self: STM.STM<R, E, A>,
     tag: T,
     stm: STM.STM<R1, E1, Context.Tag.Service<T>>
-  ): STM.STM<R1 | Exclude<R, Context.Tag.Service<T>>, E1 | E, A> =>
-    contextWithSTM((env: Context.Context<R1 | Exclude<R, Context.Tag.Service<T>>>) =>
+  ): STM.STM<R1 | Exclude<R, Context.Tag.Identifier<T>>, E1 | E, A> =>
+    core.contextWithSTM((env: Context.Context<R1 | Exclude<R, Context.Tag.Identifier<T>>>) =>
       core.flatMap(
         stm,
         (service) =>
@@ -1169,23 +1151,6 @@ export const partition = Debug.dualWithTrace<
       forEach(elements, (a) => either(restore(f)(a))),
       core.map((as) => effectCore.partitionMap(as, identity))
     ).traced(trace))
-
-/** @internal */
-export const service = Debug.methodWithTrace((trace) =>
-  <T>(tag: Context.Tag<T>): STM.STM<T, never, T> => contextWith<T, T>(Context.unsafeGet(tag)).traced(trace)
-)
-
-/** @internal */
-export const serviceWith = Debug.methodWithTrace((trace) =>
-  <T, A>(tag: Context.Tag<T>, f: (service: T) => A): STM.STM<T, never, A> =>
-    pipe(service(tag), core.map(f)).traced(trace)
-)
-
-/** @internal */
-export const serviceWithSTM = Debug.methodWithTrace((trace) =>
-  <T, R, E, A>(tag: Context.Tag<T>, f: (service: T) => STM.STM<R, E, A>): STM.STM<R | T, E, A> =>
-    pipe(service(tag), core.flatMap(f)).traced(trace)
-)
 
 /** @internal */
 export const some = Debug.methodWithTrace((trace) =>

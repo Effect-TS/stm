@@ -1,6 +1,6 @@
+import * as Debug from "@effect/data/Debug"
 import { dual, pipe } from "@effect/data/Function"
 import * as Option from "@effect/data/Option"
-import * as Debug from "@effect/io/Debug"
 import * as core from "@effect/stm/internal_effect_untraced/core"
 import * as Entry from "@effect/stm/internal_effect_untraced/stm/entry"
 import type * as Journal from "@effect/stm/internal_effect_untraced/stm/journal"

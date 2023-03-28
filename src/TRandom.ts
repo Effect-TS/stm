@@ -69,7 +69,7 @@ export interface TRandom {
  * @since 1.0.0
  * @category environment
  */
-export const Tag: Context.Tag<TRandom> = internal.Tag
+export const Tag: Context.Tag<TRandom, TRandom> = internal.Tag
 
 /**
  * The "live" `TRandom` service wrapped into a `Layer`.

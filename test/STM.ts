@@ -239,7 +239,7 @@ describe.concurrent("STM", () => {
         makeSTMEnv(0),
         Effect.flatMap((env) =>
           pipe(
-            STM.serviceWithSTM(STMEnv, (env) => pipe(env.ref, TRef.update((n) => n + 1))),
+            STM.flatMap(STMEnv, (env) => pipe(env.ref, TRef.update((n) => n + 1))),
             STM.provideContext(Context.make(STMEnv, env)),
             STM.commit,
             Effect.zipRight(TRef.get(env.ref))
@@ -255,7 +255,7 @@ describe.concurrent("STM", () => {
         makeSTMEnv(0),
         Effect.flatMap((env) =>
           pipe(
-            STM.serviceWithSTM(STMEnv, (env) => pipe(env.ref, TRef.update((n) => n + 1))),
+            STM.flatMap(STMEnv, (env) => pipe(env.ref, TRef.update((n) => n + 1))),
             STM.provideContext(Context.make(STMEnv, env)),
             STM.zipRight(TRef.get(env.ref))
           )

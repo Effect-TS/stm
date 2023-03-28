@@ -1,8 +1,8 @@
 import type * as Chunk from "@effect/data/Chunk"
 import * as Context from "@effect/data/Context"
+import * as Debug from "@effect/data/Debug"
 import { pipe } from "@effect/data/Function"
 import * as Random from "@effect/data/Random"
-import * as Debug from "@effect/io/Debug"
 import * as Layer from "@effect/io/Layer"
 import * as core from "@effect/stm/internal_effect_untraced/core"
 import * as stm from "@effect/stm/internal_effect_untraced/stm"
@@ -85,7 +85,7 @@ const shuffleWith = <A>(
 }
 
 /** @internal */
-export const Tag: Context.Tag<TRandom.TRandom> = Context.Tag<TRandom.TRandom>()
+export const Tag = Context.Tag<TRandom.TRandom>()
 
 class TRandomImpl implements TRandom.TRandom {
   readonly [TRandomTypeId]: TRandom.TRandomTypeId = TRandomTypeId
@@ -127,34 +127,33 @@ export const live = Debug.methodWithTrace((trace) =>
 
 /** @internal */
 export const next = Debug.methodWithTrace((trace) =>
-  (): STM.STM<TRandom.TRandom, never, number> => stm.serviceWithSTM(Tag, (random) => random.next()).traced(trace)
+  (): STM.STM<TRandom.TRandom, never, number> => core.flatMap(Tag, (random) => random.next()).traced(trace)
 )
 
 /** @internal */
 export const nextBoolean = Debug.methodWithTrace((trace) =>
-  (): STM.STM<TRandom.TRandom, never, boolean> =>
-    stm.serviceWithSTM(Tag, (random) => random.nextBoolean()).traced(trace)
+  (): STM.STM<TRandom.TRandom, never, boolean> => core.flatMap(Tag, (random) => random.nextBoolean()).traced(trace)
 )
 
 /** @internal */
 export const nextInt = Debug.methodWithTrace((trace) =>
-  (): STM.STM<TRandom.TRandom, never, number> => stm.serviceWithSTM(Tag, (random) => random.nextInt()).traced(trace)
+  (): STM.STM<TRandom.TRandom, never, number> => core.flatMap(Tag, (random) => random.nextInt()).traced(trace)
 )
 
 /** @internal */
 export const nextIntBetween = Debug.methodWithTrace((trace) =>
   (low: number, high: number): STM.STM<TRandom.TRandom, never, number> =>
-    stm.serviceWithSTM(Tag, (random) => random.nextIntBetween(low, high)).traced(trace)
+    core.flatMap(Tag, (random) => random.nextIntBetween(low, high)).traced(trace)
 )
 
 /** @internal */
 export const nextRange = Debug.methodWithTrace((trace) =>
   (min: number, max: number): STM.STM<TRandom.TRandom, never, number> =>
-    stm.serviceWithSTM(Tag, (random) => random.nextRange(min, max)).traced(trace)
+    core.flatMap(Tag, (random) => random.nextRange(min, max)).traced(trace)
 )
 
 /** @internal */
 export const shuffle = Debug.methodWithTrace((trace) =>
   <A>(elements: Iterable<A>): STM.STM<TRandom.TRandom, never, Chunk.Chunk<A>> =>
-    stm.serviceWithSTM(Tag, (random) => random.shuffle(elements)).traced(trace)
+    core.flatMap(Tag, (random) => random.shuffle(elements)).traced(trace)
 )

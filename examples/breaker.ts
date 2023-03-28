@@ -32,18 +32,16 @@ export class CircuitBreakerError {
  * When an open state is detected the breaker will wait for the provided time before switching the
  * state to half-open.
  */
-export interface CircuitBreaker<V extends string> {
-  readonly _tag: "CircuitBreaker"
-  readonly vendor: (_: never) => V
+export interface CircuitBreaker {
   readonly withBreaker: <R, E, A>(self: Effect.Effect<R, E, A>) => Effect.Effect<R, E | CircuitBreakerError, A>
 }
 
 export interface CircuitBreakerOptions {
   timeToSleep?: Duration.Duration
-  schedule?: Schedule.Schedule<never, any, any>
+  schedule?: Schedule.Schedule<never, unknown, unknown>
 }
 
-export const makeBreaker = <V extends string>(opts?: CircuitBreakerOptions) =>
+export const makeCircuitBreaker = (opts?: CircuitBreakerOptions) =>
   Effect.gen(function*($) {
     const schedule = opts?.schedule ?? pipe(
       Schedule.exponential(Duration.millis(100), 1.5),
@@ -75,9 +73,7 @@ export const makeBreaker = <V extends string>(opts?: CircuitBreakerOptions) =>
       }
     })))
 
-    const breaker: CircuitBreaker<V> = {
-      _tag: "CircuitBreaker",
-      vendor: (_) => _,
+    return {
       withBreaker: <R, E, A>(self: Effect.Effect<R, E, A>) =>
         Effect.gen(function*($) {
           const state = yield* $(TRef.get(stateRef))
@@ -110,23 +106,35 @@ export const makeBreaker = <V extends string>(opts?: CircuitBreakerOptions) =>
           }
         })
     }
-
-    return breaker
   })
-
-export const CircuitBreakerLive = <V extends string>(
-  vendor: Context.Tag<CircuitBreaker<V>>,
-  opts?: CircuitBreakerOptions
-) => Layer.scoped(vendor, makeBreaker<V>(opts))
 
 // usage
 
-const CircuitBreakerA = Context.Tag<CircuitBreaker<"A">>()
+interface CircuitBreakerAWS {
+  readonly _: unique symbol
+}
 
-export const program = Effect.gen(function*($) {
-  const { withBreaker } = yield* $(Effect.service(CircuitBreakerA))
+const CircuitBreakerAWS = Context.Tag<CircuitBreakerAWS, CircuitBreaker>()
+const LiveCircuitBreakerAWS = Layer.scoped(CircuitBreakerAWS, makeCircuitBreaker())
 
-  yield* $(withBreaker(pipe(
+interface CircuitBreakerGCE {
+  readonly _: unique symbol
+}
+
+const CircuitBreakerGCE = Context.Tag<CircuitBreakerGCE, CircuitBreaker>()
+const LiveCircuitBreakerGCE = Layer.scoped(CircuitBreakerGCE, makeCircuitBreaker())
+
+const program = Effect.gen(function*($) {
+  const aws = yield* $(CircuitBreakerAWS)
+  const gce = yield* $(CircuitBreakerGCE)
+
+  yield* $(aws.withBreaker(pipe(
+    Effect.log("hello"),
+    Effect.tap(() => Effect.sleep(Duration.millis(500))),
+    Effect.tap(() => Effect.log("world"))
+  )))
+
+  yield* $(gce.withBreaker(pipe(
     Effect.log("hello"),
     Effect.tap(() => Effect.sleep(Duration.millis(500))),
     Effect.tap(() => Effect.log("world"))
@@ -135,6 +143,11 @@ export const program = Effect.gen(function*($) {
 
 pipe(
   program,
-  Effect.provideSomeLayer(CircuitBreakerLive(CircuitBreakerA)),
+  Effect.provideSomeLayer(
+    Layer.mergeAll(
+      LiveCircuitBreakerAWS,
+      LiveCircuitBreakerGCE
+    )
+  ),
   Effect.runFork
 )
