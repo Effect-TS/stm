@@ -41,7 +41,7 @@ The service tag used to access `TRandom` in the environment of an effect.
 **Signature**
 
 ```ts
-export declare const Tag: Context.Tag<TRandom>
+export declare const Tag: Context.Tag<TRandom, TRandom>
 ```
 
 Added in v1.0.0

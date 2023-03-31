@@ -1,5 +1,6 @@
 import * as Chunk from "@effect/data/Chunk"
-import type * as Context from "@effect/data/Context"
+import * as Context from "@effect/data/Context"
+import * as Debug from "@effect/data/Debug"
 import * as Either from "@effect/data/Either"
 import * as Equal from "@effect/data/Equal"
 import type { LazyArg } from "@effect/data/Function"
@@ -7,7 +8,6 @@ import { constVoid, pipe } from "@effect/data/Function"
 import * as Hash from "@effect/data/Hash"
 import * as MRef from "@effect/data/MutableRef"
 import * as Cause from "@effect/io/Cause"
-import * as Debug from "@effect/io/Debug"
 import * as Effect from "@effect/io/Effect"
 import * as Exit from "@effect/io/Exit"
 import type * as FiberId from "@effect/io/Fiber/Id"
@@ -182,7 +182,7 @@ class STMPrimitive implements STM.STM<any, any, any> {
 
 /** @internal */
 export const isSTM = (u: unknown): u is STM.STM<unknown, unknown, unknown> =>
-  typeof u === "object" && u != null && STMTypeId in u
+  typeof u === "object" && u != null && STMTypeId in u || Context.isGenericTag(u)
 
 /** @internal */
 export const commit = Debug.methodWithTrace((trace) =>
@@ -424,6 +424,24 @@ const completeTryCommit = <R, E, A>(
 type Continuation = STMOnFailure | STMOnSuccess | STMOnRetry | STMTraced
 
 /** @internal */
+export const context = Debug.methodWithTrace((trace) =>
+  <R>(): STM.STM<R, never, Context.Context<R>> => effect<R, Context.Context<R>>((_, __, env) => env).traced(trace)
+)
+
+/** @internal */
+export const contextWith = Debug.methodWithTrace((trace, restore) =>
+  <R0, R>(f: (environment: Context.Context<R0>) => R): STM.STM<R0, never, R> =>
+    map(context<R0>(), restore(f)).traced(trace)
+)
+
+/** @internal */
+export const contextWithSTM = Debug.methodWithTrace((trace, restore) =>
+  <R0, R, E, A>(
+    f: (environment: Context.Context<R0>) => STM.STM<R, E, A>
+  ): STM.STM<R0 | R, E, A> => flatMap(context<R0>(), restore(f)).traced(trace)
+)
+
+/** @internal */
 export class STMDriver<R, E, A> {
   private contStack: Array<Continuation> = []
   private env: Context.Context<unknown>
@@ -499,94 +517,102 @@ export class STMDriver<R, E, A> {
   }
 
   run(): TExit.TExit<E, A> {
-    let curr = this.self as Primitive | undefined
+    let curr = this.self as Primitive | Context.GenericTag | undefined
     let exit: TExit.TExit<unknown, unknown> | undefined = undefined
     while (exit === undefined && curr !== undefined) {
       try {
         const current = curr
-        switch (current.i0) {
-          case OpCodes.OP_TRACED: {
-            this.pushStack(current)
-            curr = current.i1 as Primitive
-            break
+        if (current && Context.isGenericTag(current)) {
+          if (Context.isTag(current)) {
+            curr = effect((_, __, env) => Context.unsafeGet(env, current)) as Primitive
+          } else {
+            curr = current["i0"]
           }
-          case OpCodes.OP_DIE: {
-            const annotation = new Cause.StackAnnotation(
-              this.stackToLines(),
-              MRef.incrementAndGet(Cause.globalErrorSeq)
-            )
-            exit = TExit.die(current.i1(), annotation)
-            break
-          }
-          case OpCodes.OP_FAIL: {
-            const annotation = new internalCause.StackAnnotation(
-              this.stackToLines(),
-              MRef.incrementAndGet(Cause.globalErrorSeq)
-            )
-            const cont = this.nextFailure()
-            if (cont === undefined) {
-              exit = TExit.fail(current.i1(), annotation)
-            } else {
-              curr = cont.i2(current.i1()) as Primitive
+        } else {
+          switch (current.i0) {
+            case OpCodes.OP_TRACED: {
+              this.pushStack(current)
+              curr = current.i1 as Primitive
+              break
             }
-            break
-          }
-          case OpCodes.OP_RETRY: {
-            const cont = this.nextRetry()
-            if (cont === undefined) {
-              exit = TExit.retry
-            } else {
-              curr = cont.i2() as Primitive
+            case OpCodes.OP_DIE: {
+              const annotation = new Cause.StackAnnotation(
+                this.stackToLines(),
+                MRef.incrementAndGet(Cause.globalErrorSeq)
+              )
+              exit = TExit.die(current.i1(), annotation)
+              break
             }
-            break
-          }
-          case OpCodes.OP_INTERRUPT: {
-            const annotation = new Cause.StackAnnotation(
-              this.stackToLines(),
-              MRef.incrementAndGet(Cause.globalErrorSeq)
-            )
-            exit = TExit.interrupt(this.fiberId, annotation)
-            break
-          }
-          case OpCodes.OP_WITH_STM_RUNTIME: {
-            curr = current.i1(this as STMDriver<unknown, unknown, unknown>) as Primitive
-            break
-          }
-          case OpCodes.OP_ON_SUCCESS:
-          case OpCodes.OP_ON_FAILURE:
-          case OpCodes.OP_ON_RETRY: {
-            this.pushStack(current)
-            curr = current.i1 as Primitive
-            break
-          }
-          case OpCodes.OP_PROVIDE: {
-            const env = this.env
-            this.env = current.i2(env)
-            curr = pipe(
-              current.i1,
-              ensuring(sync(() => (this.env = env)))
-            ) as Primitive
-            break
-          }
-          case OpCodes.OP_SUCCEED: {
-            const value = current.i1
-            const cont = this.nextSuccess()
-            if (cont === undefined) {
-              exit = TExit.succeed(value)
-            } else {
-              curr = cont.i2(value) as Primitive
+            case OpCodes.OP_FAIL: {
+              const annotation = new internalCause.StackAnnotation(
+                this.stackToLines(),
+                MRef.incrementAndGet(Cause.globalErrorSeq)
+              )
+              const cont = this.nextFailure()
+              if (cont === undefined) {
+                exit = TExit.fail(current.i1(), annotation)
+              } else {
+                curr = cont.i2(current.i1()) as Primitive
+              }
+              break
             }
-            break
-          }
-          case OpCodes.OP_SYNC: {
-            const value = current.i1()
-            const cont = this.nextSuccess()
-            if (cont === undefined) {
-              exit = TExit.succeed(value)
-            } else {
-              curr = cont.i2(value) as Primitive
+            case OpCodes.OP_RETRY: {
+              const cont = this.nextRetry()
+              if (cont === undefined) {
+                exit = TExit.retry
+              } else {
+                curr = cont.i2() as Primitive
+              }
+              break
             }
-            break
+            case OpCodes.OP_INTERRUPT: {
+              const annotation = new Cause.StackAnnotation(
+                this.stackToLines(),
+                MRef.incrementAndGet(Cause.globalErrorSeq)
+              )
+              exit = TExit.interrupt(this.fiberId, annotation)
+              break
+            }
+            case OpCodes.OP_WITH_STM_RUNTIME: {
+              curr = current.i1(this as STMDriver<unknown, unknown, unknown>) as Primitive
+              break
+            }
+            case OpCodes.OP_ON_SUCCESS:
+            case OpCodes.OP_ON_FAILURE:
+            case OpCodes.OP_ON_RETRY: {
+              this.pushStack(current)
+              curr = current.i1 as Primitive
+              break
+            }
+            case OpCodes.OP_PROVIDE: {
+              const env = this.env
+              this.env = current.i2(env)
+              curr = pipe(
+                current.i1,
+                ensuring(sync(() => (this.env = env)))
+              ) as Primitive
+              break
+            }
+            case OpCodes.OP_SUCCEED: {
+              const value = current.i1
+              const cont = this.nextSuccess()
+              if (cont === undefined) {
+                exit = TExit.succeed(value)
+              } else {
+                curr = cont.i2(value) as Primitive
+              }
+              break
+            }
+            case OpCodes.OP_SYNC: {
+              const value = current.i1()
+              const cont = this.nextSuccess()
+              if (cont === undefined) {
+                exit = TExit.succeed(value)
+              } else {
+                curr = cont.i2(value) as Primitive
+              }
+              break
+            }
           }
         }
       } catch (e) {

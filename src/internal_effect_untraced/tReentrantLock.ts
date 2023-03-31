@@ -1,7 +1,7 @@
+import * as Debug from "@effect/data/Debug"
 import * as Equal from "@effect/data/Equal"
 import * as HashMap from "@effect/data/HashMap"
 import * as Option from "@effect/data/Option"
-import * as Debug from "@effect/io/Debug"
 import * as Effect from "@effect/io/Effect"
 import * as FiberId from "@effect/io/Fiber/Id"
 import type * as Scope from "@effect/io/src/Scope"

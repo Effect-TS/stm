@@ -1,6 +1,6 @@
+import * as Debug from "@effect/data/Debug"
 import * as Either from "@effect/data/Either"
 import * as Option from "@effect/data/Option"
-import * as Debug from "@effect/io/Debug"
 import * as core from "@effect/stm/internal_effect_untraced/core"
 import * as stm from "@effect/stm/internal_effect_untraced/stm"
 import * as tRef from "@effect/stm/internal_effect_untraced/tRef"
