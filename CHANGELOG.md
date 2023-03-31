@@ -1,5 +1,13 @@
 # @effect/stm
 
+## 0.8.1
+
+### Patch Changes
+
+- [#72](https://github.com/Effect-TS/stm/pull/72) [`cd07b80`](https://github.com/Effect-TS/stm/commit/cd07b80183e10fd2cc25bf2b8f395b9979df47b4) Thanks [@mikearnaldi](https://github.com/mikearnaldi)! - Export instances
+
+- [#74](https://github.com/Effect-TS/stm/pull/74) [`cc9f07a`](https://github.com/Effect-TS/stm/commit/cc9f07ad72135805e923076d24ce599430372923) Thanks [@mikearnaldi](https://github.com/mikearnaldi)! - Fix release
+
 ## 0.8.0
 
 ### Minor Changes
