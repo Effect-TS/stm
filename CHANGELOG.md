@@ -1,5 +1,11 @@
 # @effect/stm
 
+## 0.8.0
+
+### Minor Changes
+
+- [#70](https://github.com/Effect-TS/stm/pull/70) [`709f2d6`](https://github.com/Effect-TS/stm/commit/709f2d6d4a2da77d05f9a3c6a2d21631090cc419) Thanks [@mikearnaldi](https://github.com/mikearnaldi)! - Support new Tag, make Context.Tag valid STM
+
 ## 0.7.0
 
 ### Minor Changes
