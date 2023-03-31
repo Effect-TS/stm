@@ -7,6 +7,7 @@ import type { LazyArg } from "@effect/data/Function"
 import { constVoid, pipe } from "@effect/data/Function"
 import * as Hash from "@effect/data/Hash"
 import * as MRef from "@effect/data/MutableRef"
+import { tuple } from "@effect/data/ReadonlyArray"
 import * as Cause from "@effect/io/Cause"
 import * as Effect from "@effect/io/Effect"
 import * as Exit from "@effect/io/Exit"
@@ -882,12 +883,12 @@ export const zip = Debug.dualWithTrace<
     that: STM.STM<R1, E1, A1>
   ) => <R, E, A>(
     self: STM.STM<R, E, A>
-  ) => STM.STM<R1 | R, E1 | E, readonly [A, A1]>,
+  ) => STM.STM<R1 | R, E1 | E, [A, A1]>,
   <R, E, A, R1, E1, A1>(
     self: STM.STM<R, E, A>,
     that: STM.STM<R1, E1, A1>
-  ) => STM.STM<R1 | R, E1 | E, readonly [A, A1]>
->(2, (trace) => (self, that) => pipe(self, zipWith(that, (a, a1) => [a, a1] as const)).traced(trace))
+  ) => STM.STM<R1 | R, E1 | E, [A, A1]>
+>(2, (trace) => (self, that) => pipe(self, zipWith(that, (a, a1) => tuple(a, a1))).traced(trace))
 
 /** @internal */
 export const zipLeft = Debug.dualWithTrace<
