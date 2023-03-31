@@ -61,6 +61,15 @@ Added in v1.0.0
 - [destructors](#destructors)
   - [commit](#commit)
   - [commitEither](#commiteither)
+- [do notation](#do-notation)
+  - [Do](#do)
+  - [bind](#bind)
+  - [bindDiscard](#binddiscard)
+  - [bindTo](#bindto)
+  - [let](#let)
+  - [letDiscard](#letdiscard)
+- [elements](#elements)
+  - [firstSuccessOf](#firstsuccessof)
 - [environment](#environment)
   - [contramapContext](#contramapcontext)
   - [provideContext](#providecontext)
@@ -103,6 +112,20 @@ Added in v1.0.0
   - [unleft](#unleft)
   - [unright](#unright)
   - [unsome](#unsome)
+- [instances](#instances)
+  - [Applicative](#applicative)
+  - [Bicovariant](#bicovariant)
+  - [Chainable](#chainable)
+  - [Covariant](#covariant)
+  - [FlatMap](#flatmap)
+  - [Invariant](#invariant)
+  - [Monad](#monad)
+  - [Pointed](#pointed)
+  - [Product](#product)
+  - [SemiAlternative](#semialternative)
+  - [SemiApplicative](#semiapplicative)
+  - [SemiCoproduct](#semicoproduct)
+  - [SemiProduct](#semiproduct)
 - [mapping](#mapping)
   - [as](#as)
   - [asSome](#assome)
@@ -163,8 +186,15 @@ Added in v1.0.0
   - [forEach](#foreach)
   - [forEachDiscard](#foreachdiscard)
   - [partition](#partition)
+- [type lambdas](#type-lambdas)
+  - [STMTypeLambda (interface)](#stmtypelambda-interface)
 - [utils](#utils)
   - [STM (interface)](#stm-interface-1)
+  - [getFailureMonoid](#getfailuremonoid)
+  - [getFailureSemigroup](#getfailuresemigroup)
+  - [getFirstSuccessSemigroup](#getfirstsuccesssemigroup)
+  - [nonEmptyStruct](#nonemptystruct)
+  - [nonEmptyTuple](#nonemptytuple)
 - [zipping](#zipping)
   - [zip](#zip)
   - [zipLeft](#zipleft)
@@ -905,6 +935,128 @@ export declare const commitEither: <R, E, A>(self: STM<R, E, A>) => Effect.Effec
 
 Added in v1.0.0
 
+# do notation
+
+## Do
+
+**Signature**
+
+```ts
+export declare const Do: <R = never, E = never>() => STM<R, E, {}>
+```
+
+Added in v1.0.0
+
+## bind
+
+**Signature**
+
+```ts
+export declare const bind: {
+  <N extends string, A extends object, O2, E2, B>(name: Exclude<N, keyof A>, f: (a: A) => STM<O2, E2, B>): <O1, E1>(
+    self: STM<O1, E1, A>
+  ) => STM<O2 | O1, E2 | E1, { [K in N | keyof A]: K extends keyof A ? A[K] : B }>
+  <O1_1, E1_1, A_1 extends object, N_1 extends string, O2_1, E2_1, B_1>(
+    self: STM<O1_1, E1_1, A_1>,
+    name: Exclude<N_1, keyof A_1>,
+    f: (a: A_1) => STM<O2_1, E2_1, B_1>
+  ): STM<O1_1 | O2_1, E1_1 | E2_1, { [K_1 in N_1 | keyof A_1]: K_1 extends keyof A_1 ? A_1[K_1] : B_1 }>
+}
+```
+
+Added in v1.0.0
+
+## bindDiscard
+
+**Signature**
+
+```ts
+export declare const bindDiscard: {
+  <N extends string, A extends object, O2, E2, B>(name: Exclude<N, keyof A>, that: STM<O2, E2, B>): <O1, E1>(
+    self: STM<O1, E1, A>
+  ) => STM<O2 | O1, E2 | E1, { [K in N | keyof A]: K extends keyof A ? A[K] : B }>
+  <O1_1, E1_1, A_1 extends object, N_1 extends string, O2_1, E2_1, B_1>(
+    self: STM<O1_1, E1_1, A_1>,
+    name: Exclude<N_1, keyof A_1>,
+    that: STM<O2_1, E2_1, B_1>
+  ): STM<O1_1 | O2_1, E1_1 | E2_1, { [K_1 in N_1 | keyof A_1]: K_1 extends keyof A_1 ? A_1[K_1] : B_1 }>
+}
+```
+
+Added in v1.0.0
+
+## bindTo
+
+**Signature**
+
+```ts
+export declare const bindTo: {
+  <N extends string>(name: N): <O, E, A>(self: STM<O, E, A>) => STM<O, E, { [K in N]: A }>
+  <O_1, E_1, A_1, N_1 extends string>(self: STM<O_1, E_1, A_1>, name: N_1): STM<O_1, E_1, { [K_1 in N_1]: A_1 }>
+}
+```
+
+Added in v1.0.0
+
+## let
+
+**Signature**
+
+```ts
+export declare const let: {
+  <N extends string, A extends object, B>(name: Exclude<N, keyof A>, f: (a: A) => B): <O, E>(
+    self: STM<O, E, A>
+  ) => STM<O, E, { [K in N | keyof A]: K extends keyof A ? A[K] : B }>
+  <O_1, E_1, A_1 extends object, N_1 extends string, B_1>(
+    self: STM<O_1, E_1, A_1>,
+    name: Exclude<N_1, keyof A_1>,
+    f: (a: A_1) => B_1
+  ): STM<O_1, E_1, { [K_1 in N_1 | keyof A_1]: K_1 extends keyof A_1 ? A_1[K_1] : B_1 }>
+}
+```
+
+Added in v1.0.0
+
+## letDiscard
+
+**Signature**
+
+```ts
+export declare const letDiscard: {
+  <N extends string, A extends object, B>(name: Exclude<N, keyof A>, b: B): <O, E>(
+    self: STM<O, E, A>
+  ) => STM<O, E, { [K in N | keyof A]: K extends keyof A ? A[K] : B }>
+  <O_1, E_1, A_1 extends object, N_1 extends string, B_1>(
+    self: STM<O_1, E_1, A_1>,
+    name: Exclude<N_1, keyof A_1>,
+    b: B_1
+  ): STM<O_1, E_1, { [K_1 in N_1 | keyof A_1]: K_1 extends keyof A_1 ? A_1[K_1] : B_1 }>
+}
+```
+
+Added in v1.0.0
+
+# elements
+
+## firstSuccessOf
+
+This function takes an iterable of `STM` values and returns a new
+`STM` value that represents the first `STM` value in the iterable
+that succeeds. If all of the `Effect` values in the iterable fail, then
+the resulting `STM` value will fail as well.
+
+This function is sequential, meaning that the `STM` values in the
+iterable will be executed in sequence, and the first one that succeeds
+will determine the outcome of the resulting `STM` value.
+
+**Signature**
+
+```ts
+export declare const firstSuccessOf: <R, E, A>(effects: Iterable<STM<R, E, A>>) => STM<R, E, A>
+```
+
+Added in v1.0.0
+
 # environment
 
 ## contramapContext
@@ -1492,6 +1644,138 @@ Converts an option on errors into an option on values.
 
 ```ts
 export declare const unsome: <R, E, A>(self: STM<R, Option.Option<E>, A>) => STM<R, E, Option.Option<A>>
+```
+
+Added in v1.0.0
+
+# instances
+
+## Applicative
+
+**Signature**
+
+```ts
+export declare const Applicative: applicative.Applicative<STMTypeLambda>
+```
+
+Added in v1.0.0
+
+## Bicovariant
+
+**Signature**
+
+```ts
+export declare const Bicovariant: bicovariant.Bicovariant<STMTypeLambda>
+```
+
+Added in v1.0.0
+
+## Chainable
+
+**Signature**
+
+```ts
+export declare const Chainable: chainable.Chainable<STMTypeLambda>
+```
+
+Added in v1.0.0
+
+## Covariant
+
+**Signature**
+
+```ts
+export declare const Covariant: covariant.Covariant<STMTypeLambda>
+```
+
+Added in v1.0.0
+
+## FlatMap
+
+**Signature**
+
+```ts
+export declare const FlatMap: flatMap_.FlatMap<STMTypeLambda>
+```
+
+Added in v1.0.0
+
+## Invariant
+
+**Signature**
+
+```ts
+export declare const Invariant: invariant.Invariant<STMTypeLambda>
+```
+
+Added in v1.0.0
+
+## Monad
+
+**Signature**
+
+```ts
+export declare const Monad: monad.Monad<STMTypeLambda>
+```
+
+Added in v1.0.0
+
+## Pointed
+
+**Signature**
+
+```ts
+export declare const Pointed: pointed.Pointed<STMTypeLambda>
+```
+
+Added in v1.0.0
+
+## Product
+
+**Signature**
+
+```ts
+export declare const Product: product_.Product<STMTypeLambda>
+```
+
+Added in v1.0.0
+
+## SemiAlternative
+
+**Signature**
+
+```ts
+export declare const SemiAlternative: semiAlternative.SemiAlternative<STMTypeLambda>
+```
+
+Added in v1.0.0
+
+## SemiApplicative
+
+**Signature**
+
+```ts
+export declare const SemiApplicative: semiApplicative.SemiApplicative<STMTypeLambda>
+```
+
+Added in v1.0.0
+
+## SemiCoproduct
+
+**Signature**
+
+```ts
+export declare const SemiCoproduct: semiCoproduct.SemiCoproduct<STMTypeLambda>
+```
+
+Added in v1.0.0
+
+## SemiProduct
+
+**Signature**
+
+```ts
+export declare const SemiProduct: semiProduct.SemiProduct<STMTypeLambda>
 ```
 
 Added in v1.0.0
@@ -2367,6 +2651,20 @@ export declare const partition: {
 
 Added in v1.0.0
 
+# type lambdas
+
+## STMTypeLambda (interface)
+
+**Signature**
+
+```ts
+export interface STMTypeLambda extends TypeLambda {
+  readonly type: STM<this['Out2'], this['Out1'], this['Target']>
+}
+```
+
+Added in v1.0.0
+
 # utils
 
 ## STM (interface)
@@ -2381,6 +2679,68 @@ export interface STM<R, E, A> {
 
 Added in v1.0.0
 
+## getFailureMonoid
+
+**Signature**
+
+```ts
+export declare const getFailureMonoid: <A, O, E>(M: Monoid<A>) => Monoid<STM<O, E, A>>
+```
+
+Added in v1.0.0
+
+## getFailureSemigroup
+
+**Signature**
+
+```ts
+export declare const getFailureSemigroup: <A, O, E>(S: Semigroup<A>) => Semigroup<STM<O, E, A>>
+```
+
+Added in v1.0.0
+
+## getFirstSuccessSemigroup
+
+**Signature**
+
+```ts
+export declare const getFirstSuccessSemigroup: <A, O, E>(S: Semigroup<A>) => Semigroup<STM<O, E, A>>
+```
+
+Added in v1.0.0
+
+## nonEmptyStruct
+
+**Signature**
+
+```ts
+export declare const nonEmptyStruct: <R extends { readonly [x: string]: STM<any, any, any> }>(
+  fields: (keyof R extends never ? never : R) & { readonly [x: string]: STM<any, any, any> }
+) => STM<
+  [R[keyof R]] extends [STM<infer O, any, any>] ? O : never,
+  [R[keyof R]] extends [STM<any, infer E, any>] ? E : never,
+  { [K in keyof R]: [R[K]] extends [STM<any, any, infer A>] ? A : never }
+>
+```
+
+Added in v1.0.0
+
+## nonEmptyTuple
+
+**Signature**
+
+```ts
+export declare const nonEmptyTuple: <T extends readonly [STM<any, any, any>, ...STM<any, any, any>[]]>(
+  ...elements: T
+) => STM<
+  [T[number]] extends [STM<infer O, any, any>] ? O : never,
+  [T[number]] extends [STM<any, infer E, any>] ? E : never,
+  { [I in keyof T]: [T[I]] extends [STM<any, any, infer A>] ? A : never }
+>
+```
+
+Added in v1.0.0
+
 # zipping
 
 ## zip
@@ -2391,8 +2751,8 @@ Sequentially zips this value with the specified one.
 
 ```ts
 export declare const zip: {
-  <R1, E1, A1>(that: STM<R1, E1, A1>): <R, E, A>(self: STM<R, E, A>) => STM<R1 | R, E1 | E, readonly [A, A1]>
-  <R, E, A, R1, E1, A1>(self: STM<R, E, A>, that: STM<R1, E1, A1>): STM<R | R1, E | E1, readonly [A, A1]>
+  <R1, E1, A1>(that: STM<R1, E1, A1>): <R, E, A>(self: STM<R, E, A>) => STM<R1 | R, E1 | E, [A, A1]>
+  <R, E, A, R1, E1, A1>(self: STM<R, E, A>, that: STM<R1, E1, A1>): STM<R | R1, E | E1, [A, A1]>
 }
 ```
 
