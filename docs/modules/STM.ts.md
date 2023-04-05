@@ -136,6 +136,7 @@ Added in v1.0.0
   - [mapBoth](#mapboth)
   - [mapError](#maperror)
 - [models](#models)
+  - [Adapter (interface)](#adapter-interface)
   - [STM (interface)](#stm-interface)
   - [STMGen (interface)](#stmgen-interface)
 - [mutations](#mutations)
@@ -564,7 +565,7 @@ Added in v1.0.0
 
 ```ts
 export declare const gen: <Eff extends STMGen<any, any, any>, AEff>(
-  f: (resume: <R, E, A>(self: STM<R, E, A>) => STMGen<R, E, A>) => Generator<Eff, AEff, any>
+  f: (resume: Adapter) => Generator<Eff, AEff, any>
 ) => STM<
   [Eff] extends [never] ? never : [Eff] extends [STMGen<infer R, any, any>] ? R : never,
   [Eff] extends [never] ? never : [Eff] extends [STMGen<any, infer E, any>] ? E : never,
@@ -1899,6 +1900,276 @@ export declare const mapError: {
 Added in v1.0.0
 
 # models
+
+## Adapter (interface)
+
+**Signature**
+
+```ts
+export interface Adapter {
+  <R, E, A>(self: STM<R, E, A>): STMGen<R, E, A>
+  <A, _R, _E, _A>(a: A, ab: (a: A) => STM<_R, _E, _A>): STMGen<_R, _E, _A>
+  <A, B, _R, _E, _A>(a: A, ab: (a: A) => B, bc: (b: B) => STM<_R, _E, _A>): STMGen<_R, _E, _A>
+  <A, B, C, _R, _E, _A>(a: A, ab: (a: A) => B, bc: (b: B) => C, cd: (c: C) => STM<_R, _E, _A>): STMGen<_R, _E, _A>
+  <A, B, C, D, _R, _E, _A>(
+    a: A,
+    ab: (a: A) => B,
+    bc: (b: B) => C,
+    cd: (c: C) => D,
+    de: (d: D) => STM<_R, _E, _A>
+  ): STMGen<_R, _E, _A>
+  <A, B, C, D, E, _R, _E, _A>(
+    a: A,
+    ab: (a: A) => B,
+    bc: (b: B) => C,
+    cd: (c: C) => D,
+    de: (d: D) => E,
+    ef: (e: E) => STM<_R, _E, _A>
+  ): STMGen<_R, _E, _A>
+  <A, B, C, D, E, F, _R, _E, _A>(
+    a: A,
+    ab: (a: A) => B,
+    bc: (b: B) => C,
+    cd: (c: C) => D,
+    de: (d: D) => E,
+    ef: (e: E) => F,
+    fg: (f: F) => STM<_R, _E, _A>
+  ): STMGen<_R, _E, _A>
+  <A, B, C, D, E, F, G, _R, _E, _A>(
+    a: A,
+    ab: (a: A) => B,
+    bc: (b: B) => C,
+    cd: (c: C) => D,
+    de: (d: D) => E,
+    ef: (e: E) => F,
+    fg: (f: F) => G,
+    gh: (g: F) => STM<_R, _E, _A>
+  ): STMGen<_R, _E, _A>
+  <A, B, C, D, E, F, G, H, _R, _E, _A>(
+    a: A,
+    ab: (a: A) => B,
+    bc: (b: B) => C,
+    cd: (c: C) => D,
+    de: (d: D) => E,
+    ef: (e: E) => F,
+    fg: (f: F) => G,
+    gh: (g: G) => H,
+    hi: (g: H) => STM<_R, _E, _A>
+  ): STMGen<_R, _E, _A>
+  <A, B, C, D, E, F, G, H, I, _R, _E, _A>(
+    a: A,
+    ab: (a: A) => B,
+    bc: (b: B) => C,
+    cd: (c: C) => D,
+    de: (d: D) => E,
+    ef: (e: E) => F,
+    fg: (f: F) => G,
+    gh: (g: G) => H,
+    hi: (h: H) => I,
+    ij: (i: I) => STM<_R, _E, _A>
+  ): STMGen<_R, _E, _A>
+  <A, B, C, D, E, F, G, H, I, J, _R, _E, _A>(
+    a: A,
+    ab: (a: A) => B,
+    bc: (b: B) => C,
+    cd: (c: C) => D,
+    de: (d: D) => E,
+    ef: (e: E) => F,
+    fg: (f: F) => G,
+    gh: (g: G) => H,
+    hi: (h: H) => I,
+    ij: (i: I) => J,
+    jk: (j: J) => STM<_R, _E, _A>
+  ): STMGen<_R, _E, _A>
+  <A, B, C, D, E, F, G, H, I, J, K, _R, _E, _A>(
+    a: A,
+    ab: (a: A) => B,
+    bc: (b: B) => C,
+    cd: (c: C) => D,
+    de: (d: D) => E,
+    ef: (e: E) => F,
+    fg: (f: F) => G,
+    gh: (g: G) => H,
+    hi: (h: H) => I,
+    ij: (i: I) => J,
+    jk: (j: J) => K,
+    kl: (k: K) => STM<_R, _E, _A>
+  ): STMGen<_R, _E, _A>
+  <A, B, C, D, E, F, G, H, I, J, K, L, _R, _E, _A>(
+    a: A,
+    ab: (a: A) => B,
+    bc: (b: B) => C,
+    cd: (c: C) => D,
+    de: (d: D) => E,
+    ef: (e: E) => F,
+    fg: (f: F) => G,
+    gh: (g: G) => H,
+    hi: (h: H) => I,
+    ij: (i: I) => J,
+    jk: (j: J) => K,
+    kl: (k: K) => L,
+    lm: (l: L) => STM<_R, _E, _A>
+  ): STMGen<_R, _E, _A>
+  <A, B, C, D, E, F, G, H, I, J, K, L, M, _R, _E, _A>(
+    a: A,
+    ab: (a: A) => B,
+    bc: (b: B) => C,
+    cd: (c: C) => D,
+    de: (d: D) => E,
+    ef: (e: E) => F,
+    fg: (f: F) => G,
+    gh: (g: G) => H,
+    hi: (h: H) => I,
+    ij: (i: I) => J,
+    jk: (j: J) => K,
+    kl: (k: K) => L,
+    lm: (l: L) => M,
+    mn: (m: M) => STM<_R, _E, _A>
+  ): STMGen<_R, _E, _A>
+  <A, B, C, D, E, F, G, H, I, J, K, L, M, N, _R, _E, _A>(
+    a: A,
+    ab: (a: A) => B,
+    bc: (b: B) => C,
+    cd: (c: C) => D,
+    de: (d: D) => E,
+    ef: (e: E) => F,
+    fg: (f: F) => G,
+    gh: (g: G) => H,
+    hi: (h: H) => I,
+    ij: (i: I) => J,
+    jk: (j: J) => K,
+    kl: (k: K) => L,
+    lm: (l: L) => M,
+    mn: (m: M) => N,
+    no: (n: N) => STM<_R, _E, _A>
+  ): STMGen<_R, _E, _A>
+  <A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, _R, _E, _A>(
+    a: A,
+    ab: (a: A) => B,
+    bc: (b: B) => C,
+    cd: (c: C) => D,
+    de: (d: D) => E,
+    ef: (e: E) => F,
+    fg: (f: F) => G,
+    gh: (g: G) => H,
+    hi: (h: H) => I,
+    ij: (i: I) => J,
+    jk: (j: J) => K,
+    kl: (k: K) => L,
+    lm: (l: L) => M,
+    mn: (m: M) => N,
+    no: (n: N) => O,
+    op: (o: O) => STM<_R, _E, _A>
+  ): STMGen<_R, _E, _A>
+  <A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, _R, _E, _A>(
+    a: A,
+    ab: (a: A) => B,
+    bc: (b: B) => C,
+    cd: (c: C) => D,
+    de: (d: D) => E,
+    ef: (e: E) => F,
+    fg: (f: F) => G,
+    gh: (g: G) => H,
+    hi: (h: H) => I,
+    ij: (i: I) => J,
+    jk: (j: J) => K,
+    kl: (k: K) => L,
+    lm: (l: L) => M,
+    mn: (m: M) => N,
+    no: (n: N) => O,
+    op: (o: O) => P,
+    pq: (p: P) => STM<_R, _E, _A>
+  ): STMGen<_R, _E, _A>
+  <A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q, _R, _E, _A>(
+    a: A,
+    ab: (a: A) => B,
+    bc: (b: B) => C,
+    cd: (c: C) => D,
+    de: (d: D) => E,
+    ef: (e: E) => F,
+    fg: (f: F) => G,
+    gh: (g: G) => H,
+    hi: (h: H) => I,
+    ij: (i: I) => J,
+    jk: (j: J) => K,
+    kl: (k: K) => L,
+    lm: (l: L) => M,
+    mn: (m: M) => N,
+    no: (n: N) => O,
+    op: (o: O) => P,
+    pq: (p: P) => Q,
+    qr: (q: Q) => STM<_R, _E, _A>
+  ): STMGen<_R, _E, _A>
+  <A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q, R, _R, _E, _A>(
+    a: A,
+    ab: (a: A) => B,
+    bc: (b: B) => C,
+    cd: (c: C) => D,
+    de: (d: D) => E,
+    ef: (e: E) => F,
+    fg: (f: F) => G,
+    gh: (g: G) => H,
+    hi: (h: H) => I,
+    ij: (i: I) => J,
+    jk: (j: J) => K,
+    kl: (k: K) => L,
+    lm: (l: L) => M,
+    mn: (m: M) => N,
+    no: (n: N) => O,
+    op: (o: O) => P,
+    pq: (p: P) => Q,
+    qr: (q: Q) => R,
+    rs: (r: R) => STM<_R, _E, _A>
+  ): STMGen<_R, _E, _A>
+  <A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q, R, S, _R, _E, _A>(
+    a: A,
+    ab: (a: A) => B,
+    bc: (b: B) => C,
+    cd: (c: C) => D,
+    de: (d: D) => E,
+    ef: (e: E) => F,
+    fg: (f: F) => G,
+    gh: (g: G) => H,
+    hi: (h: H) => I,
+    ij: (i: I) => J,
+    jk: (j: J) => K,
+    kl: (k: K) => L,
+    lm: (l: L) => M,
+    mn: (m: M) => N,
+    no: (n: N) => O,
+    op: (o: O) => P,
+    pq: (p: P) => Q,
+    qr: (q: Q) => R,
+    rs: (r: R) => S,
+    st: (s: S) => STM<_R, _E, _A>
+  ): STMGen<_R, _E, _A>
+  <A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q, R, S, T, _R, _E, _A>(
+    a: A,
+    ab: (a: A) => B,
+    bc: (b: B) => C,
+    cd: (c: C) => D,
+    de: (d: D) => E,
+    ef: (e: E) => F,
+    fg: (f: F) => G,
+    gh: (g: G) => H,
+    hi: (h: H) => I,
+    ij: (i: I) => J,
+    jk: (j: J) => K,
+    kl: (k: K) => L,
+    lm: (l: L) => M,
+    mn: (m: M) => N,
+    no: (n: N) => O,
+    op: (o: O) => P,
+    pq: (p: P) => Q,
+    qr: (q: Q) => R,
+    rs: (r: R) => S,
+    st: (s: S) => T,
+    tu: (s: T) => STM<_R, _E, _A>
+  ): STMGen<_R, _E, _A>
+}
+```
+
+Added in v1.0.0
 
 ## STM (interface)
 
