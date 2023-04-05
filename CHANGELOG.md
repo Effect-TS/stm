@@ -1,5 +1,11 @@
 # @effect/stm
 
+## 0.9.0
+
+### Minor Changes
+
+- [#75](https://github.com/Effect-TS/stm/pull/75) [`772c522`](https://github.com/Effect-TS/stm/commit/772c522f8c5c41bfc3dcc396c0b6266e47933804) Thanks [@mikearnaldi](https://github.com/mikearnaldi)! - Make Option and Either valid STM
+
 ## 0.8.1
 
 ### Patch Changes
