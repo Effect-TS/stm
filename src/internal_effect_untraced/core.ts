@@ -7,6 +7,7 @@ import type { LazyArg } from "@effect/data/Function"
 import { constVoid, pipe } from "@effect/data/Function"
 import * as Hash from "@effect/data/Hash"
 import * as MRef from "@effect/data/MutableRef"
+import type * as Option from "@effect/data/Option"
 import { tuple } from "@effect/data/ReadonlyArray"
 import * as Cause from "@effect/io/Cause"
 import * as Effect from "@effect/io/Effect"
@@ -518,99 +519,122 @@ export class STMDriver<R, E, A> {
   }
 
   run(): TExit.TExit<E, A> {
-    let curr = this.self as Primitive | Context.GenericTag | undefined
+    let curr = this.self as Primitive | Context.GenericTag | Either.Either<any, any> | Option.Option<any> | undefined
     let exit: TExit.TExit<unknown, unknown> | undefined = undefined
     while (exit === undefined && curr !== undefined) {
       try {
         const current = curr
-        if (current && Context.isGenericTag(current)) {
-          if (Context.isTag(current)) {
-            curr = effect((_, __, env) => Context.unsafeGet(env, current)) as Primitive
-          } else {
-            curr = current["i0"]
-          }
-        } else {
-          switch (current.i0) {
-            case OpCodes.OP_TRACED: {
-              this.pushStack(current)
-              curr = current.i1 as Primitive
+        if (current) {
+          switch (current._tag) {
+            case "Tag": {
+              curr = effect((_, __, env) => Context.unsafeGet(env, current)) as Primitive
               break
             }
-            case OpCodes.OP_DIE: {
-              const annotation = new Cause.StackAnnotation(
-                this.stackToLines(),
-                MRef.incrementAndGet(Cause.globalErrorSeq)
-              )
-              exit = TExit.die(current.i1(), annotation)
+            case "Traced": {
+              curr = current.i0
               break
             }
-            case OpCodes.OP_FAIL: {
-              const annotation = new internalCause.StackAnnotation(
-                this.stackToLines(),
-                MRef.incrementAndGet(Cause.globalErrorSeq)
-              )
-              const cont = this.nextFailure()
-              if (cont === undefined) {
-                exit = TExit.fail(current.i1(), annotation)
-              } else {
-                curr = cont.i2(current.i1()) as Primitive
-              }
+            case "Left": {
+              curr = fail((current as any)["i0"]) as Primitive
               break
             }
-            case OpCodes.OP_RETRY: {
-              const cont = this.nextRetry()
-              if (cont === undefined) {
-                exit = TExit.retry
-              } else {
-                curr = cont.i2() as Primitive
-              }
+            case "None": {
+              curr = fail(Cause.NoSuchElementException()) as Primitive
               break
             }
-            case OpCodes.OP_INTERRUPT: {
-              const annotation = new Cause.StackAnnotation(
-                this.stackToLines(),
-                MRef.incrementAndGet(Cause.globalErrorSeq)
-              )
-              exit = TExit.interrupt(this.fiberId, annotation)
+            case "Right": {
+              curr = succeed((current as any)["i0"]) as Primitive
               break
             }
-            case OpCodes.OP_WITH_STM_RUNTIME: {
-              curr = current.i1(this as STMDriver<unknown, unknown, unknown>) as Primitive
+            case "Some": {
+              curr = succeed((current as any)["i0"]) as Primitive
               break
             }
-            case OpCodes.OP_ON_SUCCESS:
-            case OpCodes.OP_ON_FAILURE:
-            case OpCodes.OP_ON_RETRY: {
-              this.pushStack(current)
-              curr = current.i1 as Primitive
-              break
-            }
-            case OpCodes.OP_PROVIDE: {
-              const env = this.env
-              this.env = current.i2(env)
-              curr = pipe(
-                current.i1,
-                ensuring(sync(() => (this.env = env)))
-              ) as Primitive
-              break
-            }
-            case OpCodes.OP_SUCCEED: {
-              const value = current.i1
-              const cont = this.nextSuccess()
-              if (cont === undefined) {
-                exit = TExit.succeed(value)
-              } else {
-                curr = cont.i2(value) as Primitive
-              }
-              break
-            }
-            case OpCodes.OP_SYNC: {
-              const value = current.i1()
-              const cont = this.nextSuccess()
-              if (cont === undefined) {
-                exit = TExit.succeed(value)
-              } else {
-                curr = cont.i2(value) as Primitive
+            case "Commit": {
+              switch (current.i0) {
+                case OpCodes.OP_TRACED: {
+                  this.pushStack(current)
+                  curr = current.i1 as Primitive
+                  break
+                }
+                case OpCodes.OP_DIE: {
+                  const annotation = new Cause.StackAnnotation(
+                    this.stackToLines(),
+                    MRef.incrementAndGet(Cause.globalErrorSeq)
+                  )
+                  exit = TExit.die(current.i1(), annotation)
+                  break
+                }
+                case OpCodes.OP_FAIL: {
+                  const annotation = new internalCause.StackAnnotation(
+                    this.stackToLines(),
+                    MRef.incrementAndGet(Cause.globalErrorSeq)
+                  )
+                  const cont = this.nextFailure()
+                  if (cont === undefined) {
+                    exit = TExit.fail(current.i1(), annotation)
+                  } else {
+                    curr = cont.i2(current.i1()) as Primitive
+                  }
+                  break
+                }
+                case OpCodes.OP_RETRY: {
+                  const cont = this.nextRetry()
+                  if (cont === undefined) {
+                    exit = TExit.retry
+                  } else {
+                    curr = cont.i2() as Primitive
+                  }
+                  break
+                }
+                case OpCodes.OP_INTERRUPT: {
+                  const annotation = new Cause.StackAnnotation(
+                    this.stackToLines(),
+                    MRef.incrementAndGet(Cause.globalErrorSeq)
+                  )
+                  exit = TExit.interrupt(this.fiberId, annotation)
+                  break
+                }
+                case OpCodes.OP_WITH_STM_RUNTIME: {
+                  curr = current.i1(this as STMDriver<unknown, unknown, unknown>) as Primitive
+                  break
+                }
+                case OpCodes.OP_ON_SUCCESS:
+                case OpCodes.OP_ON_FAILURE:
+                case OpCodes.OP_ON_RETRY: {
+                  this.pushStack(current)
+                  curr = current.i1 as Primitive
+                  break
+                }
+                case OpCodes.OP_PROVIDE: {
+                  const env = this.env
+                  this.env = current.i2(env)
+                  curr = pipe(
+                    current.i1,
+                    ensuring(sync(() => (this.env = env)))
+                  ) as Primitive
+                  break
+                }
+                case OpCodes.OP_SUCCEED: {
+                  const value = current.i1
+                  const cont = this.nextSuccess()
+                  if (cont === undefined) {
+                    exit = TExit.succeed(value)
+                  } else {
+                    curr = cont.i2(value) as Primitive
+                  }
+                  break
+                }
+                case OpCodes.OP_SYNC: {
+                  const value = current.i1()
+                  const cont = this.nextSuccess()
+                  if (cont === undefined) {
+                    exit = TExit.succeed(value)
+                  } else {
+                    curr = cont.i2(value) as Primitive
+                  }
+                  break
+                }
               }
               break
             }

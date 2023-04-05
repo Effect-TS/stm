@@ -94,7 +94,7 @@ export const makeCircuitBreaker = (opts?: CircuitBreakerOptions) =>
             case "closed": {
               const result = yield* $(pipe(
                 self,
-                Effect.retry<never, E, any>(schedule),
+                Effect.retry(schedule),
                 Effect.either
               ))
               if (Either.isLeft(result)) {

@@ -552,6 +552,14 @@ class STMGen {
   }
 }
 
+const adapter = function() {
+  let x = arguments[0]
+  for (let i = 1; i < arguments.length; i++) {
+    x = arguments[i](x)
+  }
+  return new STMGen(x) as any
+}
+
 /**
  * Inspired by https://github.com/tusharmath/qio/pull/22 (revised)
  * @internal
@@ -559,7 +567,7 @@ class STMGen {
 export const gen: typeof STM.gen = Debug.methodWithTrace((trace, restore) =>
   (f) =>
     suspend(() => {
-      const iterator = f((self) => new STMGen(self) as any)
+      const iterator = f(adapter)
       const state = restore(() => iterator.next())()
       const run = (
         state: IteratorYieldResult<any> | IteratorReturnResult<any>
