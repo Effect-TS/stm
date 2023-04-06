@@ -104,10 +104,10 @@ declare module "@effect/data/Context" {
  * @category models
  */
 declare module "@effect/data/Either" {
-  interface Left<E> extends STM<never, E, never> {
+  interface Left<E, A> extends STM<never, E, A> {
     readonly _tag: "Left"
   }
-  interface Right<A> extends STM<never, never, A> {
+  interface Right<E, A> extends STM<never, E, A> {
     readonly _tag: "Right"
   }
   interface TracedEither<E, A> extends STM<never, E, A> {
@@ -120,7 +120,7 @@ declare module "@effect/data/Either" {
  * @category models
  */
 declare module "@effect/data/Option" {
-  interface None extends STM<never, Cause.NoSuchElementException, never> {
+  interface None<A> extends STM<never, Cause.NoSuchElementException, A> {
     readonly _tag: "None"
   }
   interface Some<A> extends STM<never, never, A> {
