@@ -190,7 +190,6 @@ Added in v1.0.0
 - [type lambdas](#type-lambdas)
   - [STMTypeLambda (interface)](#stmtypelambda-interface)
 - [utils](#utils)
-  - [STM (interface)](#stm-interface-1)
   - [getFailureMonoid](#getfailuremonoid)
   - [getFailureSemigroup](#getfailuresemigroup)
   - [getFirstSuccessSemigroup](#getfirstsuccesssemigroup)
@@ -2209,7 +2208,9 @@ synchronization of Fibers and transactional data-types can be quite useful.
 **Signature**
 
 ```ts
-export interface STM<R, E, A> extends STM.Variance<R, E, A>, Effect.Effect<R, E, A> {}
+export interface STM<R, E, A> extends STMUnify<R, E, A> {
+  traced(trace: Debug.Trace): STM<R, E, A>
+}
 ```
 
 Added in v1.0.0
@@ -2937,18 +2938,6 @@ export interface STMTypeLambda extends TypeLambda {
 Added in v1.0.0
 
 # utils
-
-## STM (interface)
-
-**Signature**
-
-```ts
-export interface STM<R, E, A> {
-  traced(trace: Debug.Trace): STM<R, E, A>
-}
-```
-
-Added in v1.0.0
 
 ## getFailureMonoid
 

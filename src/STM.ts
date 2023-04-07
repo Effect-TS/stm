@@ -25,6 +25,7 @@ import * as semiApplicative from "@effect/data/typeclass/SemiApplicative"
 import * as semiCoproduct from "@effect/data/typeclass/SemiCoproduct"
 import type { Semigroup } from "@effect/data/typeclass/Semigroup"
 import * as semiProduct from "@effect/data/typeclass/SemiProduct"
+import type * as Unify from "@effect/data/Unify"
 import * as Cause from "@effect/io/Cause"
 import type * as Effect from "@effect/io/Effect"
 import type * as FiberId from "@effect/io/Fiber/Id"
@@ -80,7 +81,17 @@ export type STMTypeId = typeof STMTypeId
  * @since 1.0.0
  * @category models
  */
-export interface STM<R, E, A> extends STM.Variance<R, E, A>, Effect.Effect<R, E, A> {}
+export interface STM<R, E, A> extends STMUnify<R, E, A> {
+  traced(trace: Debug.Trace): STM<R, E, A>
+}
+
+interface STMUnify<R, E, A> extends Effect.Effect<R, E, A> {
+  [Unify.typeSymbol]?: unknown
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  [Unify.unifySymbol]?: () => this[Unify.typeSymbol] extends STM<infer R0, infer E0, infer A0> | infer _
+    ? STM<R0, E0, A0>
+    : never
+}
 
 /**
  * @category type lambdas
@@ -129,14 +140,6 @@ declare module "@effect/data/Option" {
   interface TracedOption<A> extends STM<never, Cause.NoSuchElementException, A> {
     readonly _tag: "Traced"
   }
-}
-
-/**
- * @internal
- * @since 1.0.0
- */
-export interface STM<R, E, A> {
-  traced(trace: Debug.Trace): STM<R, E, A>
 }
 
 /**
