@@ -58,6 +58,12 @@ Added in v1.0.0
   - [sync](#sync)
   - [tryCatch](#trycatch)
   - [unit](#unit)
+- [context](#context-1)
+  - [contramapContext](#contramapcontext)
+  - [provideContext](#providecontext)
+  - [provideService](#provideservice)
+  - [provideServiceSTM](#provideservicestm)
+  - [provideSomeContext](#providesomecontext)
 - [destructors](#destructors)
   - [commit](#commit)
   - [commitEither](#commiteither)
@@ -70,11 +76,6 @@ Added in v1.0.0
   - [letDiscard](#letdiscard)
 - [elements](#elements)
   - [firstSuccessOf](#firstsuccessof)
-- [environment](#environment)
-  - [contramapContext](#contramapcontext)
-  - [provideContext](#providecontext)
-  - [provideService](#provideservice)
-  - [provideServiceSTM](#provideservicestm)
 - [error handling](#error-handling)
   - [catchAll](#catchall)
   - [catchSome](#catchsome)
@@ -908,6 +909,100 @@ export declare const unit: () => STM<never, never, void>
 
 Added in v1.0.0
 
+# context
+
+## contramapContext
+
+Transforms the environment being provided to this effect with the specified
+function.
+
+**Signature**
+
+```ts
+export declare const contramapContext: {
+  <R0, R>(f: (context: Context.Context<R0>) => Context.Context<R>): <E, A>(self: STM<R, E, A>) => STM<R0, E, A>
+  <E, A, R0, R>(self: STM<R, E, A>, f: (context: Context.Context<R0>) => Context.Context<R>): STM<R0, E, A>
+}
+```
+
+Added in v1.0.0
+
+## provideContext
+
+Provides the transaction its required environment, which eliminates its
+dependency on `R`.
+
+**Signature**
+
+```ts
+export declare const provideContext: {
+  <R>(env: Context.Context<R>): <E, A>(self: STM<R, E, A>) => STM<never, E, A>
+  <E, A, R>(self: STM<R, E, A>, env: Context.Context<R>): STM<never, E, A>
+}
+```
+
+Added in v1.0.0
+
+## provideService
+
+Provides the effect with the single service it requires. If the transactional
+effect requires more than one service use `provideEnvironment` instead.
+
+**Signature**
+
+```ts
+export declare const provideService: {
+  <T extends Context.Tag<any, any>>(tag: T, resource: Context.Tag.Service<T>): <R, E, A>(
+    self: STM<R, E, A>
+  ) => STM<Exclude<R, Context.Tag.Identifier<T>>, E, A>
+  <R, E, A, T extends Context.Tag<any, any>>(self: STM<R, E, A>, tag: T, resource: Context.Tag.Service<T>): STM<
+    Exclude<R, Context.Tag.Identifier<T>>,
+    E,
+    A
+  >
+}
+```
+
+Added in v1.0.0
+
+## provideServiceSTM
+
+Provides the effect with the single service it requires. If the transactional
+effect requires more than one service use `provideEnvironment` instead.
+
+**Signature**
+
+```ts
+export declare const provideServiceSTM: {
+  <T extends Context.Tag<any, any>, R1, E1>(tag: T, stm: STM<R1, E1, Context.Tag.Service<T>>): <R, E, A>(
+    self: STM<R, E, A>
+  ) => STM<R1 | Exclude<R, Context.Tag.Identifier<T>>, E1 | E, A>
+  <R, E, A, T extends Context.Tag<any, any>, R1, E1>(
+    self: STM<R, E, A>,
+    tag: T,
+    stm: STM<R1, E1, Context.Tag.Service<T>>
+  ): STM<R1 | Exclude<R, Context.Tag.Identifier<T>>, E | E1, A>
+}
+```
+
+Added in v1.0.0
+
+## provideSomeContext
+
+Splits the context into two parts, providing one part using the
+specified layer and leaving the remainder `R0`.
+
+**Signature**
+
+```ts
+export declare const provideSomeContext: {
+  <R>(context: Context.Context<R>): <R1, E, A>(self: STM<R1, E, A>) => STM<Exclude<R1, R>, E, A>
+  <R, R1, E, A>(self: STM<R1, E, A>, context: Context.Context<R>): STM<Exclude<R1, R>, E, A>
+}
+```
+
+Added in v1.0.0
+
 # destructors
 
 ## commit
@@ -1053,84 +1148,6 @@ will determine the outcome of the resulting `STM` value.
 
 ```ts
 export declare const firstSuccessOf: <R, E, A>(effects: Iterable<STM<R, E, A>>) => STM<R, E, A>
-```
-
-Added in v1.0.0
-
-# environment
-
-## contramapContext
-
-Transforms the environment being provided to this effect with the specified
-function.
-
-**Signature**
-
-```ts
-export declare const contramapContext: {
-  <R0, R>(f: (context: Context.Context<R0>) => Context.Context<R>): <E, A>(self: STM<R, E, A>) => STM<R0, E, A>
-  <E, A, R0, R>(self: STM<R, E, A>, f: (context: Context.Context<R0>) => Context.Context<R>): STM<R0, E, A>
-}
-```
-
-Added in v1.0.0
-
-## provideContext
-
-Provides the transaction its required environment, which eliminates its
-dependency on `R`.
-
-**Signature**
-
-```ts
-export declare const provideContext: {
-  <R>(env: Context.Context<R>): <E, A>(self: STM<R, E, A>) => STM<never, E, A>
-  <E, A, R>(self: STM<R, E, A>, env: Context.Context<R>): STM<never, E, A>
-}
-```
-
-Added in v1.0.0
-
-## provideService
-
-Provides the effect with the single service it requires. If the transactional
-effect requires more than one service use `provideEnvironment` instead.
-
-**Signature**
-
-```ts
-export declare const provideService: {
-  <T extends Context.Tag<any, any>>(tag: T, resource: Context.Tag.Service<T>): <R, E, A>(
-    self: STM<R, E, A>
-  ) => STM<Exclude<R, Context.Tag.Identifier<T>>, E, A>
-  <R, E, A, T extends Context.Tag<any, any>>(self: STM<R, E, A>, tag: T, resource: Context.Tag.Service<T>): STM<
-    Exclude<R, Context.Tag.Identifier<T>>,
-    E,
-    A
-  >
-}
-```
-
-Added in v1.0.0
-
-## provideServiceSTM
-
-Provides the effect with the single service it requires. If the transactional
-effect requires more than one service use `provideEnvironment` instead.
-
-**Signature**
-
-```ts
-export declare const provideServiceSTM: {
-  <T extends Context.Tag<any, any>, R1, E1>(tag: T, stm: STM<R1, E1, Context.Tag.Service<T>>): <R, E, A>(
-    self: STM<R, E, A>
-  ) => STM<R1 | Exclude<R, Context.Tag.Identifier<T>>, E1 | E, A>
-  <R, E, A, T extends Context.Tag<any, any>, R1, E1>(
-    self: STM<R, E, A>,
-    tag: T,
-    stm: STM<R1, E1, Context.Tag.Service<T>>
-  ): STM<R1 | Exclude<R, Context.Tag.Identifier<T>>, E | E1, A>
-}
 ```
 
 Added in v1.0.0

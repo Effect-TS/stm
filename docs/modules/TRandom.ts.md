@@ -12,7 +12,7 @@ Added in v1.0.0
 
 <h2 class="text-delta">Table of contents</h2>
 
-- [environment](#environment)
+- [context](#context)
   - [Tag](#tag)
   - [live](#live)
 - [models](#models)
@@ -32,7 +32,7 @@ Added in v1.0.0
 
 ---
 
-# environment
+# context
 
 ## Tag
 

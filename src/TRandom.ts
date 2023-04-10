@@ -67,7 +67,7 @@ export interface TRandom {
  * The service tag used to access `TRandom` in the environment of an effect.
  *
  * @since 1.0.0
- * @category environment
+ * @category context
  */
 export const Tag: Context.Tag<TRandom, TRandom> = internal.Tag
 
@@ -75,7 +75,7 @@ export const Tag: Context.Tag<TRandom, TRandom> = internal.Tag
  * The "live" `TRandom` service wrapped into a `Layer`.
  *
  * @since 1.0.0
- * @category environment
+ * @category context
  */
 export const live: () => Layer.Layer<never, never, TRandom> = internal.live
 

@@ -905,6 +905,22 @@ export const provideContext = Debug.dualWithTrace<
 >(2, (trace) => (self, env) => core.contramapContext(self, (_: Context.Context<never>) => env).traced(trace))
 
 /** @internal */
+export const provideSomeContext = Debug.dualWithTrace<
+  <R>(context: Context.Context<R>) => <R1, E, A>(self: STM.STM<R1, E, A>) => STM.STM<Exclude<R1, R>, E, A>,
+  <R, R1, E, A>(self: STM.STM<R1, E, A>, context: Context.Context<R>) => STM.STM<Exclude<R1, R>, E, A>
+>(2, (trace) =>
+  <R, R1, E, A>(
+    self: STM.STM<R1, E, A>,
+    context: Context.Context<R>
+  ): STM.STM<Exclude<R1, R>, E, A> =>
+    core.contramapContext(
+      self,
+      (parent: Context.Context<Exclude<R1, R>>): Context.Context<R1> => Context.merge(parent, context) as any
+    ).traced(
+      trace
+    ))
+
+/** @internal */
 export const provideService = Debug.dualWithTrace<
   <T extends Context.Tag<any, any>>(
     tag: T,
