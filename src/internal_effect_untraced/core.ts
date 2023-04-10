@@ -156,7 +156,7 @@ class STMPrimitive implements STM.STM<any, any, any> {
   public _tag = OP_COMMIT
   public i1: any = undefined
   public i2: any = undefined
-  public trace = undefined;
+  public trace: Debug.Trace = undefined;
   [Effect.EffectTypeId] = stmVariance
   get [STMTypeId]() {
     return stmVariance
@@ -531,7 +531,14 @@ export class STMDriver<R, E, A> {
               break
             }
             case "Traced": {
-              curr = current.i0
+              if (current.trace) {
+                const stm = new STMPrimitive(OpCodes.OP_TRACED)
+                stm.i1 = current.i0
+                stm.trace = current.trace
+                curr = stm as any
+              } else {
+                curr = current.i0
+              }
               break
             }
             case "Left": {
