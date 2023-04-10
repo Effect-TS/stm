@@ -458,7 +458,7 @@ export const contextWithSTM: <R0, R, E, A>(
  * function.
  *
  * @since 1.0.0
- * @category environment
+ * @category context
  */
 export const contramapContext: {
   <R0, R>(f: (context: Context.Context<R0>) => Context.Context<R>): <E, A>(self: STM<R, E, A>) => STM<R0, E, A>
@@ -1447,7 +1447,7 @@ export const partition: {
  * dependency on `R`.
  *
  * @since 1.0.0
- * @category environment
+ * @category context
  */
 export const provideContext: {
   <R>(env: Context.Context<R>): <E, A>(self: STM<R, E, A>) => STM<never, E, A>
@@ -1455,11 +1455,23 @@ export const provideContext: {
 } = stm.provideContext
 
 /**
+ * Splits the context into two parts, providing one part using the
+ * specified layer and leaving the remainder `R0`.
+ *
+ * @since 1.0.0
+ * @category context
+ */
+export const provideSomeContext: {
+  <R>(context: Context.Context<R>): <R1, E, A>(self: STM<R1, E, A>) => STM<Exclude<R1, R>, E, A>
+  <R, R1, E, A>(self: STM<R1, E, A>, context: Context.Context<R>): STM<Exclude<R1, R>, E, A>
+} = stm.provideSomeContext
+
+/**
  * Provides the effect with the single service it requires. If the transactional
  * effect requires more than one service use `provideEnvironment` instead.
  *
  * @since 1.0.0
- * @category environment
+ * @category context
  */
 export const provideService: {
   <T extends Context.Tag<any, any>>(
@@ -1478,7 +1490,7 @@ export const provideService: {
  * effect requires more than one service use `provideEnvironment` instead.
  *
  * @since 1.0.0
- * @category environment
+ * @category context
  */
 export const provideServiceSTM: {
   <T extends Context.Tag<any, any>, R1, E1>(
