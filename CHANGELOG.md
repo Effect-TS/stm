@@ -1,5 +1,11 @@
 # @effect/stm
 
+## 0.10.2
+
+### Patch Changes
+
+- [#81](https://github.com/Effect-TS/stm/pull/81) [`bf42007`](https://github.com/Effect-TS/stm/commit/bf420074a13bd8c7ceb6d6f0c35e72729c23b0a7) Thanks [@mikearnaldi](https://github.com/mikearnaldi)! - Add STM.provideSomeContext
+
 ## 0.10.1
 
 ### Patch Changes
