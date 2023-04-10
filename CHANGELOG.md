@@ -1,5 +1,11 @@
 # @effect/stm
 
+## 0.10.3
+
+### Patch Changes
+
+- [#83](https://github.com/Effect-TS/stm/pull/83) [`3f45480`](https://github.com/Effect-TS/stm/commit/3f45480fef4733ef3ad37cc1556a264a9a010baf) Thanks [@mikearnaldi](https://github.com/mikearnaldi)! - Improve Traced handling
+
 ## 0.10.2
 
 ### Patch Changes
