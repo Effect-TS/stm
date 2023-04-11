@@ -1,5 +1,11 @@
 # @effect/stm
 
+## 0.11.0
+
+### Minor Changes
+
+- [#85](https://github.com/Effect-TS/stm/pull/85) [`1038046`](https://github.com/Effect-TS/stm/commit/103804614ff264d4798b3bbfa6711273901f4eb0) Thanks [@mikearnaldi](https://github.com/mikearnaldi)! - Update STM unify implementation
+
 ## 0.10.3
 
 ### Patch Changes
