@@ -140,6 +140,8 @@ Added in v1.0.0
   - [Adapter (interface)](#adapter-interface)
   - [STM (interface)](#stm-interface)
   - [STMGen (interface)](#stmgen-interface)
+  - [STMUnify (interface)](#stmunify-interface)
+  - [STMUnifyBlacklist (interface)](#stmunifyblacklist-interface)
 - [mutations](#mutations)
   - [absolve](#absolve)
   - [collect](#collect)
@@ -2225,8 +2227,11 @@ synchronization of Fibers and transactional data-types can be quite useful.
 **Signature**
 
 ```ts
-export interface STM<R, E, A> extends STMUnify<R, E, A> {
+export interface STM<R, E, A> extends Effect.Effect<R, E, A>, STM.Variance<R, E, A> {
   traced(trace: Debug.Trace): STM<R, E, A>
+  [Unify.typeSymbol]?: unknown
+  [Unify.unifySymbol]?: STMUnify<this>
+  [Unify.blacklistSymbol]?: STMUnifyBlacklist
 }
 ```
 
@@ -2243,6 +2248,30 @@ export interface STMGen<R, E, A> {
   readonly _A: () => A
   readonly value: STM<R, E, A>
   [Symbol.iterator](): Generator<STMGen<R, E, A>, A>
+}
+```
+
+Added in v1.0.0
+
+## STMUnify (interface)
+
+**Signature**
+
+```ts
+export interface STMUnify<A extends { [Unify.typeSymbol]?: any }> extends Effect.EffectUnify<A> {
+  STM?: () => A[Unify.typeSymbol] extends STM<infer R0, infer E0, infer A0> | infer _ ? STM<R0, E0, A0> : never
+}
+```
+
+Added in v1.0.0
+
+## STMUnifyBlacklist (interface)
+
+**Signature**
+
+```ts
+export interface STMUnifyBlacklist extends Effect.EffectUnifyBlacklist {
+  Effect?: true
 }
 ```
 
