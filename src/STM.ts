@@ -81,16 +81,27 @@ export type STMTypeId = typeof STMTypeId
  * @since 1.0.0
  * @category models
  */
-export interface STM<R, E, A> extends STMUnify<R, E, A> {
+export interface STM<R, E, A> extends Effect.Effect<R, E, A>, STM.Variance<R, E, A> {
   traced(trace: Debug.Trace): STM<R, E, A>
+  [Unify.typeSymbol]?: unknown
+  [Unify.unifySymbol]?: STMUnify<this>
+  [Unify.blacklistSymbol]?: STMUnifyBlacklist
 }
 
-interface STMUnify<R, E, A> extends Effect.Effect<R, E, A> {
-  [Unify.typeSymbol]?: unknown
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  [Unify.unifySymbol]?: () => this[Unify.typeSymbol] extends STM<infer R0, infer E0, infer A0> | infer _
-    ? STM<R0, E0, A0>
-    : never
+/**
+ * @since 1.0.0
+ * @category models
+ */
+export interface STMUnify<A extends { [Unify.typeSymbol]?: any }> extends Effect.EffectUnify<A> {
+  STM?: () => A[Unify.typeSymbol] extends STM<infer R0, infer E0, infer A0> | infer _ ? STM<R0, E0, A0> : never
+}
+
+/**
+ * @category models
+ * @since 1.0.0
+ */
+export interface STMUnifyBlacklist extends Effect.EffectUnifyBlacklist {
+  Effect?: true
 }
 
 /**
