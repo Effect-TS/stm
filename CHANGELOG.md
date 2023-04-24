@@ -1,5 +1,11 @@
 # @effect/stm
 
+## 0.12.0
+
+### Minor Changes
+
+- [#87](https://github.com/Effect-TS/stm/pull/87) [`c50fd61`](https://github.com/Effect-TS/stm/commit/c50fd61eb5bbf071c7825a9e52ac7a9a12397fb1) Thanks [@mikearnaldi](https://github.com/mikearnaldi)! - Avoid exposing Chunk, update effect/io, restructure STM.all
+
 ## 0.11.0
 
 ### Minor Changes
