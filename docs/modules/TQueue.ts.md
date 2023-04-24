@@ -301,12 +301,12 @@ export interface TDequeue<A> extends TQueue.TDequeueVariance<A>, BaseTQueue {
    * Takes all the values in the queue and returns the values. If the queue is
    * empty returns an empty collection.
    */
-  takeAll(): STM.STM<never, never, Chunk.Chunk<A>>
+  takeAll(): STM.STM<never, never, Array<A>>
 
   /**
    * Takes up to max number of values from the queue.
    */
-  takeUpTo(max: number): STM.STM<never, never, Chunk.Chunk<A>>
+  takeUpTo(max: number): STM.STM<never, never, Array<A>>
 }
 ```
 
@@ -463,7 +463,7 @@ empty returns an empty collection.
 **Signature**
 
 ```ts
-export declare const takeAll: <A>(self: TDequeue<A>) => STM.STM<never, never, Chunk.Chunk<A>>
+export declare const takeAll: <A>(self: TDequeue<A>) => STM.STM<never, never, A[]>
 ```
 
 Added in v1.0.0
@@ -478,8 +478,8 @@ retries until at least the minimum number of elements have been collected.
 
 ```ts
 export declare const takeBetween: {
-  (min: number, max: number): <A>(self: TDequeue<A>) => STM.STM<never, never, Chunk.Chunk<A>>
-  <A>(self: TDequeue<A>, min: number, max: number): STM.STM<never, never, Chunk.Chunk<A>>
+  (min: number, max: number): <A>(self: TDequeue<A>) => STM.STM<never, never, A[]>
+  <A>(self: TDequeue<A>, min: number, max: number): STM.STM<never, never, A[]>
 }
 ```
 
@@ -495,8 +495,8 @@ become available.
 
 ```ts
 export declare const takeN: {
-  (n: number): <A>(self: TDequeue<A>) => STM.STM<never, never, Chunk.Chunk<A>>
-  <A>(self: TDequeue<A>, n: number): STM.STM<never, never, Chunk.Chunk<A>>
+  (n: number): <A>(self: TDequeue<A>) => STM.STM<never, never, A[]>
+  <A>(self: TDequeue<A>, n: number): STM.STM<never, never, A[]>
 }
 ```
 
@@ -510,8 +510,8 @@ Takes up to max number of values from the queue.
 
 ```ts
 export declare const takeUpTo: {
-  (max: number): <A>(self: TDequeue<A>) => STM.STM<never, never, Chunk.Chunk<A>>
-  <A>(self: TDequeue<A>, max: number): STM.STM<never, never, Chunk.Chunk<A>>
+  (max: number): <A>(self: TDequeue<A>) => STM.STM<never, never, A[]>
+  <A>(self: TDequeue<A>, max: number): STM.STM<never, never, A[]>
 }
 ```
 

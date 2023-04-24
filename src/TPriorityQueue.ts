@@ -1,7 +1,6 @@
 /**
  * @since 1.0.0
  */
-import type * as Chunk from "@effect/data/Chunk"
 import type * as Option from "@effect/data/Option"
 import type { Predicate } from "@effect/data/Predicate"
 import type * as SortedMap from "@effect/data/SortedMap"
@@ -184,7 +183,7 @@ export const take: <A>(self: TPriorityQueue<A>) => STM.STM<never, never, A> = in
  * @since 1.0.0
  * @category mutations
  */
-export const takeAll: <A>(self: TPriorityQueue<A>) => STM.STM<never, never, Chunk.Chunk<A>> = internal.takeAll
+export const takeAll: <A>(self: TPriorityQueue<A>) => STM.STM<never, never, Array<A>> = internal.takeAll
 
 /**
  * Takes a value from the queue, returning `None` if there is not a value in
@@ -202,8 +201,8 @@ export const takeOption: <A>(self: TPriorityQueue<A>) => STM.STM<never, never, O
  * @category mutations
  */
 export const takeUpTo: {
-  (n: number): <A>(self: TPriorityQueue<A>) => STM.STM<never, never, Chunk.Chunk<A>>
-  <A>(self: TPriorityQueue<A>, n: number): STM.STM<never, never, Chunk.Chunk<A>>
+  (n: number): <A>(self: TPriorityQueue<A>) => STM.STM<never, never, Array<A>>
+  <A>(self: TPriorityQueue<A>, n: number): STM.STM<never, never, Array<A>>
 } = internal.takeUpTo
 
 /**
@@ -212,7 +211,7 @@ export const takeUpTo: {
  * @since 1.0.0
  * @category destructors
  */
-export const toChunk: <A>(self: TPriorityQueue<A>) => STM.STM<never, never, Chunk.Chunk<A>> = internal.toChunk
+export const toArray: <A>(self: TPriorityQueue<A>) => STM.STM<never, never, Array<A>> = internal.toChunk
 
 /**
  * Collects all values into an array.

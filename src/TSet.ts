@@ -1,7 +1,6 @@
 /**
  * @since 1.0.0
  */
-import type * as Chunk from "@effect/data/Chunk"
 import type * as HashSet from "@effect/data/HashSet"
 import type * as Option from "@effect/data/Option"
 import type { Predicate } from "@effect/data/Predicate"
@@ -194,8 +193,8 @@ export const removeAll: {
  * @category mutations
  */
 export const removeIf: {
-  <A>(predicate: Predicate<A>): (self: TSet<A>) => STM.STM<never, never, Chunk.Chunk<A>>
-  <A>(self: TSet<A>, predicate: Predicate<A>): STM.STM<never, never, Chunk.Chunk<A>>
+  <A>(predicate: Predicate<A>): (self: TSet<A>) => STM.STM<never, never, Array<A>>
+  <A>(self: TSet<A>, predicate: Predicate<A>): STM.STM<never, never, Array<A>>
 } = internal.removeIf
 
 /**
@@ -216,8 +215,8 @@ export const removeIfDiscard: {
  * @category mutations
  */
 export const retainIf: {
-  <A>(predicate: Predicate<A>): (self: TSet<A>) => STM.STM<never, never, Chunk.Chunk<A>>
-  <A>(self: TSet<A>, predicate: Predicate<A>): STM.STM<never, never, Chunk.Chunk<A>>
+  <A>(predicate: Predicate<A>): (self: TSet<A>) => STM.STM<never, never, Array<A>>
+  <A>(self: TSet<A>, predicate: Predicate<A>): STM.STM<never, never, Array<A>>
 } = internal.retainIf
 
 /**
@@ -268,8 +267,8 @@ export const takeFirstSTM: {
  * @category mutations
  */
 export const takeSome: {
-  <A, B>(pf: (a: A) => Option.Option<B>): (self: TSet<A>) => STM.STM<never, never, Chunk.NonEmptyChunk<B>>
-  <A, B>(self: TSet<A>, pf: (a: A) => Option.Option<B>): STM.STM<never, never, Chunk.NonEmptyChunk<B>>
+  <A, B>(pf: (a: A) => Option.Option<B>): (self: TSet<A>) => STM.STM<never, never, [B, ...Array<B>]>
+  <A, B>(self: TSet<A>, pf: (a: A) => Option.Option<B>): STM.STM<never, never, [B, ...Array<B>]>
 } = internal.takeSome
 
 /**
@@ -279,8 +278,8 @@ export const takeSome: {
  * @category mutations
  */
 export const takeSomeSTM: {
-  <A, R, E, B>(pf: (a: A) => STM.STM<R, Option.Option<E>, B>): (self: TSet<A>) => STM.STM<R, E, Chunk.NonEmptyChunk<B>>
-  <A, R, E, B>(self: TSet<A>, pf: (a: A) => STM.STM<R, Option.Option<E>, B>): STM.STM<R, E, Chunk.NonEmptyChunk<B>>
+  <A, R, E, B>(pf: (a: A) => STM.STM<R, Option.Option<E>, B>): (self: TSet<A>) => STM.STM<R, E, [B, ...Array<B>]>
+  <A, R, E, B>(self: TSet<A>, pf: (a: A) => STM.STM<R, Option.Option<E>, B>): STM.STM<R, E, [B, ...Array<B>]>
 } = internal.takeSomeSTM
 
 /**
@@ -289,7 +288,7 @@ export const takeSomeSTM: {
  * @since 1.0.0
  * @category destructors
  */
-export const toChunk: <A>(self: TSet<A>) => STM.STM<never, never, Chunk.Chunk<A>> = internal.toChunk
+export const toChunk: <A>(self: TSet<A>) => STM.STM<never, never, Array<A>> = internal.toChunk
 
 /**
  * Collects all elements into a `HashSet`.

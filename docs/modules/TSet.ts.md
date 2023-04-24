@@ -106,7 +106,7 @@ Collects all elements into a `Chunk`.
 **Signature**
 
 ```ts
-export declare const toChunk: <A>(self: TSet<A>) => STM.STM<never, never, Chunk.Chunk<A>>
+export declare const toChunk: <A>(self: TSet<A>) => STM.STM<never, never, A[]>
 ```
 
 Added in v1.0.0
@@ -338,8 +338,8 @@ Removes bindings matching predicate and returns the removed entries.
 
 ```ts
 export declare const removeIf: {
-  <A>(predicate: Predicate<A>): (self: TSet<A>) => STM.STM<never, never, Chunk.Chunk<A>>
-  <A>(self: TSet<A>, predicate: Predicate<A>): STM.STM<never, never, Chunk.Chunk<A>>
+  <A>(predicate: Predicate<A>): (self: TSet<A>) => STM.STM<never, never, A[]>
+  <A>(self: TSet<A>, predicate: Predicate<A>): STM.STM<never, never, A[]>
 }
 ```
 
@@ -368,8 +368,8 @@ Retains bindings matching predicate and returns removed bindings.
 
 ```ts
 export declare const retainIf: {
-  <A>(predicate: Predicate<A>): (self: TSet<A>) => STM.STM<never, never, Chunk.Chunk<A>>
-  <A>(self: TSet<A>, predicate: Predicate<A>): STM.STM<never, never, Chunk.Chunk<A>>
+  <A>(predicate: Predicate<A>): (self: TSet<A>) => STM.STM<never, never, A[]>
+  <A>(self: TSet<A>, predicate: Predicate<A>): STM.STM<never, never, A[]>
 }
 ```
 
@@ -428,8 +428,8 @@ Takes all matching values, or retries until there is at least one.
 
 ```ts
 export declare const takeSome: {
-  <A, B>(pf: (a: A) => Option.Option<B>): (self: TSet<A>) => STM.STM<never, never, Chunk.NonEmptyChunk<B>>
-  <A, B>(self: TSet<A>, pf: (a: A) => Option.Option<B>): STM.STM<never, never, Chunk.NonEmptyChunk<B>>
+  <A, B>(pf: (a: A) => Option.Option<B>): (self: TSet<A>) => STM.STM<never, never, [B, ...B[]]>
+  <A, B>(self: TSet<A>, pf: (a: A) => Option.Option<B>): STM.STM<never, never, [B, ...B[]]>
 }
 ```
 
@@ -443,8 +443,8 @@ Takes all matching values, or retries until there is at least one.
 
 ```ts
 export declare const takeSomeSTM: {
-  <A, R, E, B>(pf: (a: A) => STM.STM<R, Option.Option<E>, B>): (self: TSet<A>) => STM.STM<R, E, Chunk.NonEmptyChunk<B>>
-  <A, R, E, B>(self: TSet<A>, pf: (a: A) => STM.STM<R, Option.Option<E>, B>): STM.STM<R, E, Chunk.NonEmptyChunk<B>>
+  <A, R, E, B>(pf: (a: A) => STM.STM<R, Option.Option<E>, B>): (self: TSet<A>) => STM.STM<R, E, [B, ...B[]]>
+  <A, R, E, B>(self: TSet<A>, pf: (a: A) => STM.STM<R, Option.Option<E>, B>): STM.STM<R, E, [B, ...B[]]>
 }
 ```
 

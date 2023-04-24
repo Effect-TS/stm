@@ -1,9 +1,9 @@
-import * as Chunk from "@effect/data/Chunk"
 import * as Debug from "@effect/data/Debug"
 import { pipe } from "@effect/data/Function"
 import * as HashSet from "@effect/data/HashSet"
 import type * as Option from "@effect/data/Option"
 import type { Predicate } from "@effect/data/Predicate"
+import * as RA from "@effect/data/ReadonlyArray"
 import * as core from "@effect/stm/internal_effect_untraced/core"
 import * as tMap from "@effect/stm/internal_effect_untraced/tMap"
 import type * as STM from "@effect/stm/STM"
@@ -133,13 +133,13 @@ export const removeAll = Debug.dualWithTrace<
 
 /** @internal */
 export const removeIf = Debug.dualWithTrace<
-  <A>(predicate: Predicate<A>) => (self: TSet.TSet<A>) => STM.STM<never, never, Chunk.Chunk<A>>,
-  <A>(self: TSet.TSet<A>, predicate: Predicate<A>) => STM.STM<never, never, Chunk.Chunk<A>>
+  <A>(predicate: Predicate<A>) => (self: TSet.TSet<A>) => STM.STM<never, never, Array<A>>,
+  <A>(self: TSet.TSet<A>, predicate: Predicate<A>) => STM.STM<never, never, Array<A>>
 >(2, (trace, restore) =>
   (self, predicate) =>
     pipe(
       tMap.removeIf(self.tMap, (key) => restore(predicate)(key)),
-      core.map(Chunk.map((entry) => entry[0]))
+      core.map(RA.map((entry) => entry[0]))
     ).traced(trace))
 
 /** @internal */
@@ -155,13 +155,13 @@ export const removeIfDiscard = Debug.dualWithTrace<
 
 /** @internal */
 export const retainIf = Debug.dualWithTrace<
-  <A>(predicate: Predicate<A>) => (self: TSet.TSet<A>) => STM.STM<never, never, Chunk.Chunk<A>>,
-  <A>(self: TSet.TSet<A>, predicate: Predicate<A>) => STM.STM<never, never, Chunk.Chunk<A>>
+  <A>(predicate: Predicate<A>) => (self: TSet.TSet<A>) => STM.STM<never, never, Array<A>>,
+  <A>(self: TSet.TSet<A>, predicate: Predicate<A>) => STM.STM<never, never, Array<A>>
 >(2, (trace, restore) =>
   (self, predicate) =>
     pipe(
       tMap.retainIf(self.tMap, (key) => restore(predicate)(key)),
-      core.map(Chunk.map((entry) => entry[0]))
+      core.map(RA.map((entry) => entry[0]))
     ).traced(trace))
 
 /** @internal */
@@ -195,24 +195,24 @@ export const takeFirstSTM = Debug.dualWithTrace<
 
 /** @internal */
 export const takeSome = Debug.dualWithTrace<
-  <A, B>(pf: (a: A) => Option.Option<B>) => (self: TSet.TSet<A>) => STM.STM<never, never, Chunk.NonEmptyChunk<B>>,
-  <A, B>(self: TSet.TSet<A>, pf: (a: A) => Option.Option<B>) => STM.STM<never, never, Chunk.NonEmptyChunk<B>>
+  <A, B>(pf: (a: A) => Option.Option<B>) => (self: TSet.TSet<A>) => STM.STM<never, never, RA.NonEmptyArray<B>>,
+  <A, B>(self: TSet.TSet<A>, pf: (a: A) => Option.Option<B>) => STM.STM<never, never, RA.NonEmptyArray<B>>
 >(2, (trace, restore) => (self, pf) => tMap.takeSome(self.tMap, (key) => restore(pf)(key)).traced(trace))
 
 /** @internal */
 export const takeSomeSTM = Debug.dualWithTrace<
   <A, R, E, B>(
     pf: (a: A) => STM.STM<R, Option.Option<E>, B>
-  ) => (self: TSet.TSet<A>) => STM.STM<R, E, Chunk.NonEmptyChunk<B>>,
+  ) => (self: TSet.TSet<A>) => STM.STM<R, E, RA.NonEmptyArray<B>>,
   <A, R, E, B>(
     self: TSet.TSet<A>,
     pf: (a: A) => STM.STM<R, Option.Option<E>, B>
-  ) => STM.STM<R, E, Chunk.NonEmptyChunk<B>>
+  ) => STM.STM<R, E, RA.NonEmptyArray<B>>
 >(2, (trace, restore) => (self, pf) => tMap.takeSomeSTM(self.tMap, (key) => restore(pf)(key)).traced(trace))
 
 /** @internal */
 export const toChunk = Debug.methodWithTrace((trace) =>
-  <A>(self: TSet.TSet<A>): STM.STM<never, never, Chunk.Chunk<A>> => tMap.keys(self.tMap).traced(trace)
+  <A>(self: TSet.TSet<A>): STM.STM<never, never, Array<A>> => tMap.keys(self.tMap).traced(trace)
 )
 
 /** @internal */

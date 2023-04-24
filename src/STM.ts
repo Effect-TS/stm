@@ -223,6 +223,69 @@ export const acquireUseRelease: {
 } = stm.acquireUseRelease
 
 /**
+ * @since 1.0.0
+ * @category utils
+ */
+export declare namespace All {
+  export type STMAny = STM<any, any, any>
+  export type ReturnArray<T> = [T] extends [ReadonlyArray<STMAny>] ? STM<
+    T[number] extends never ? never
+      : [T[number]] extends [{ [STMTypeId]: { _R: (_: never) => infer R } }] ? R
+      : never,
+    T[number] extends never ? never
+      : [T[number]] extends [{ [STMTypeId]: { _E: (_: never) => infer E } }] ? E
+      : never,
+    T[number] extends never ? []
+      : { [K in keyof T]: [T[K]] extends [STM<any, any, infer A>] ? A : never }
+  >
+    : never
+  export type ReturnTuple<T extends ReadonlyArray<STM<any, any, any>>> = STM<
+    T[number] extends never ? never
+      : [T[number]] extends [{ [STMTypeId]: { _R: (_: never) => infer R } }] ? R
+      : never,
+    T[number] extends never ? never
+      : [T[number]] extends [{ [STMTypeId]: { _E: (_: never) => infer E } }] ? E
+      : never,
+    T[number] extends never ? []
+      : { [K in keyof T]: [T[K]] extends [STM<any, any, infer A>] ? A : never }
+  > extends infer X ? X : never
+  export type ReturnIterable<T> = [T] extends [[Iterable<STMAny>]]
+    ? [T] extends [[ReadonlyArray<STMAny>]] ? ReturnTuple<T[0]>
+    : STM<
+      [T[0]] extends [Iterable<{ [STMTypeId]: { _R: (_: never) => infer R } }>] ? R
+        : never,
+      [T[0]] extends [Iterable<{ [STMTypeId]: { _E: (_: never) => infer E } }>] ? E
+        : never,
+      [T[0]] extends [Iterable<{ [STMTypeId]: { _A: (_: never) => infer A } }>] ? Array<A>
+        : never
+    >
+    : never
+  export type ReturnObject<T> = [T] extends [[Readonly<{ [K: string]: STM<any, any, any> }>]] ? STM<
+    keyof T[0] extends never ? never
+      : [T[0][keyof T[0]]] extends [{ [STMTypeId]: { _R: (_: never) => infer R } }] ? R
+      : never,
+    keyof T[0] extends never ? never
+      : [T[0][keyof T[0]]] extends [{ [STMTypeId]: { _E: (_: never) => infer E } }] ? E
+      : never,
+    { [K in keyof T[0]]: [T[0][K]] extends [STM<any, any, infer A>] ? A : never }
+  >
+    : never
+  export type Signature = {
+    <
+      Args extends
+        | ReadonlyArray<STMAny>
+        | [Iterable<STMAny>]
+        | [Readonly<{ [K: string]: STM<any, any, any> }>]
+    >(
+      ...args: [...Args]
+    ): Args["length"] extends 1 ? Args extends [Iterable<STMAny>] ? ReturnIterable<Args>
+    : Args extends [STMAny] ? ReturnArray<Args>
+    : ReturnObject<Args>
+      : ReturnArray<Args>
+  }
+}
+
+/**
  * Runs all the provided transactional effects in sequence respecting the
  * structure provided in input.
  *
@@ -232,47 +295,7 @@ export const acquireUseRelease: {
  * @since 1.0.0
  * @category constructors
  */
-export const all: {
-  <R, E, A, T extends ReadonlyArray<STM<any, any, any>>>(
-    self: STM<R, E, A>,
-    ...args: T
-  ): STM<
-    R | T["length"] extends 0 ? never
-      : [T[number]] extends [{ [STMTypeId]: { _R: (_: never) => infer R } }] ? R
-      : never,
-    E | T["length"] extends 0 ? never
-      : [T[number]] extends [{ [STMTypeId]: { _E: (_: never) => infer E } }] ? E
-      : never,
-    readonly [
-      A,
-      ...(T["length"] extends 0 ? []
-        : Readonly<{ [K in keyof T]: [T[K]] extends [STM<any, any, infer A>] ? A : never }>)
-    ]
-  >
-  <T extends ReadonlyArray<STM<any, any, any>>>(
-    args: [...T]
-  ): STM<
-    T[number] extends never ? never
-      : [T[number]] extends [{ [STMTypeId]: { _R: (_: never) => infer R } }] ? R
-      : never,
-    T[number] extends never ? never
-      : [T[number]] extends [{ [STMTypeId]: { _E: (_: never) => infer E } }] ? E
-      : never,
-    T[number] extends never ? []
-      : Readonly<{ [K in keyof T]: [T[K]] extends [STM<any, any, infer A>] ? A : never }>
-  >
-  <T extends Readonly<{ [K: string]: STM<any, any, any> }>>(
-    args: T
-  ): STM<
-    keyof T extends never ? never
-      : [T[keyof T]] extends [{ [STMTypeId]: { _R: (_: never) => infer R } }] ? R
-      : never,
-    keyof T extends never ? never
-      : [T[keyof T]] extends [{ [STMTypeId]: { _E: (_: never) => infer E } }] ? E
-      : never,
-    Readonly<{ [K in keyof T]: [T[K]] extends [STM<any, any, infer A>] ? A : never }>
-  >
-} = stm.all
+export const all: All.Signature = stm.all
 
 /**
  * Maps the success value of this effect to the specified constant value.
@@ -368,15 +391,6 @@ export const collect: {
 } = stm.collect
 
 /**
- * Collects all the transactional effects in a collection, returning a single
- * transactional effect that produces a collection of values.
- *
- * @since 1.0.0
- * @category constructors
- */
-export const collectAll: <R, E, A>(iterable: Iterable<STM<R, E, A>>) => STM<R, E, Chunk.Chunk<A>> = stm.collectAll
-
-/**
  * Collects all the transactional effects, returning a single transactional
  * effect that produces `Unit`.
  *
@@ -386,7 +400,7 @@ export const collectAll: <R, E, A>(iterable: Iterable<STM<R, E, A>>) => STM<R, E
  * @since 1.0.0
  * @category constructors
  */
-export const collectAllDiscard: <R, E, A>(iterable: Iterable<STM<R, E, A>>) => STM<R, E, void> = stm.collectAllDiscard
+export const allDiscard: <R, E, A>(iterable: Iterable<STM<R, E, A>>) => STM<R, E, void> = stm.collectAllDiscard
 
 /**
  * Collects the first element of the `Iterable<A>` for which the effectual
@@ -586,8 +600,8 @@ export const fiberId: () => STM<never, never, FiberId.FiberId> = stm.fiberId
  * @category constructors
  */
 export const filter: {
-  <A, R, E>(predicate: (a: A) => STM<R, E, boolean>): (iterable: Iterable<A>) => STM<R, E, Chunk.Chunk<A>>
-  <A, R, E>(iterable: Iterable<A>, predicate: (a: A) => STM<R, E, boolean>): STM<R, E, Chunk.Chunk<A>>
+  <A, R, E>(predicate: (a: A) => STM<R, E, boolean>): (iterable: Iterable<A>) => STM<R, E, Array<A>>
+  <A, R, E>(iterable: Iterable<A>, predicate: (a: A) => STM<R, E, boolean>): STM<R, E, Array<A>>
 } = stm.filter
 
 /**
@@ -598,8 +612,8 @@ export const filter: {
  * @category constructors
  */
 export const filterNot: {
-  <A, R, E>(predicate: (a: A) => STM<R, E, boolean>): (iterable: Iterable<A>) => STM<R, E, Chunk.Chunk<A>>
-  <A, R, E>(iterable: Iterable<A>, predicate: (a: A) => STM<R, E, boolean>): STM<R, E, Chunk.Chunk<A>>
+  <A, R, E>(predicate: (a: A) => STM<R, E, boolean>): (iterable: Iterable<A>) => STM<R, E, Array<A>>
+  <A, R, E>(iterable: Iterable<A>, predicate: (a: A) => STM<R, E, boolean>): STM<R, E, Array<A>>
 } = stm.filterNot
 
 /**
@@ -781,8 +795,8 @@ export const matchSTM: {
  * @category traversing
  */
 export const forEach: {
-  <A, R, E, A2>(f: (a: A) => STM<R, E, A2>): (elements: Iterable<A>) => STM<R, E, Chunk.Chunk<A2>>
-  <A, R, E, A2>(elements: Iterable<A>, f: (a: A) => STM<R, E, A2>): STM<R, E, Chunk.Chunk<A2>>
+  <A, R, E, A2>(f: (a: A) => STM<R, E, A2>): (elements: Iterable<A>) => STM<R, E, Array<A2>>
+  <A, R, E, A2>(elements: Iterable<A>, f: (a: A) => STM<R, E, A2>): STM<R, E, Array<A2>>
 } = stm.forEach
 
 /**
@@ -1216,7 +1230,7 @@ export const loop: <Z, R, E, A>(
   cont: (z: Z) => boolean,
   inc: (z: Z) => Z,
   body: (z: Z) => STM<R, E, A>
-) => STM<R, E, Chunk.Chunk<A>> = stm.loop
+) => STM<R, E, Array<A>> = stm.loop
 
 /**
  * Loops with the specified transactional function purely for its
@@ -1442,15 +1456,8 @@ export const orTry: {
  * @category traversing
  */
 export const partition: {
-  <R, E, A, A2>(
-    f: (a: A) => STM<R, E, A2>
-  ): (
-    elements: Iterable<A>
-  ) => STM<R, never, readonly [Chunk.Chunk<E>, Chunk.Chunk<A2>]>
-  <R, E, A, A2>(
-    elements: Iterable<A>,
-    f: (a: A) => STM<R, E, A2>
-  ): STM<R, never, readonly [Chunk.Chunk<E>, Chunk.Chunk<A2>]>
+  <R, E, A, A2>(f: (a: A) => STM<R, E, A2>): (elements: Iterable<A>) => STM<R, never, readonly [Array<E>, Array<A2>]>
+  <R, E, A, A2>(elements: Iterable<A>, f: (a: A) => STM<R, E, A2>): STM<R, never, readonly [Array<E>, Array<A2>]>
 } = stm.partition
 
 /**
@@ -1656,8 +1663,8 @@ export const repeatWhile: {
  * @category constructors
  */
 export const replicate: {
-  (n: number): <R, E, A>(self: STM<R, E, A>) => Chunk.Chunk<STM<R, E, A>>
-  <R, E, A>(self: STM<R, E, A>, n: number): Chunk.Chunk<STM<R, E, A>>
+  (n: number): <R, E, A>(self: STM<R, E, A>) => Array<STM<R, E, A>>
+  <R, E, A>(self: STM<R, E, A>, n: number): Array<STM<R, E, A>>
 } = stm.replicate
 
 /**
@@ -1668,8 +1675,8 @@ export const replicate: {
  * @category constructors
  */
 export const replicateSTM: {
-  (n: number): <R, E, A>(self: STM<R, E, A>) => STM<R, E, Chunk.Chunk<A>>
-  <R, E, A>(self: STM<R, E, A>, n: number): STM<R, E, Chunk.Chunk<A>>
+  (n: number): <R, E, A>(self: STM<R, E, A>) => STM<R, E, Array<A>>
+  <R, E, A>(self: STM<R, E, A>, n: number): STM<R, E, Array<A>>
 } = stm.replicateSTM
 
 /**
@@ -1984,8 +1991,8 @@ export const unit: () => STM<never, never, void> = stm.unit
  * @category mutations
  */
 export const validateAll: {
-  <R, E, A, B>(f: (a: A) => STM<R, E, B>): (elements: Iterable<A>) => STM<R, Chunk.NonEmptyChunk<E>, Chunk.Chunk<B>>
-  <R, E, A, B>(elements: Iterable<A>, f: (a: A) => STM<R, E, B>): STM<R, Chunk.NonEmptyChunk<E>, Chunk.Chunk<B>>
+  <R, E, A, B>(f: (a: A) => STM<R, E, B>): (elements: Iterable<A>) => STM<R, [E, ...Array<E>], Array<B>>
+  <R, E, A, B>(elements: Iterable<A>, f: (a: A) => STM<R, E, B>): STM<R, [E, ...Array<E>], Array<B>>
 } = stm.validateAll
 
 /**
@@ -1996,8 +2003,8 @@ export const validateAll: {
  * @category mutations
  */
 export const validateFirst: {
-  <R, E, A, B>(f: (a: A) => STM<R, E, B>): (elements: Iterable<A>) => STM<R, Chunk.Chunk<E>, B>
-  <R, E, A, B>(elements: Iterable<A>, f: (a: A) => STM<R, E, B>): STM<R, Chunk.Chunk<E>, B>
+  <R, E, A, B>(f: (a: A) => STM<R, E, B>): (elements: Iterable<A>) => STM<R, Array<E>, B>
+  <R, E, A, B>(elements: Iterable<A>, f: (a: A) => STM<R, E, B>): STM<R, Array<E>, B>
 } = stm.validateFirst
 
 /**
@@ -2182,7 +2189,7 @@ export const Monad: monad.Monad<STMTypeLambda> = {
 export const SemiProduct: semiProduct.SemiProduct<STMTypeLambda> = {
   imap,
   product: zip,
-  productMany: (self, rest) => flatMap(self, (a) => map(collectAll(rest), (r) => [a, ...r]))
+  productMany: (self, rest) => flatMap(self, (a) => map(all(rest), (r) => [a, ...r]))
 }
 
 /**
@@ -2194,7 +2201,7 @@ export const Product: product_.Product<STMTypeLambda> = {
   imap,
   product: SemiProduct.product,
   productMany: SemiProduct.productMany,
-  productAll: (rest) => map(collectAll(rest), (x) => Array.from(x))
+  productAll: (rest) => map(all(rest), (x) => Array.from(x))
 }
 
 /**

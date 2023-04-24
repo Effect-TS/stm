@@ -283,7 +283,7 @@ describe.concurrent("TMap", () => {
         .map((i) => [new HashContainer(i), i] as const)
       const transaction = pipe(
         TMap.empty<HashContainer, number>(),
-        STM.tap((map) => STM.collectAll(entries.map((entry) => pipe(map, TMap.set(entry[0], entry[1]))))),
+        STM.tap((map) => STM.all(entries.map((entry) => pipe(map, TMap.set(entry[0], entry[1]))))),
         STM.flatMap(TMap.toReadonlyArray)
       )
       const result = yield* $(STM.commit(transaction))
@@ -431,7 +431,7 @@ describe.concurrent("TMap", () => {
         STM.commit,
         Effect.repeatN(999)
       )
-      yield* $(Effect.collectAllParDiscard(Array.from({ length: 2 }, () => effect)))
+      yield* $(Effect.allParDiscard(Array.from({ length: 2 }, () => effect)))
       const result = yield* $(pipe(map, TMap.get("a")))
       assert.deepStrictEqual(result, Option.some(2_000))
     }))

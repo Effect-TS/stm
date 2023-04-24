@@ -6,6 +6,7 @@ import { pipe } from "@effect/data/Function"
 import * as Hash from "@effect/data/Hash"
 import * as HashMap from "@effect/data/HashMap"
 import * as Option from "@effect/data/Option"
+import * as RA from "@effect/data/ReadonlyArray"
 import * as core from "@effect/stm/internal_effect_untraced/core"
 import * as stm from "@effect/stm/internal_effect_untraced/stm"
 import type * as Journal from "@effect/stm/internal_effect_untraced/stm/journal"
@@ -141,11 +142,11 @@ export const findSTM = Debug.dualWithTrace<
 export const findAll = Debug.dualWithTrace<
   <K, V, A>(
     pf: (key: K, value: V) => Option.Option<A>
-  ) => (self: TMap.TMap<K, V>) => STM.STM<never, never, Chunk.Chunk<A>>,
+  ) => (self: TMap.TMap<K, V>) => STM.STM<never, never, Array<A>>,
   <K, V, A>(
     self: TMap.TMap<K, V>,
     pf: (key: K, value: V) => Option.Option<A>
-  ) => STM.STM<never, never, Chunk.Chunk<A>>
+  ) => STM.STM<never, never, Array<A>>
 >(2, (trace, restore) =>
   (self, pf) =>
     findAllSTM(self, (key, value) => {
@@ -160,25 +161,28 @@ export const findAll = Debug.dualWithTrace<
 export const findAllSTM = Debug.dualWithTrace<
   <K, V, R, E, A>(
     pf: (key: K, value: V) => STM.STM<R, Option.Option<E>, A>
-  ) => (self: TMap.TMap<K, V>) => STM.STM<R, E, Chunk.Chunk<A>>,
+  ) => (self: TMap.TMap<K, V>) => STM.STM<R, E, Array<A>>,
   <K, V, R, E, A>(
     self: TMap.TMap<K, V>,
     pf: (key: K, value: V) => STM.STM<R, Option.Option<E>, A>
-  ) => STM.STM<R, E, Chunk.Chunk<A>>
+  ) => STM.STM<R, E, Array<A>>
 >(2, (trace, restore) =>
   <K, V, R, E, A>(
     self: TMap.TMap<K, V>,
     pf: (key: K, value: V) => STM.STM<R, Option.Option<E>, A>
   ) =>
-    reduceWithIndexSTM(self, Chunk.empty<A>(), (acc, value, key) =>
-      core.matchSTM(
-        restore(pf)(key, value),
-        Option.match(
-          () => core.succeed(acc),
-          core.fail
-        ),
-        (a) => core.succeed(Chunk.append(acc, a))
-      )).traced(trace))
+    core.map(
+      reduceWithIndexSTM(self, Chunk.empty<A>(), (acc, value, key) =>
+        core.matchSTM(
+          restore(pf)(key, value),
+          Option.match(
+            () => core.succeed(acc),
+            core.fail
+          ),
+          (a) => core.succeed(Chunk.append(acc, a))
+        )),
+      (a) => Array.from(a)
+    ).traced(trace))
 
 /** @internal */
 export const forEach = Debug.dualWithTrace<
@@ -213,7 +217,7 @@ export const get = Debug.dualWithTrace<
     core.effect<never, Option.Option<V>>((journal) => {
       const buckets = tRef.unsafeGet(self.tBuckets, journal)
       const index = indexOf(key, buckets.chunk.length)
-      const bucket = tRef.unsafeGet(Chunk.unsafeGet(buckets.chunk, index), journal)
+      const bucket = tRef.unsafeGet(buckets.chunk[index], journal)
       return pipe(
         Chunk.findFirst(bucket, (entry) => Equal.equals(entry[0])(key)),
         Option.map((entry) => entry[1])
@@ -245,8 +249,8 @@ export const isEmpty = Debug.methodWithTrace((trace) =>
 
 /** @internal */
 export const keys = Debug.methodWithTrace((trace) =>
-  <K, V>(self: TMap.TMap<K, V>): STM.STM<never, never, Chunk.Chunk<K>> =>
-    core.map(toChunk(self), Chunk.map((entry) => entry[0])).traced(trace)
+  <K, V>(self: TMap.TMap<K, V>): STM.STM<never, never, Array<K>> =>
+    core.map(toArray(self), RA.map((entry) => entry[0])).traced(trace)
 )
 
 /** @internal */
@@ -309,7 +313,7 @@ export const reduceWithIndex = Debug.dualWithTrace<
         let result = zero
         let index = 0
         while (index < buckets.chunk.length) {
-          const bucket = Chunk.unsafeGet(buckets.chunk, index)
+          const bucket = buckets.chunk[index]
           const items = tRef.unsafeGet(bucket, journal)
           result = Chunk.reduce(items, result, (acc, entry) => restore(f)(acc, entry[1], entry[0]))
           index = index + 1
@@ -332,7 +336,7 @@ export const reduceWithIndexSTM = Debug.dualWithTrace<
 >(3, (trace, restore) =>
   (self, zero, f) =>
     core.flatMap(
-      toChunk(self),
+      toArray(self),
       stm.reduce(zero, (acc, entry) => restore(f)(acc, entry[1], entry[0]))
     ).traced(trace))
 
@@ -345,11 +349,11 @@ export const remove = Debug.dualWithTrace<
     core.effect<never, void>((journal) => {
       const buckets = tRef.unsafeGet(self.tBuckets, journal)
       const index = indexOf(key, buckets.chunk.length)
-      const bucket = tRef.unsafeGet(Chunk.unsafeGet(buckets.chunk, index), journal)
+      const bucket = tRef.unsafeGet(buckets.chunk[index], journal)
       const [toRemove, toRetain] = Chunk.partition(bucket, (entry) => Equal.equals(entry[1], key))
       if (Chunk.isNonEmpty(toRemove)) {
         const currentSize = tRef.unsafeGet(self.tSize, journal)
-        tRef.unsafeSet(Chunk.unsafeGet(buckets.chunk, index), toRetain, journal)
+        tRef.unsafeSet(buckets.chunk[index], toRetain, journal)
         tRef.unsafeSet(self.tSize, currentSize - 1, journal)
       }
     }).traced(trace))
@@ -366,11 +370,11 @@ export const removeAll = Debug.dualWithTrace<
       while ((next = iterator.next()) && !next.done) {
         const buckets = tRef.unsafeGet(self.tBuckets, journal)
         const index = indexOf(next.value, buckets.chunk.length)
-        const bucket = tRef.unsafeGet(Chunk.unsafeGet(buckets.chunk, index), journal)
+        const bucket = tRef.unsafeGet(buckets.chunk[index], journal)
         const [toRemove, toRetain] = Chunk.partition(bucket, (entry) => Equal.equals(next.value)(entry[0]))
         if (Chunk.isNonEmpty(toRemove)) {
           const currentSize = tRef.unsafeGet(self.tSize, journal)
-          tRef.unsafeSet(Chunk.unsafeGet(buckets.chunk, index), toRetain, journal)
+          tRef.unsafeSet(buckets.chunk[index], toRetain, journal)
           tRef.unsafeSet(self.tSize, currentSize - 1, journal)
         }
       }
@@ -380,24 +384,24 @@ export const removeAll = Debug.dualWithTrace<
 export const removeIf = Debug.dualWithTrace<
   <K, V>(
     predicate: (key: K, value: V) => boolean
-  ) => (self: TMap.TMap<K, V>) => STM.STM<never, never, Chunk.Chunk<readonly [K, V]>>,
+  ) => (self: TMap.TMap<K, V>) => STM.STM<never, never, Array<readonly [K, V]>>,
   <K, V>(
     self: TMap.TMap<K, V>,
     predicate: (key: K, value: V) => boolean
-  ) => STM.STM<never, never, Chunk.Chunk<readonly [K, V]>>
+  ) => STM.STM<never, never, Array<readonly [K, V]>>
 >(2, (trace, restore) =>
   <K, V>(
     self: TMap.TMap<K, V>,
     predicate: (key: K, value: V) => boolean
   ) =>
-    core.effect<never, Chunk.Chunk<readonly [K, V]>>((journal) => {
+    core.effect<never, Array<readonly [K, V]>>((journal) => {
       const buckets = tRef.unsafeGet(self.tBuckets, journal)
       const capacity = buckets.chunk.length
       const removed: Array<readonly [K, V]> = []
       let index = 0
       let newSize = 0
       while (index < capacity) {
-        const bucket = tRef.unsafeGet(Chunk.unsafeGet(buckets.chunk, index), journal)
+        const bucket = tRef.unsafeGet(buckets.chunk[index], journal)
         const iterator = bucket[Symbol.iterator]()
         let next: IteratorResult<readonly [K, V], any>
         let newBucket = Chunk.empty<readonly [K, V]>()
@@ -409,11 +413,11 @@ export const removeIf = Debug.dualWithTrace<
             removed.push(next.value)
           }
         }
-        tRef.unsafeSet(Chunk.unsafeGet(buckets.chunk, index), newBucket, journal)
+        tRef.unsafeSet(buckets.chunk[index], newBucket, journal)
         index = index + 1
       }
       tRef.unsafeSet(self.tSize, newSize, journal)
-      return Chunk.unsafeFromArray(removed)
+      return removed
     }).traced(trace))
 
 /** @internal */
@@ -430,7 +434,7 @@ export const removeIfDiscard = Debug.dualWithTrace<
         let index = 0
         let newSize = 0
         while (index < capacity) {
-          const bucket = tRef.unsafeGet(Chunk.unsafeGet(buckets.chunk, index), journal)
+          const bucket = tRef.unsafeGet(buckets.chunk[index], journal)
           const iterator = bucket[Symbol.iterator]()
           let next: IteratorResult<readonly [K, V], any>
           let newBucket = Chunk.empty<readonly [K, V]>()
@@ -440,7 +444,7 @@ export const removeIfDiscard = Debug.dualWithTrace<
               newSize = newSize + 1
             }
           }
-          tRef.unsafeSet(Chunk.unsafeGet(buckets.chunk, index), newBucket, journal)
+          tRef.unsafeSet(buckets.chunk[index], newBucket, journal)
           index = index + 1
         }
         tRef.unsafeSet(self.tSize, newSize, journal)
@@ -451,11 +455,11 @@ export const removeIfDiscard = Debug.dualWithTrace<
 export const retainIf = Debug.dualWithTrace<
   <K, V>(
     predicate: (key: K, value: V) => boolean
-  ) => (self: TMap.TMap<K, V>) => STM.STM<never, never, Chunk.Chunk<readonly [K, V]>>,
+  ) => (self: TMap.TMap<K, V>) => STM.STM<never, never, Array<readonly [K, V]>>,
   <K, V>(
     self: TMap.TMap<K, V>,
     predicate: (key: K, value: V) => boolean
-  ) => STM.STM<never, never, Chunk.Chunk<readonly [K, V]>>
+  ) => STM.STM<never, never, Array<readonly [K, V]>>
 >(
   2,
   (trace, restore) => (self, predicate) => removeIf(self, (key, value) => !restore(predicate)(key, value)).traced(trace)
@@ -484,7 +488,7 @@ export const set = Debug.dualWithTrace<
       const newBuckets = Array.from({ length: newCapacity }, () => Chunk.empty<readonly [K, V]>())
       let index = 0
       while (index < capacity) {
-        const pairs = tRef.unsafeGet(Chunk.unsafeGet(buckets.chunk, index), journal)
+        const pairs = tRef.unsafeGet(buckets.chunk[index], journal)
         const iterator = pairs[Symbol.iterator]()
         let next: IteratorResult<readonly [K, V], any>
         while ((next = iterator.next()) && !next.done) {
@@ -503,23 +507,21 @@ export const set = Debug.dualWithTrace<
         newArray[index] = new tRef.TRefImpl(newBuckets[index])
         index = index + 1
       }
-      const newTArray: TArray.TArray<Chunk.Chunk<readonly [K, V]>> = new tArray.TArrayImpl(
-        Chunk.unsafeFromArray(newArray)
-      )
+      const newTArray: TArray.TArray<Chunk.Chunk<readonly [K, V]>> = new tArray.TArrayImpl(newArray)
       tRef.unsafeSet(self.tBuckets, newTArray, journal)
     }
     return core.effect<never, void>((journal) => {
       const buckets = tRef.unsafeGet(self.tBuckets, journal)
       const capacity = buckets.chunk.length
       const index = indexOf(key, capacity)
-      const bucket = tRef.unsafeGet(Chunk.unsafeGet(buckets.chunk, index), journal)
+      const bucket = tRef.unsafeGet(buckets.chunk[index], journal)
       const shouldUpdate = Chunk.some(bucket, (entry) => Equal.equals(key)(entry[0]))
       if (shouldUpdate) {
         const newBucket = Chunk.map(bucket, (entry) =>
           Equal.equals(key)(entry[0]) ?
             [key, value] as const :
             entry)
-        tRef.unsafeSet(Chunk.unsafeGet(buckets.chunk, index), newBucket, journal)
+        tRef.unsafeSet(buckets.chunk[index], newBucket, journal)
       } else {
         const newSize = tRef.unsafeGet(self.tSize, journal) + 1
         tRef.unsafeSet(self.tSize, newSize, journal)
@@ -527,7 +529,7 @@ export const set = Debug.dualWithTrace<
           resize(journal, buckets)
         } else {
           const newBucket = Chunk.prepend(bucket, [key, value] as const)
-          tRef.unsafeSet(Chunk.unsafeGet(buckets.chunk, index), newBucket, journal)
+          tRef.unsafeSet(buckets.chunk[index], newBucket, journal)
         }
       }
     }).traced(trace)
@@ -566,7 +568,7 @@ export const takeFirst = Debug.dualWithTrace<
         let result: Option.Option<A> = Option.none()
         let index = 0
         while (index < capacity && Option.isNone(result)) {
-          const bucket = tRef.unsafeGet(Chunk.unsafeGet(buckets.chunk, index), journal)
+          const bucket = tRef.unsafeGet(buckets.chunk[index], journal)
           const recreate = Chunk.some(bucket, (entry) => Option.isSome(pf(entry[0], entry[1])))
           if (recreate) {
             const iterator = bucket[Symbol.iterator]()
@@ -580,7 +582,7 @@ export const takeFirst = Debug.dualWithTrace<
                 newBucket = Chunk.prepend(newBucket, next.value)
               }
             }
-            tRef.unsafeSet(Chunk.unsafeGet(buckets.chunk, index), newBucket, journal)
+            tRef.unsafeSet(buckets.chunk[index], newBucket, journal)
           }
           index = index + 1
         }
@@ -614,22 +616,22 @@ export const takeFirstSTM = Debug.dualWithTrace<
 export const takeSome = Debug.dualWithTrace<
   <K, V, A>(
     pf: (key: K, value: V) => Option.Option<A>
-  ) => (self: TMap.TMap<K, V>) => STM.STM<never, never, Chunk.NonEmptyChunk<A>>,
+  ) => (self: TMap.TMap<K, V>) => STM.STM<never, never, RA.NonEmptyArray<A>>,
   <K, V, A>(
     self: TMap.TMap<K, V>,
     pf: (key: K, value: V) => Option.Option<A>
-  ) => STM.STM<never, never, Chunk.NonEmptyChunk<A>>
+  ) => STM.STM<never, never, RA.NonEmptyArray<A>>
 >(2, (trace, restore) =>
   <K, V, A>(self: TMap.TMap<K, V>, pf: (key: K, value: V) => Option.Option<A>) =>
     pipe(
-      core.effect<never, Option.Option<Chunk.NonEmptyChunk<A>>>((journal) => {
+      core.effect<never, Option.Option<RA.NonEmptyArray<A>>>((journal) => {
         const buckets = tRef.unsafeGet(self.tBuckets, journal)
         const capacity = buckets.chunk.length
         const builder: Array<A> = []
         let newSize = 0
         let index = 0
         while (index < capacity) {
-          const bucket = tRef.unsafeGet(Chunk.unsafeGet(buckets.chunk, index), journal)
+          const bucket = tRef.unsafeGet(buckets.chunk[index], journal)
           const recreate = Chunk.some(bucket, (entry) => Option.isSome(restore(pf)(entry[0], entry[1])))
           if (recreate) {
             const iterator = bucket[Symbol.iterator]()
@@ -644,7 +646,7 @@ export const takeSome = Debug.dualWithTrace<
                 newSize = newSize + 1
               }
             }
-            tRef.unsafeSet(Chunk.unsafeGet(buckets.chunk, index), newBucket, journal)
+            tRef.unsafeSet(buckets.chunk[index], newBucket, journal)
           } else {
             newSize = newSize + bucket.length
           }
@@ -652,7 +654,7 @@ export const takeSome = Debug.dualWithTrace<
         }
         tRef.unsafeSet(self.tSize, newSize, journal)
         if (builder.length > 0) {
-          return Option.some(Chunk.unsafeFromArray(builder) as Chunk.NonEmptyChunk<A>)
+          return Option.some(builder as RA.NonEmptyArray<A>)
         }
         return Option.none()
       }),
@@ -667,11 +669,11 @@ export const takeSome = Debug.dualWithTrace<
 export const takeSomeSTM = Debug.dualWithTrace<
   <K, V, R, E, A>(
     pf: (key: K, value: V) => STM.STM<R, Option.Option<E>, A>
-  ) => (self: TMap.TMap<K, V>) => STM.STM<R, E, Chunk.NonEmptyChunk<A>>,
+  ) => (self: TMap.TMap<K, V>) => STM.STM<R, E, RA.NonEmptyArray<A>>,
   <K, V, R, E, A>(
     self: TMap.TMap<K, V>,
     pf: (key: K, value: V) => STM.STM<R, Option.Option<E>, A>
-  ) => STM.STM<R, E, Chunk.NonEmptyChunk<A>>
+  ) => STM.STM<R, E, RA.NonEmptyArray<A>>
 >(2, (trace, restore) =>
   <K, V, R, E, A>(
     self: TMap.TMap<K, V>,
@@ -683,7 +685,7 @@ export const takeSomeSTM = Debug.dualWithTrace<
         (key, value) => core.map(restore(pf)(key, value), (a) => [key, a] as const)
       ),
       core.map((chunk) =>
-        Chunk.isNonEmpty(chunk) ?
+        RA.isNonEmptyArray(chunk) ?
           Option.some(chunk) :
           Option.none()
       ),
@@ -694,26 +696,26 @@ export const takeSomeSTM = Debug.dualWithTrace<
       ),
       core.flatMap((entries) =>
         stm.as(
-          removeAll(self, Chunk.map(entries, (entry) => entry[0])),
-          Chunk.map(entries, (entry) => entry[1]) as Chunk.NonEmptyChunk<A>
+          removeAll(self, entries.map((entry) => entry[0])),
+          RA.map(entries, (entry) => entry[1]) as RA.NonEmptyArray<A>
         )
       )
     ).traced(trace))
 
 /** @internal */
-export const toChunk = Debug.methodWithTrace((trace) =>
-  <K, V>(self: TMap.TMap<K, V>): STM.STM<never, never, Chunk.Chunk<readonly [K, V]>> =>
-    core.effect<never, Chunk.Chunk<readonly [K, V]>>((journal) => {
+export const toArray = Debug.methodWithTrace((trace) =>
+  <K, V>(self: TMap.TMap<K, V>): STM.STM<never, never, Array<readonly [K, V]>> =>
+    core.effect<never, Array<readonly [K, V]>>((journal) => {
       const buckets = tRef.unsafeGet(self.tBuckets, journal)
       const capacity = buckets.chunk.length
       const builder: Array<readonly [K, V]> = []
       let index = 0
       while (index < capacity) {
-        const bucket = Chunk.unsafeGet(buckets.chunk, index)
+        const bucket = buckets.chunk[index]
         builder.push(...tRef.unsafeGet(bucket, journal))
         index = index + 1
       }
-      return Chunk.unsafeFromArray(builder)
+      return builder
     }).traced(trace)
 )
 
@@ -763,7 +765,7 @@ export const transform = Debug.dualWithTrace<
         let newSize = 0
         let index = 0
         while (index < capacity) {
-          const bucket = Chunk.unsafeGet(buckets.chunk, index)
+          const bucket = buckets.chunk[index]
           const pairs = tRef.unsafeGet(bucket, journal)
           const iterator = pairs[Symbol.iterator]()
           let next: IteratorResult<readonly [K, V], any>
@@ -780,7 +782,7 @@ export const transform = Debug.dualWithTrace<
         }
         index = 0
         while (index < capacity) {
-          tRef.unsafeSet(Chunk.unsafeGet(buckets.chunk, index), newBuckets[index], journal)
+          tRef.unsafeSet(buckets.chunk[index], newBuckets[index], journal)
           index = index + 1
         }
         tRef.unsafeSet(self.tSize, newSize, journal)
@@ -799,7 +801,7 @@ export const transformSTM = Debug.dualWithTrace<
     <K, V, R, E>(self: TMap.TMap<K, V>, f: (key: K, value: V) => STM.STM<R, E, readonly [K, V]>) =>
       pipe(
         core.flatMap(
-          toChunk(self),
+          toArray(self),
           stm.forEach((entry) => restore(f)(entry[0], entry[1]))
         ),
         core.flatMap((newData) =>
@@ -820,7 +822,7 @@ export const transformSTM = Debug.dualWithTrace<
             }
             let index = 0
             while (index < capacity) {
-              tRef.unsafeSet(Chunk.unsafeGet(buckets.chunk, index), newBuckets[index], journal)
+              tRef.unsafeSet(buckets.chunk[index], newBuckets[index], journal)
               index = index + 1
             }
             tRef.unsafeSet(self.tSize, newSize, journal)
@@ -870,6 +872,6 @@ export const updateWith = Debug.dualWithTrace<
 
 /** @internal */
 export const values = Debug.methodWithTrace((trace) =>
-  <K, V>(self: TMap.TMap<K, V>): STM.STM<never, never, Chunk.Chunk<V>> =>
-    core.map(toChunk(self), Chunk.map((entry) => entry[1])).traced(trace)
+  <K, V>(self: TMap.TMap<K, V>): STM.STM<never, never, Array<V>> =>
+    core.map(toArray(self), RA.map((entry) => entry[1])).traced(trace)
 )

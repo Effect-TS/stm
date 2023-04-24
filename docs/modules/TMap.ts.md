@@ -116,7 +116,7 @@ Collects all bindings into a `Chunk`.
 **Signature**
 
 ```ts
-export declare const toChunk: <K, V>(self: TMap<K, V>) => STM.STM<never, never, Chunk.Chunk<readonly [K, V]>>
+export declare const toChunk: <K, V>(self: TMap<K, V>) => STM.STM<never, never, (readonly [K, V])[]>
 ```
 
 Added in v1.0.0
@@ -184,8 +184,8 @@ the provided function to extract values out them.
 
 ```ts
 export declare const findAll: {
-  <K, V, A>(pf: (key: K, value: V) => Option.Option<A>): (self: TMap<K, V>) => STM.STM<never, never, Chunk.Chunk<A>>
-  <K, V, A>(self: TMap<K, V>, pf: (key: K, value: V) => Option.Option<A>): STM.STM<never, never, Chunk.Chunk<A>>
+  <K, V, A>(pf: (key: K, value: V) => Option.Option<A>): (self: TMap<K, V>) => STM.STM<never, never, A[]>
+  <K, V, A>(self: TMap<K, V>, pf: (key: K, value: V) => Option.Option<A>): STM.STM<never, never, A[]>
 }
 ```
 
@@ -200,14 +200,8 @@ the provided effectful function to extract values out of them..
 
 ```ts
 export declare const findAllSTM: {
-  <K, V, R, E, A>(pf: (key: K, value: V) => STM.STM<R, Option.Option<E>, A>): (
-    self: TMap<K, V>
-  ) => STM.STM<R, E, Chunk.Chunk<A>>
-  <K, V, R, E, A>(self: TMap<K, V>, pf: (key: K, value: V) => STM.STM<R, Option.Option<E>, A>): STM.STM<
-    R,
-    E,
-    Chunk.Chunk<A>
-  >
+  <K, V, R, E, A>(pf: (key: K, value: V) => STM.STM<R, Option.Option<E>, A>): (self: TMap<K, V>) => STM.STM<R, E, A[]>
+  <K, V, R, E, A>(self: TMap<K, V>, pf: (key: K, value: V) => STM.STM<R, Option.Option<E>, A>): STM.STM<R, E, A[]>
 }
 ```
 
@@ -303,7 +297,7 @@ Collects all keys stored in map.
 **Signature**
 
 ```ts
-export declare const keys: <K, V>(self: TMap<K, V>) => STM.STM<never, never, Chunk.Chunk<K>>
+export declare const keys: <K, V>(self: TMap<K, V>) => STM.STM<never, never, K[]>
 ```
 
 Added in v1.0.0
@@ -315,7 +309,7 @@ Collects all values stored in map.
 **Signature**
 
 ```ts
-export declare const values: <K, V>(self: TMap<K, V>) => STM.STM<never, never, Chunk.Chunk<V>>
+export declare const values: <K, V>(self: TMap<K, V>) => STM.STM<never, never, V[]>
 ```
 
 Added in v1.0.0
@@ -480,14 +474,8 @@ Removes bindings matching predicate and returns the removed entries.
 
 ```ts
 export declare const removeIf: {
-  <K, V>(predicate: (key: K, value: V) => boolean): (
-    self: TMap<K, V>
-  ) => STM.STM<never, never, Chunk.Chunk<readonly [K, V]>>
-  <K, V>(self: TMap<K, V>, predicate: (key: K, value: V) => boolean): STM.STM<
-    never,
-    never,
-    Chunk.Chunk<readonly [K, V]>
-  >
+  <K, V>(predicate: (key: K, value: V) => boolean): (self: TMap<K, V>) => STM.STM<never, never, (readonly [K, V])[]>
+  <K, V>(self: TMap<K, V>, predicate: (key: K, value: V) => boolean): STM.STM<never, never, (readonly [K, V])[]>
 }
 ```
 
@@ -516,14 +504,8 @@ Retains bindings matching predicate and returns removed bindings.
 
 ```ts
 export declare const retainIf: {
-  <K, V>(predicate: (key: K, value: V) => boolean): (
-    self: TMap<K, V>
-  ) => STM.STM<never, never, Chunk.Chunk<readonly [K, V]>>
-  <K, V>(self: TMap<K, V>, predicate: (key: K, value: V) => boolean): STM.STM<
-    never,
-    never,
-    Chunk.Chunk<readonly [K, V]>
-  >
+  <K, V>(predicate: (key: K, value: V) => boolean): (self: TMap<K, V>) => STM.STM<never, never, (readonly [K, V])[]>
+  <K, V>(self: TMap<K, V>, predicate: (key: K, value: V) => boolean): STM.STM<never, never, (readonly [K, V])[]>
 }
 ```
 
@@ -612,10 +594,8 @@ Takes all matching values, or retries until there is at least one.
 
 ```ts
 export declare const takeSome: {
-  <K, V, A>(pf: (key: K, value: V) => Option.Option<A>): (
-    self: TMap<K, V>
-  ) => STM.STM<never, never, Chunk.NonEmptyChunk<A>>
-  <K, V, A>(self: TMap<K, V>, pf: (key: K, value: V) => Option.Option<A>): STM.STM<never, never, Chunk.NonEmptyChunk<A>>
+  <K, V, A>(pf: (key: K, value: V) => Option.Option<A>): (self: TMap<K, V>) => STM.STM<never, never, [A, ...A[]]>
+  <K, V, A>(self: TMap<K, V>, pf: (key: K, value: V) => Option.Option<A>): STM.STM<never, never, [A, ...A[]]>
 }
 ```
 
@@ -631,11 +611,11 @@ Takes all matching values, or retries until there is at least one.
 export declare const takeSomeSTM: {
   <K, V, R, E, A>(pf: (key: K, value: V) => STM.STM<R, Option.Option<E>, A>): (
     self: TMap<K, V>
-  ) => STM.STM<R, E, Chunk.NonEmptyChunk<A>>
+  ) => STM.STM<R, E, [A, ...A[]]>
   <K, V, R, E, A>(self: TMap<K, V>, pf: (key: K, value: V) => STM.STM<R, Option.Option<E>, A>): STM.STM<
     R,
     E,
-    Chunk.NonEmptyChunk<A>
+    [A, ...A[]]
   >
 }
 ```

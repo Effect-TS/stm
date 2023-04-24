@@ -1,4 +1,3 @@
-import * as Chunk from "@effect/data/Chunk"
 import * as Debug from "@effect/data/Debug"
 import { pipe } from "@effect/data/Function"
 import * as Option from "@effect/data/Option"
@@ -208,13 +207,13 @@ export const take = Debug.methodWithTrace((trace) =>
 
 /** @internal */
 export const takeAll = Debug.methodWithTrace((trace) =>
-  <A>(self: TPriorityQueue.TPriorityQueue<A>): STM.STM<never, never, Chunk.Chunk<A>> =>
+  <A>(self: TPriorityQueue.TPriorityQueue<A>): STM.STM<never, never, Array<A>> =>
     tRef.modify(self.ref, (map) => {
       const builder: Array<A> = []
       for (const entry of map) {
         builder.push(...entry[1])
       }
-      return [Chunk.unsafeFromArray(builder), SortedMap.empty(SortedMap.getOrder(map))]
+      return [builder, SortedMap.empty(SortedMap.getOrder(map))]
     }).traced(trace)
 )
 
@@ -245,8 +244,8 @@ export const takeOption = Debug.methodWithTrace((trace) =>
 
 /** @internal */
 export const takeUpTo = Debug.dualWithTrace<
-  (n: number) => <A>(self: TPriorityQueue.TPriorityQueue<A>) => STM.STM<never, never, Chunk.Chunk<A>>,
-  <A>(self: TPriorityQueue.TPriorityQueue<A>, n: number) => STM.STM<never, never, Chunk.Chunk<A>>
+  (n: number) => <A>(self: TPriorityQueue.TPriorityQueue<A>) => STM.STM<never, never, Array<A>>,
+  <A>(self: TPriorityQueue.TPriorityQueue<A>, n: number) => STM.STM<never, never, Array<A>>
 >(2, (trace) =>
   <A>(self: TPriorityQueue.TPriorityQueue<A>, n: number) =>
     tRef.modify(self.ref, (map) => {
@@ -266,18 +265,18 @@ export const takeUpTo = Debug.dualWithTrace<
         }
         index = index + left.length
       }
-      return [Chunk.unsafeFromArray(builder), updated]
+      return [builder, updated]
     }).traced(trace))
 
 /** @internal */
 export const toChunk = Debug.methodWithTrace((trace) =>
-  <A>(self: TPriorityQueue.TPriorityQueue<A>): STM.STM<never, never, Chunk.Chunk<A>> =>
+  <A>(self: TPriorityQueue.TPriorityQueue<A>): STM.STM<never, never, Array<A>> =>
     tRef.modify(self.ref, (map) => {
       const builder: Array<A> = []
       for (const entry of map) {
         builder.push(...entry[1])
       }
-      return [Chunk.unsafeFromArray(builder), map]
+      return [builder, map]
     }).traced(trace)
 )
 

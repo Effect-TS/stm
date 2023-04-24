@@ -3,6 +3,7 @@ import * as Debug from "@effect/data/Debug"
 import { pipe } from "@effect/data/Function"
 import * as Option from "@effect/data/Option"
 import type { Predicate } from "@effect/data/Predicate"
+import * as RA from "@effect/data/ReadonlyArray"
 import * as core from "@effect/stm/internal_effect_untraced/core"
 import * as OpCodes from "@effect/stm/internal_effect_untraced/opCodes/strategy"
 import * as stm from "@effect/stm/internal_effect_untraced/stm"
@@ -254,7 +255,7 @@ class TQueueImpl<A> implements TQueue.TQueue<A> {
     )
   }
 
-  takeAll(): STM.STM<never, never, Chunk.Chunk<A>> {
+  takeAll(): STM.STM<never, never, Array<A>> {
     return Debug.bodyWithTrace((trace) =>
       core.withSTMRuntime((runtime) => {
         const queue = tRef.unsafeGet(this.ref, runtime.journal)
@@ -262,12 +263,12 @@ class TQueueImpl<A> implements TQueue.TQueue<A> {
           return core.interruptAs(runtime.fiberId)
         }
         tRef.unsafeSet(this.ref, [], runtime.journal)
-        return core.succeed(Chunk.unsafeFromArray(queue))
+        return core.succeed(queue)
       }).traced(trace)
     )
   }
 
-  takeUpTo(max: number): STM.STM<never, never, Chunk.Chunk<A>> {
+  takeUpTo(max: number): STM.STM<never, never, Array<A>> {
     return Debug.bodyWithTrace((trace) =>
       core.withSTMRuntime((runtime) => {
         const queue = tRef.unsafeGet(this.ref, runtime.journal)
@@ -276,7 +277,7 @@ class TQueueImpl<A> implements TQueue.TQueue<A> {
         }
         const [toTake, remaining] = Chunk.splitAt(Chunk.unsafeFromArray(queue), max)
         tRef.unsafeSet<Array<A> | undefined>(this.ref, Array.from(remaining), runtime.journal)
-        return core.succeed(toTake)
+        return core.succeed(Array.from(toTake))
       }).traced(trace)
     )
   }
@@ -359,7 +360,7 @@ export const peekOption = Debug.methodWithTrace((trace) =>
 /** @internal */
 export const poll = Debug.methodWithTrace((trace) =>
   <A>(self: TQueue.TDequeue<A>): STM.STM<never, never, Option.Option<A>> =>
-    pipe(self.takeUpTo(1), core.map(Chunk.head)).traced(trace)
+    pipe(self.takeUpTo(1), core.map(RA.head)).traced(trace)
 )
 
 /** @internal */
@@ -397,17 +398,17 @@ export const take = Debug.methodWithTrace((trace) =>
 
 /** @internal */
 export const takeAll = Debug.methodWithTrace((trace) =>
-  <A>(self: TQueue.TDequeue<A>): STM.STM<never, never, Chunk.Chunk<A>> => self.takeAll().traced(trace)
+  <A>(self: TQueue.TDequeue<A>): STM.STM<never, never, Array<A>> => self.takeAll().traced(trace)
 )
 
 /** @internal */
 export const takeBetween = Debug.dualWithTrace<
-  (min: number, max: number) => <A>(self: TQueue.TDequeue<A>) => STM.STM<never, never, Chunk.Chunk<A>>,
-  <A>(self: TQueue.TDequeue<A>, min: number, max: number) => STM.STM<never, never, Chunk.Chunk<A>>
+  (min: number, max: number) => <A>(self: TQueue.TDequeue<A>) => STM.STM<never, never, Array<A>>,
+  <A>(self: TQueue.TDequeue<A>, min: number, max: number) => STM.STM<never, never, Array<A>>
 >(
   3,
   (trace) =>
-    <A>(self: TQueue.TDequeue<A>, min: number, max: number): STM.STM<never, never, Chunk.Chunk<A>> =>
+    <A>(self: TQueue.TDequeue<A>, min: number, max: number): STM.STM<never, never, Array<A>> =>
       stm.suspend(() => {
         const takeRemainder = (
           min: number,
@@ -424,7 +425,7 @@ export const takeBetween = Debug.dualWithTrace<
               if (remaining === 1) {
                 return pipe(
                   self.take(),
-                  core.map((a) => pipe(acc, Chunk.concat(taken), Chunk.append(a)))
+                  core.map((a) => pipe(acc, Chunk.concat(Chunk.unsafeFromArray(taken)), Chunk.append(a)))
                 )
               }
               if (remaining > 1) {
@@ -434,29 +435,29 @@ export const takeBetween = Debug.dualWithTrace<
                     takeRemainder(
                       remaining - 1,
                       max - taken.length - 1,
-                      pipe(acc, Chunk.concat(taken), Chunk.append(a))
+                      pipe(acc, Chunk.concat(Chunk.unsafeFromArray(taken)), Chunk.append(a))
                     )
                   )
                 )
               }
-              return core.succeed(pipe(acc, Chunk.concat(taken)))
+              return core.succeed(pipe(acc, Chunk.concat(Chunk.unsafeFromArray(taken))))
             })
           )
         }
-        return takeRemainder(min, max, Chunk.empty<A>())
+        return core.map(takeRemainder(min, max, Chunk.empty<A>()), (c) => Array.from(c))
       }).traced(trace)
 )
 
 /** @internal */
 export const takeN = Debug.dualWithTrace<
-  (n: number) => <A>(self: TQueue.TDequeue<A>) => STM.STM<never, never, Chunk.Chunk<A>>,
-  <A>(self: TQueue.TDequeue<A>, n: number) => STM.STM<never, never, Chunk.Chunk<A>>
+  (n: number) => <A>(self: TQueue.TDequeue<A>) => STM.STM<never, never, Array<A>>,
+  <A>(self: TQueue.TDequeue<A>, n: number) => STM.STM<never, never, Array<A>>
 >(2, (trace) => (self, n) => pipe(self, takeBetween(n, n)).traced(trace))
 
 /** @internal */
 export const takeUpTo = Debug.dualWithTrace<
-  (max: number) => <A>(self: TQueue.TDequeue<A>) => STM.STM<never, never, Chunk.Chunk<A>>,
-  <A>(self: TQueue.TDequeue<A>, max: number) => STM.STM<never, never, Chunk.Chunk<A>>
+  (max: number) => <A>(self: TQueue.TDequeue<A>) => STM.STM<never, never, Array<A>>,
+  <A>(self: TQueue.TDequeue<A>, max: number) => STM.STM<never, never, Array<A>>
 >(2, (trace) => (self, max) => self.takeUpTo(max).traced(trace))
 
 /** @internal */

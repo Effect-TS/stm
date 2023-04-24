@@ -1,4 +1,3 @@
-import type * as Chunk from "@effect/data/Chunk"
 import * as Context from "@effect/data/Context"
 import * as Debug from "@effect/data/Debug"
 import { pipe } from "@effect/data/Function"
@@ -50,7 +49,7 @@ const withState = <A>(
 const shuffleWith = <A>(
   iterable: Iterable<A>,
   nextIntBounded: (n: number) => STM.STM<never, never, number>
-): STM.STM<never, never, Chunk.Chunk<A>> => {
+): STM.STM<never, never, Array<A>> => {
   const swap = (buffer: TArray.TArray<A>, index1: number, index2: number): STM.STM<never, never, void> =>
     pipe(
       buffer,
@@ -78,7 +77,7 @@ const shuffleWith = <A>(
       return pipe(
         array,
         stm.forEachDiscard((n) => pipe(nextIntBounded(n), core.flatMap((k) => swap(buffer, n - 1, k)))),
-        core.zipRight(tArray.toChunk(buffer))
+        core.zipRight(tArray.toArray(buffer))
       )
     })
   )
@@ -107,7 +106,7 @@ class TRandomImpl implements TRandom.TRandom {
   nextIntBetween(low: number, high: number): STM.STM<never, never, number> {
     return Debug.bodyWithTrace((trace) => withState(this.state, randomIntegerBetween(low, high)).traced(trace))
   }
-  shuffle<A>(elements: Iterable<A>): STM.STM<never, never, Chunk.Chunk<A>> {
+  shuffle<A>(elements: Iterable<A>): STM.STM<never, never, Array<A>> {
     return Debug.bodyWithTrace((trace) => shuffleWith(elements, (n) => this.nextIntBetween(0, n)).traced(trace))
   }
 }
@@ -154,6 +153,6 @@ export const nextRange = Debug.methodWithTrace((trace) =>
 
 /** @internal */
 export const shuffle = Debug.methodWithTrace((trace) =>
-  <A>(elements: Iterable<A>): STM.STM<TRandom.TRandom, never, Chunk.Chunk<A>> =>
+  <A>(elements: Iterable<A>): STM.STM<TRandom.TRandom, never, Array<A>> =>
     core.flatMap(Tag, (random) => random.shuffle(elements)).traced(trace)
 )
