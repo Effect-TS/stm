@@ -6,6 +6,7 @@ import type { LazyArg } from "@effect/data/Function"
 import { constFalse, constTrue, constVoid, dual, identity, pipe } from "@effect/data/Function"
 import * as Option from "@effect/data/Option"
 import type { Predicate } from "@effect/data/Predicate"
+import * as RA from "@effect/data/ReadonlyArray"
 import * as Cause from "@effect/io/Cause"
 import * as Effect from "@effect/io/Effect"
 import * as Exit from "@effect/io/Exit"
@@ -160,8 +161,7 @@ export const collect = Debug.dualWithTrace<
 
 /** @internal */
 export const collectAll = Debug.methodWithTrace((trace) =>
-  <R, E, A>(iterable: Iterable<STM.STM<R, E, A>>): STM.STM<R, E, Chunk.Chunk<A>> =>
-    forEach(iterable, identity).traced(trace)
+  <R, E, A>(iterable: Iterable<STM.STM<R, E, A>>): STM.STM<R, E, Array<A>> => forEach(iterable, identity).traced(trace)
 )
 
 /** @internal */
@@ -306,39 +306,36 @@ export const fiberId = Debug.methodWithTrace((trace) =>
 
 /** @internal */
 export const filter = Debug.dualWithTrace<
-  <A, R, E>(predicate: (a: A) => STM.STM<R, E, boolean>) => (iterable: Iterable<A>) => STM.STM<R, E, Chunk.Chunk<A>>,
-  <A, R, E>(iterable: Iterable<A>, predicate: (a: A) => STM.STM<R, E, boolean>) => STM.STM<R, E, Chunk.Chunk<A>>
+  <A, R, E>(predicate: (a: A) => STM.STM<R, E, boolean>) => (iterable: Iterable<A>) => STM.STM<R, E, Array<A>>,
+  <A, R, E>(iterable: Iterable<A>, predicate: (a: A) => STM.STM<R, E, boolean>) => STM.STM<R, E, Array<A>>
 >(
   2,
   (trace, restore) =>
-    <A, R, E>(iterable: Iterable<A>, predicate: (a: A) => STM.STM<R, E, boolean>): STM.STM<R, E, Chunk.Chunk<A>> =>
-      pipe(
-        Array.from(iterable).reduce(
-          (acc, curr) =>
-            pipe(
-              acc,
-              core.zipWith(restore(predicate)(curr), (as, p) => {
-                if (p) {
-                  as.push(curr)
-                  return as
-                }
+    <A, R, E>(iterable: Iterable<A>, predicate: (a: A) => STM.STM<R, E, boolean>): STM.STM<R, E, Array<A>> =>
+      Array.from(iterable).reduce(
+        (acc, curr) =>
+          pipe(
+            acc,
+            core.zipWith(restore(predicate)(curr), (as, p) => {
+              if (p) {
+                as.push(curr)
                 return as
-              })
-            ),
-          core.succeed([]) as STM.STM<R, E, Array<A>>
-        ),
-        core.map(Chunk.unsafeFromArray)
+              }
+              return as
+            })
+          ),
+        core.succeed([]) as STM.STM<R, E, Array<A>>
       ).traced(trace)
 )
 
 /** @internal */
 export const filterNot = Debug.dualWithTrace<
-  <A, R, E>(predicate: (a: A) => STM.STM<R, E, boolean>) => (iterable: Iterable<A>) => STM.STM<R, E, Chunk.Chunk<A>>,
-  <A, R, E>(iterable: Iterable<A>, predicate: (a: A) => STM.STM<R, E, boolean>) => STM.STM<R, E, Chunk.Chunk<A>>
+  <A, R, E>(predicate: (a: A) => STM.STM<R, E, boolean>) => (iterable: Iterable<A>) => STM.STM<R, E, Array<A>>,
+  <A, R, E>(iterable: Iterable<A>, predicate: (a: A) => STM.STM<R, E, boolean>) => STM.STM<R, E, Array<A>>
 >(
   2,
   (trace, restore) =>
-    <A, R, E>(iterable: Iterable<A>, predicate: (a: A) => STM.STM<R, E, boolean>): STM.STM<R, E, Chunk.Chunk<A>> =>
+    <A, R, E>(iterable: Iterable<A>, predicate: (a: A) => STM.STM<R, E, boolean>): STM.STM<R, E, Array<A>> =>
       filter(iterable, (a) => negate(restore(predicate)(a))).traced(trace)
 )
 
@@ -477,27 +474,24 @@ export const match = Debug.dualWithTrace<
 
 /** @internal */
 export const forEach = Debug.dualWithTrace<
-  <A, R, E, A2>(f: (a: A) => STM.STM<R, E, A2>) => (elements: Iterable<A>) => STM.STM<R, E, Chunk.Chunk<A2>>,
-  <A, R, E, A2>(elements: Iterable<A>, f: (a: A) => STM.STM<R, E, A2>) => STM.STM<R, E, Chunk.Chunk<A2>>
+  <A, R, E, A2>(f: (a: A) => STM.STM<R, E, A2>) => (elements: Iterable<A>) => STM.STM<R, E, Array<A2>>,
+  <A, R, E, A2>(elements: Iterable<A>, f: (a: A) => STM.STM<R, E, A2>) => STM.STM<R, E, Array<A2>>
 >(
   2,
   (trace, restore) =>
-    <A, R, E, A2>(elements: Iterable<A>, f: (a: A) => STM.STM<R, E, A2>): STM.STM<R, E, Chunk.Chunk<A2>> =>
-      core.map(
-        suspend(() =>
-          Array.from(elements).reduce(
-            (acc, curr) =>
-              pipe(
-                acc,
-                core.zipWith(restore(f)(curr), (array, elem) => {
-                  array.push(elem)
-                  return array
-                })
-              ),
-            core.succeed([]) as STM.STM<R, E, Array<A2>>
-          )
-        ),
-        Chunk.unsafeFromArray
+    <A, R, E, A2>(elements: Iterable<A>, f: (a: A) => STM.STM<R, E, A2>): STM.STM<R, E, Array<A2>> =>
+      suspend(() =>
+        Array.from(elements).reduce(
+          (acc, curr) =>
+            pipe(
+              acc,
+              core.zipWith(restore(f)(curr), (array, elem) => {
+                array.push(elem)
+                return array
+              })
+            ),
+          core.succeed([]) as STM.STM<R, E, Array<A2>>
+        )
       ).traced(trace)
 )
 
@@ -589,14 +583,15 @@ export const head = Debug.methodWithTrace((trace) =>
       self,
       core.matchSTM(
         (e) => core.fail(Option.some(e)),
-        (a) =>
-          pipe(
-            Chunk.head(Chunk.fromIterable(a)),
-            Option.match(
-              () => core.fail(Option.none()),
-              core.succeed
-            )
-          )
+        (a) => {
+          const i = a[Symbol.iterator]()
+          const res = i.next()
+          if (res.done) {
+            return core.fail(Option.none())
+          } else {
+            return core.succeed(res.value)
+          }
+        }
       )
     ).traced(trace)
 )
@@ -682,8 +677,8 @@ export const loop = Debug.methodWithTrace((trace, restore) =>
     cont: (z: Z) => boolean,
     inc: (z: Z) => Z,
     body: (z: Z) => STM.STM<R, E, A>
-  ): STM.STM<R, E, Chunk.Chunk<A>> => {
-    return loopLoop(initial, restore(cont), restore(inc), restore(body)).traced(trace)
+  ): STM.STM<R, E, Array<A>> => {
+    return core.map(loopLoop(initial, restore(cont), restore(inc), restore(body)), (a) => Array.from(a)).traced(trace)
   }
 )
 
@@ -1110,14 +1105,14 @@ const repeatWhileLoop = <R, E, A>(self: STM.STM<R, E, A>, predicate: Predicate<A
 
 /** @internal */
 export const replicate = dual<
-  (n: number) => <R, E, A>(self: STM.STM<R, E, A>) => Chunk.Chunk<STM.STM<R, E, A>>,
-  <R, E, A>(self: STM.STM<R, E, A>, n: number) => Chunk.Chunk<STM.STM<R, E, A>>
->(2, (self, n) => Chunk.unsafeFromArray(Array.from({ length: n }, () => self)))
+  (n: number) => <R, E, A>(self: STM.STM<R, E, A>) => Array<STM.STM<R, E, A>>,
+  <R, E, A>(self: STM.STM<R, E, A>, n: number) => Array<STM.STM<R, E, A>>
+>(2, (self, n) => Array.from({ length: n }, () => self))
 
 /** @internal */
 export const replicateSTM = Debug.dualWithTrace<
-  (n: number) => <R, E, A>(self: STM.STM<R, E, A>) => STM.STM<R, E, Chunk.Chunk<A>>,
-  <R, E, A>(self: STM.STM<R, E, A>, n: number) => STM.STM<R, E, Chunk.Chunk<A>>
+  (n: number) => <R, E, A>(self: STM.STM<R, E, A>) => STM.STM<R, E, Array<A>>,
+  <R, E, A>(self: STM.STM<R, E, A>, n: number) => STM.STM<R, E, Array<A>>
 >(2, (trace) => (self, n) => pipe(self, replicate(n), collectAll).traced(trace))
 
 /** @internal */
@@ -1164,11 +1159,11 @@ export const partition = Debug.dualWithTrace<
     f: (a: A) => STM.STM<R, E, A2>
   ) => (
     elements: Iterable<A>
-  ) => STM.STM<R, never, readonly [Chunk.Chunk<E>, Chunk.Chunk<A2>]>,
+  ) => STM.STM<R, never, readonly [Array<E>, Array<A2>]>,
   <R, E, A, A2>(
     elements: Iterable<A>,
     f: (a: A) => STM.STM<R, E, A2>
-  ) => STM.STM<R, never, readonly [Chunk.Chunk<E>, Chunk.Chunk<A2>]>
+  ) => STM.STM<R, never, readonly [Array<E>, Array<A2>]>
 >(2, (trace, restore) =>
   (elements, f) =>
     pipe(
@@ -1284,8 +1279,8 @@ export const all = Debug.methodWithTrace((trace): {
     if (arguments.length === 1) {
       if (core.isSTM(arguments[0])) {
         return core.map(arguments[0], (x) => [x])
-      } else if (Array.isArray(arguments[0])) {
-        return core.map(collectAll(arguments[0]), Chunk.toReadonlyArray).traced(trace)
+      } else if (Symbol.iterator in arguments[0]) {
+        return collectAll(arguments[0]).traced(trace)
       } else {
         return pipe(
           forEach(
@@ -1302,7 +1297,7 @@ export const all = Debug.methodWithTrace((trace): {
         ).traced(trace) as any
       }
     }
-    return core.map(collectAll(arguments), Chunk.toReadonlyArray).traced(trace)
+    return collectAll(arguments).traced(trace)
   }
 )
 
@@ -1478,25 +1473,25 @@ export const validateAll = Debug.dualWithTrace<
     f: (a: A) => STM.STM<R, E, B>
   ) => (
     elements: Iterable<A>
-  ) => STM.STM<R, Chunk.NonEmptyChunk<E>, Chunk.Chunk<B>>,
+  ) => STM.STM<R, RA.NonEmptyArray<E>, Array<B>>,
   <R, E, A, B>(
     elements: Iterable<A>,
     f: (a: A) => STM.STM<R, E, B>
-  ) => STM.STM<R, Chunk.NonEmptyChunk<E>, Chunk.Chunk<B>>
+  ) => STM.STM<R, RA.NonEmptyArray<E>, Array<B>>
 >(
   2,
   (trace, restore) =>
     (elements, f) =>
       core.flatMap(partition(elements, restore(f)), ([errors, values]) =>
-        Chunk.isNonEmpty(errors) ?
+        RA.isNonEmptyArray(errors) ?
           core.fail(errors) :
           core.succeed(values)).traced(trace)
 )
 
 /** @internal */
 export const validateFirst = Debug.dualWithTrace<
-  <R, E, A, B>(f: (a: A) => STM.STM<R, E, B>) => (elements: Iterable<A>) => STM.STM<R, Chunk.Chunk<E>, B>,
-  <R, E, A, B>(elements: Iterable<A>, f: (a: A) => STM.STM<R, E, B>) => STM.STM<R, Chunk.Chunk<E>, B>
+  <R, E, A, B>(f: (a: A) => STM.STM<R, E, B>) => (elements: Iterable<A>) => STM.STM<R, Array<E>, B>,
+  <R, E, A, B>(elements: Iterable<A>, f: (a: A) => STM.STM<R, E, B>) => STM.STM<R, Array<E>, B>
 >(2, (trace, restore) => (elements, f) => flip(forEach(elements, (a) => flip(restore(f)(a)))).traced(trace))
 
 /** @internal */

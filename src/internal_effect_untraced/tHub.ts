@@ -1,8 +1,8 @@
-import * as Chunk from "@effect/data/Chunk"
 import * as Debug from "@effect/data/Debug"
 import { identity, pipe } from "@effect/data/Function"
 import * as HashSet from "@effect/data/HashSet"
 import * as Option from "@effect/data/Option"
+import * as RA from "@effect/data/ReadonlyArray"
 import * as Effect from "@effect/io/Effect"
 import type * as Scope from "@effect/io/Scope"
 import * as core from "@effect/stm/internal_effect_untraced/core"
@@ -157,7 +157,7 @@ class THubImpl<A> implements THub.THub<A> {
     return Debug.bodyWithTrace((trace) =>
       core.map(
         stm.forEach(iterable, (a) => this.offer(a)),
-        Chunk.every(identity)
+        RA.every(identity)
       ).traced(trace)
     )
   }
@@ -411,11 +411,11 @@ class THubSubscriptionImpl<A> implements TQueue.TDequeue<A> {
     )
   }
 
-  takeAll(): STM.STM<never, never, Chunk.Chunk<A>> {
+  takeAll(): STM.STM<never, never, Array<A>> {
     return Debug.bodyWithTrace((trace) => this.takeUpTo(Number.POSITIVE_INFINITY).traced(trace))
   }
 
-  takeUpTo(max: number): STM.STM<never, never, Chunk.Chunk<A>> {
+  takeUpTo(max: number): STM.STM<never, never, Array<A>> {
     return Debug.bodyWithTrace((trace) =>
       core.withSTMRuntime((runtime) => {
         let currentSubscriberHead = tRef.unsafeGet(this.subscriberHead, runtime.journal)
@@ -454,7 +454,7 @@ class THubSubscriptionImpl<A> implements TQueue.TDequeue<A> {
           currentSubscriberHead,
           runtime.journal
         )
-        return core.succeed(Chunk.unsafeFromArray(builder))
+        return core.succeed(builder)
       }).traced(trace)
     )
   }

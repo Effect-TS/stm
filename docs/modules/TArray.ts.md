@@ -17,7 +17,7 @@ Added in v1.0.0
   - [fromIterable](#fromiterable)
   - [make](#make)
 - [destructors](#destructors)
-  - [toChunk](#tochunk)
+  - [toArray](#toarray)
 - [elements](#elements)
   - [collectFirst](#collectfirst)
   - [collectFirstSTM](#collectfirststm)
@@ -109,14 +109,14 @@ Added in v1.0.0
 
 # destructors
 
-## toChunk
+## toArray
 
 Collects all elements into a chunk.
 
 **Signature**
 
 ```ts
-export declare const toChunk: <A>(self: TArray<A>) => STM.STM<never, never, Chunk.Chunk<A>>
+export declare const toArray: <A>(self: TArray<A>) => STM.STM<never, never, A[]>
 ```
 
 Added in v1.0.0
@@ -718,7 +718,7 @@ Added in v1.0.0
 ```ts
 export interface TArray<A> {
   /** @internal */
-  readonly chunk: Chunk.Chunk<TRef.TRef<A>>
+  readonly chunk: Array<TRef.TRef<A>>
 }
 ```
 

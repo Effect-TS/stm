@@ -1,7 +1,6 @@
 /**
  * @since 1.0.0
  */
-import type * as Chunk from "@effect/data/Chunk"
 import type * as Context from "@effect/data/Context"
 import type * as Random from "@effect/data/Random"
 import type * as Layer from "@effect/io/Layer"
@@ -52,7 +51,7 @@ export interface TRandom {
   /**
    * Uses the pseudo-random number generator to shuffle the specified iterable.
    */
-  shuffle<A>(elements: Iterable<A>): STM.STM<never, never, Chunk.Chunk<A>>
+  shuffle<A>(elements: Iterable<A>): STM.STM<never, never, Array<A>>
 }
 /**
  * @internal
@@ -127,4 +126,4 @@ export const nextRange: (min: number, max: number) => STM.STM<TRandom, never, nu
  * @since 1.0.0
  * @category random
  */
-export const shuffle: <A>(elements: Iterable<A>) => STM.STM<TRandom, never, Chunk.Chunk<A>> = internal.shuffle
+export const shuffle: <A>(elements: Iterable<A>) => STM.STM<TRandom, never, Array<A>> = internal.shuffle

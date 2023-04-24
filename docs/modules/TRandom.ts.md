@@ -92,7 +92,7 @@ export interface TRandom {
   /**
    * Uses the pseudo-random number generator to shuffle the specified iterable.
    */
-  shuffle<A>(elements: Iterable<A>): STM.STM<never, never, Chunk.Chunk<A>>
+  shuffle<A>(elements: Iterable<A>): STM.STM<never, never, Array<A>>
 }
 ```
 
@@ -169,7 +169,7 @@ Uses the pseudo-random number generator to shuffle the specified iterable.
 **Signature**
 
 ```ts
-export declare const shuffle: <A>(elements: Iterable<A>) => STM.STM<TRandom, never, Chunk.Chunk<A>>
+export declare const shuffle: <A>(elements: Iterable<A>) => STM.STM<TRandom, never, A[]>
 ```
 
 Added in v1.0.0

@@ -1,4 +1,3 @@
-import * as Chunk from "@effect/data/Chunk"
 import * as Debug from "@effect/data/Debug"
 import * as Equal from "@effect/data/Equal"
 import { pipe } from "@effect/data/Function"
@@ -26,7 +25,7 @@ const tArrayVariance = {
 /** @internal */
 export class TArrayImpl<A> implements TArray.TArray<A> {
   readonly [TArrayTypeId] = tArrayVariance
-  constructor(readonly chunk: Chunk.Chunk<TRef.TRef<A>>) {}
+  constructor(readonly chunk: Array<TRef.TRef<A>>) {}
 }
 
 /** @internal */
@@ -59,7 +58,7 @@ export const collectFirstSTM = Debug.dualWithTrace<
         let index = 0
         let result: Option.Option<STM.STM<R, E, B>> = Option.none()
         while (Option.isNone(result) && index < self.chunk.length) {
-          const element = pipe(self.chunk, Chunk.unsafeGet(index), tRef.unsafeGet(runtime.journal))
+          const element = pipe(self.chunk[index], tRef.unsafeGet(runtime.journal))
           const option = restore(pf)(element)
           if (Option.isSome(option)) {
             result = option
@@ -179,7 +178,7 @@ export const findFirstIndexWhereFrom = Debug.dualWithTrace<
       let index: number = from
       let found = false
       while (!found && index < self.chunk.length) {
-        const element = tRef.unsafeGet(Chunk.unsafeGet(self.chunk, index), journal)
+        const element = tRef.unsafeGet(self.chunk[index], journal)
         found = restore(predicate)(element)
         index = index + 1
       }
@@ -221,7 +220,7 @@ export const findFirstIndexWhereFromSTM = Debug.dualWithTrace<
     const forIndex = (index: number): STM.STM<R, E, Option.Option<number>> =>
       index < self.chunk.length
         ? pipe(
-          tRef.get(Chunk.unsafeGet(self.chunk, index)),
+          tRef.get(self.chunk[index]),
           core.flatMap(restore(predicate)),
           core.flatMap((bool) =>
             bool ?
@@ -255,7 +254,7 @@ export const findFirstSTM = Debug.dualWithTrace<
       stm.iterate(init, cont, (state) => {
         const index = state[1]
         return pipe(
-          tRef.get(Chunk.unsafeGet(self.chunk, index)),
+          tRef.get(self.chunk[index]),
           core.flatMap((value) =>
             core.map(
               restore(predicate)(value),
@@ -280,7 +279,7 @@ export const findLast = Debug.dualWithTrace<
         let index = self.chunk.length - 1
         let result: Option.Option<A> = Option.none()
         while (Option.isNone(result) && index >= 0) {
-          const element = tRef.unsafeGet(Chunk.unsafeGet(self.chunk, index), journal)
+          const element = tRef.unsafeGet(self.chunk[index], journal)
           if (restore(predicate)(element)) {
             result = Option.some(element)
           }
@@ -309,7 +308,7 @@ export const findLastIndexFrom = Debug.dualWithTrace<
       let index: number = end
       let found = false
       while (!found && index >= 0) {
-        const element = tRef.unsafeGet(Chunk.unsafeGet(self.chunk, index), journal)
+        const element = tRef.unsafeGet(self.chunk[index], journal)
         found = Equal.equals(element)(value)
         index = index - 1
       }
@@ -337,7 +336,7 @@ export const findLastSTM = Debug.dualWithTrace<
       stm.iterate(init, cont, (state) => {
         const index = state[1]
         return pipe(
-          tRef.get(Chunk.unsafeGet(self.chunk, index)),
+          tRef.get(self.chunk[index]),
           core.flatMap((value) =>
             core.map(
               restore(predicate)(value),
@@ -374,23 +373,23 @@ export const get = Debug.dualWithTrace<
     if (index < 0 || index >= self.chunk.length) {
       return core.dieMessage("Index out of bounds").traced(trace)
     }
-    return tRef.get(Chunk.unsafeGet(self.chunk, index)).traced(trace)
+    return tRef.get(self.chunk[index]).traced(trace)
   })
 
 /** @internal */
 export const headOption = Debug.methodWithTrace((trace) =>
   <A>(self: TArray.TArray<A>): STM.STM<never, never, Option.Option<A>> =>
-    Chunk.isEmpty(self.chunk) ?
+    self.chunk.length === 0 ?
       core.succeed(Option.none()).traced(trace) :
-      core.map(tRef.get(Chunk.unsafeHead(self.chunk)), Option.some).traced(trace)
+      core.map(tRef.get(self.chunk[0]), Option.some).traced(trace)
 )
 
 /** @internal */
 export const lastOption = Debug.methodWithTrace((trace) =>
   <A>(self: TArray.TArray<A>): STM.STM<never, never, Option.Option<A>> =>
-    Chunk.isEmpty(self.chunk) ?
+    self.chunk.length === 0 ?
       stm.succeedNone().traced(trace) :
-      core.map(tRef.get(Chunk.unsafeLast(self.chunk)), Option.some).traced(trace)
+      core.map(tRef.get(self.chunk[self.chunk.length - 1]), Option.some).traced(trace)
 )
 
 /** @internal */
@@ -432,7 +431,7 @@ export const reduce = Debug.dualWithTrace<
         let index = 0
         let result = zero
         while (index < self.chunk.length) {
-          const element = tRef.unsafeGet(Chunk.unsafeGet(self.chunk, index), journal)
+          const element = tRef.unsafeGet(self.chunk[index], journal)
           result = restore(f)(result, element)
           index = index + 1
         }
@@ -452,7 +451,7 @@ export const reduceOption = Debug.dualWithTrace<
         let index = 0
         let result: A | undefined = undefined
         while (index < self.chunk.length) {
-          const element = tRef.unsafeGet(Chunk.unsafeGet(self.chunk, index), journal)
+          const element = tRef.unsafeGet(self.chunk[index], journal)
           result = result === undefined ? element : restore(f)(result, element)
           index = index + 1
         }
@@ -488,7 +487,7 @@ export const reduceSTM = Debug.dualWithTrace<
 >(3, (trace, restore) =>
   (self, zero, f) =>
     core.flatMap(
-      toChunk(self),
+      toArray(self),
       stm.reduce(zero, restore(f))
     ).traced(trace))
 
@@ -513,8 +512,8 @@ export const someSTM = Debug.dualWithTrace<
 >(2, (trace, restore) => (self, predicate) => core.map(countSTM(self, restore(predicate)), (n) => n > 0).traced(trace))
 
 /** @internal */
-export const toChunk = Debug.methodWithTrace((trace) =>
-  <A>(self: TArray.TArray<A>): STM.STM<never, never, Chunk.Chunk<A>> => stm.forEach(self.chunk, tRef.get).traced(trace)
+export const toArray = Debug.methodWithTrace((trace) =>
+  <A>(self: TArray.TArray<A>): STM.STM<never, never, Array<A>> => stm.forEach(self.chunk, tRef.get).traced(trace)
 )
 
 /** @internal */
@@ -526,7 +525,7 @@ export const transform = Debug.dualWithTrace<
     core.effect<never, void>((journal) => {
       let index = 0
       while (index < self.chunk.length) {
-        const ref = pipe(self.chunk, Chunk.unsafeGet(index))
+        const ref = self.chunk[index]
         tRef.unsafeSet(ref, restore(f)(tRef.unsafeGet(ref, journal)), journal)
         index = index + 1
       }
@@ -550,7 +549,7 @@ export const transformSTM = Debug.dualWithTrace<
           let index = 0
           let next: IteratorResult<A>
           while ((next = iterator.next()) && !next.done) {
-            tRef.unsafeSet(Chunk.unsafeGet(self.chunk, index), next.value, journal)
+            tRef.unsafeSet(self.chunk[index], next.value, journal)
             index = index + 1
           }
           return void 0
@@ -566,7 +565,7 @@ export const update = Debug.dualWithTrace<
     if (index < 0 || index >= self.chunk.length) {
       return core.dieMessage("Index out of bounds").traced(trace)
     }
-    return tRef.update(Chunk.unsafeGet(self.chunk, index), restore(f)).traced(trace)
+    return tRef.update(self.chunk[index], restore(f)).traced(trace)
   })
 
 /** @internal */
@@ -579,8 +578,8 @@ export const updateSTM = Debug.dualWithTrace<
       return core.dieMessage("Index out of bounds").traced(trace)
     }
     return pipe(
-      tRef.get(Chunk.unsafeGet(self.chunk, index)),
+      tRef.get(self.chunk[index]),
       core.flatMap(restore(f)),
-      core.flatMap((updated) => tRef.set(Chunk.unsafeGet(self.chunk, index), updated))
+      core.flatMap((updated) => tRef.set(self.chunk[index], updated))
     ).traced(trace)
   })

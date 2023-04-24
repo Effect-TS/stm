@@ -1236,7 +1236,7 @@ describe.concurrent("TArray", () => {
   it.effect("toChunk", () =>
     Effect.gen(function*($) {
       const array = yield* $(TArray.make(1, 2, 3, 4, 5))
-      const result = yield* $(TArray.toChunk(array))
+      const result = yield* $(TArray.toArray(array))
       assert.deepStrictEqual(Array.from(result), [1, 2, 3, 4, 5])
     }))
 })

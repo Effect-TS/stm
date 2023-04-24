@@ -17,7 +17,7 @@ Added in v1.0.0
   - [fromIterable](#fromiterable)
   - [make](#make)
 - [destructors](#destructors)
-  - [toChunk](#tochunk)
+  - [toArray](#toarray)
   - [toReadonlyArray](#toreadonlyarray)
 - [getters](#getters)
   - [isEmpty](#isempty)
@@ -86,14 +86,14 @@ Added in v1.0.0
 
 # destructors
 
-## toChunk
+## toArray
 
 Collects all values into a chunk.
 
 **Signature**
 
 ```ts
-export declare const toChunk: <A>(self: TPriorityQueue<A>) => STM.STM<never, never, Chunk.Chunk<A>>
+export declare const toArray: <A>(self: TPriorityQueue<A>) => STM.STM<never, never, A[]>
 ```
 
 Added in v1.0.0
@@ -273,7 +273,7 @@ Takes all values from the queue.
 **Signature**
 
 ```ts
-export declare const takeAll: <A>(self: TPriorityQueue<A>) => STM.STM<never, never, Chunk.Chunk<A>>
+export declare const takeAll: <A>(self: TPriorityQueue<A>) => STM.STM<never, never, A[]>
 ```
 
 Added in v1.0.0
@@ -299,8 +299,8 @@ Takes up to the specified maximum number of elements from the queue.
 
 ```ts
 export declare const takeUpTo: {
-  (n: number): <A>(self: TPriorityQueue<A>) => STM.STM<never, never, Chunk.Chunk<A>>
-  <A>(self: TPriorityQueue<A>, n: number): STM.STM<never, never, Chunk.Chunk<A>>
+  (n: number): <A>(self: TPriorityQueue<A>) => STM.STM<never, never, A[]>
+  <A>(self: TPriorityQueue<A>, n: number): STM.STM<never, never, A[]>
 }
 ```
 

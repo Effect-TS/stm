@@ -15,10 +15,9 @@ Added in v1.0.0
 - [constructors](#constructors)
   - [acquireUseRelease](#acquireuserelease)
   - [all](#all)
+  - [allDiscard](#alldiscard)
   - [attempt](#attempt)
   - [check](#check)
-  - [collectAll](#collectall)
-  - [collectAllDiscard](#collectalldiscard)
   - [collectFirst](#collectfirst)
   - [cond](#cond)
   - [context](#context)
@@ -243,36 +242,23 @@ struct.
 **Signature**
 
 ```ts
-export declare const all: {
-  <R, E, A, T extends readonly STM<any, any, any>[]>(self: STM<R, E, A>, ...args: T): STM<
-    R | T['length'] extends 0
-      ? never
-      : [T[number]] extends [{ [STMTypeId]: { _R: (_: never) => infer R } }]
-      ? R
-      : never,
-    E | T['length'] extends 0
-      ? never
-      : [T[number]] extends [{ [STMTypeId]: { _E: (_: never) => infer E } }]
-      ? E
-      : never,
-    readonly [
-      A,
-      ...(T['length'] extends 0
-        ? []
-        : Readonly<{ [K in keyof T]: [T[K]] extends [STM<any, any, infer A>] ? A : never }>)
-    ]
-  >
-  <T extends readonly STM<any, any, any>[]>(args: [...T]): STM<
-    T[number] extends never ? never : [T[number]] extends [{ [STMTypeId]: { _R: (_: never) => infer R } }] ? R : never,
-    T[number] extends never ? never : [T[number]] extends [{ [STMTypeId]: { _E: (_: never) => infer E } }] ? E : never,
-    T[number] extends never ? [] : Readonly<{ [K in keyof T]: [T[K]] extends [STM<any, any, infer A>] ? A : never }>
-  >
-  <T extends Readonly<{ [K: string]: STM<any, any, any> }>>(args: T): STM<
-    keyof T extends never ? never : [T[keyof T]] extends [{ [STMTypeId]: { _R: (_: never) => infer R } }] ? R : never,
-    keyof T extends never ? never : [T[keyof T]] extends [{ [STMTypeId]: { _E: (_: never) => infer E } }] ? E : never,
-    Readonly<{ [K in keyof T]: [T[K]] extends [STM<any, any, infer A>] ? A : never }>
-  >
-}
+export declare const all: All.Signature
+```
+
+Added in v1.0.0
+
+## allDiscard
+
+Collects all the transactional effects, returning a single transactional
+effect that produces `Unit`.
+
+Equivalent to `pipe(icollectAll(iterable), asUnit)`, but without the cost
+of building the list of results.
+
+**Signature**
+
+```ts
+export declare const allDiscard: <R, E, A>(iterable: Iterable<STM<R, E, A>>) => STM<R, E, void>
 ```
 
 Added in v1.0.0
@@ -297,35 +283,6 @@ Checks the condition, and if it's true, returns unit, otherwise, retries.
 
 ```ts
 export declare const check: (predicate: LazyArg<boolean>) => STM<never, never, void>
-```
-
-Added in v1.0.0
-
-## collectAll
-
-Collects all the transactional effects in a collection, returning a single
-transactional effect that produces a collection of values.
-
-**Signature**
-
-```ts
-export declare const collectAll: <R, E, A>(iterable: Iterable<STM<R, E, A>>) => STM<R, E, Chunk.Chunk<A>>
-```
-
-Added in v1.0.0
-
-## collectAllDiscard
-
-Collects all the transactional effects, returning a single transactional
-effect that produces `Unit`.
-
-Equivalent to `pipe(icollectAll(iterable), asUnit)`, but without the cost
-of building the list of results.
-
-**Signature**
-
-```ts
-export declare const collectAllDiscard: <R, E, A>(iterable: Iterable<STM<R, E, A>>) => STM<R, E, void>
 ```
 
 Added in v1.0.0
@@ -514,8 +471,8 @@ Filters the collection using the specified effectual predicate.
 
 ```ts
 export declare const filter: {
-  <A, R, E>(predicate: (a: A) => STM<R, E, boolean>): (iterable: Iterable<A>) => STM<R, E, Chunk.Chunk<A>>
-  <A, R, E>(iterable: Iterable<A>, predicate: (a: A) => STM<R, E, boolean>): STM<R, E, Chunk.Chunk<A>>
+  <A, R, E>(predicate: (a: A) => STM<R, E, boolean>): (iterable: Iterable<A>) => STM<R, E, A[]>
+  <A, R, E>(iterable: Iterable<A>, predicate: (a: A) => STM<R, E, boolean>): STM<R, E, A[]>
 }
 ```
 
@@ -530,8 +487,8 @@ all elements that satisfy the predicate.
 
 ```ts
 export declare const filterNot: {
-  <A, R, E>(predicate: (a: A) => STM<R, E, boolean>): (iterable: Iterable<A>) => STM<R, E, Chunk.Chunk<A>>
-  <A, R, E>(iterable: Iterable<A>, predicate: (a: A) => STM<R, E, boolean>): STM<R, E, Chunk.Chunk<A>>
+  <A, R, E>(predicate: (a: A) => STM<R, E, boolean>): (iterable: Iterable<A>) => STM<R, E, A[]>
+  <A, R, E>(iterable: Iterable<A>, predicate: (a: A) => STM<R, E, boolean>): STM<R, E, A[]>
 }
 ```
 
@@ -653,7 +610,7 @@ export declare const loop: <Z, R, E, A>(
   cont: (z: Z) => boolean,
   inc: (z: Z) => Z,
   body: (z: Z) => STM<R, E, A>
-) => STM<R, E, Chunk.Chunk<A>>
+) => STM<R, E, A[]>
 ```
 
 Added in v1.0.0
@@ -762,8 +719,8 @@ empty `Chunk` will be returned.
 
 ```ts
 export declare const replicate: {
-  (n: number): <R, E, A>(self: STM<R, E, A>) => Chunk.Chunk<STM<R, E, A>>
-  <R, E, A>(self: STM<R, E, A>, n: number): Chunk.Chunk<STM<R, E, A>>
+  (n: number): <R, E, A>(self: STM<R, E, A>) => STM<R, E, A>[]
+  <R, E, A>(self: STM<R, E, A>, n: number): STM<R, E, A>[]
 }
 ```
 
@@ -778,8 +735,8 @@ results.
 
 ```ts
 export declare const replicateSTM: {
-  (n: number): <R, E, A>(self: STM<R, E, A>) => STM<R, E, Chunk.Chunk<A>>
-  <R, E, A>(self: STM<R, E, A>, n: number): STM<R, E, Chunk.Chunk<A>>
+  (n: number): <R, E, A>(self: STM<R, E, A>) => STM<R, E, A[]>
+  <R, E, A>(self: STM<R, E, A>, n: number): STM<R, E, A[]>
 }
 ```
 
@@ -2671,8 +2628,8 @@ will be lost. To retain all information please use `STM.partition`.
 
 ```ts
 export declare const validateAll: {
-  <R, E, A, B>(f: (a: A) => STM<R, E, B>): (elements: Iterable<A>) => STM<R, Chunk.NonEmptyChunk<E>, Chunk.Chunk<B>>
-  <R, E, A, B>(elements: Iterable<A>, f: (a: A) => STM<R, E, B>): STM<R, Chunk.NonEmptyChunk<E>, Chunk.Chunk<B>>
+  <R, E, A, B>(f: (a: A) => STM<R, E, B>): (elements: Iterable<A>) => STM<R, [E, ...E[]], B[]>
+  <R, E, A, B>(elements: Iterable<A>, f: (a: A) => STM<R, E, B>): STM<R, [E, ...E[]], B[]>
 }
 ```
 
@@ -2687,8 +2644,8 @@ or the accumulation of all errors.
 
 ```ts
 export declare const validateFirst: {
-  <R, E, A, B>(f: (a: A) => STM<R, E, B>): (elements: Iterable<A>) => STM<R, Chunk.Chunk<E>, B>
-  <R, E, A, B>(elements: Iterable<A>, f: (a: A) => STM<R, E, B>): STM<R, Chunk.Chunk<E>, B>
+  <R, E, A, B>(f: (a: A) => STM<R, E, B>): (elements: Iterable<A>) => STM<R, E[], B>
+  <R, E, A, B>(elements: Iterable<A>, f: (a: A) => STM<R, E, B>): STM<R, E[], B>
 }
 ```
 
@@ -2921,8 +2878,8 @@ a transactional effect that produces a new `Chunk<A2>`.
 
 ```ts
 export declare const forEach: {
-  <A, R, E, A2>(f: (a: A) => STM<R, E, A2>): (elements: Iterable<A>) => STM<R, E, Chunk.Chunk<A2>>
-  <A, R, E, A2>(elements: Iterable<A>, f: (a: A) => STM<R, E, A2>): STM<R, E, Chunk.Chunk<A2>>
+  <A, R, E, A2>(f: (a: A) => STM<R, E, A2>): (elements: Iterable<A>) => STM<R, E, A2[]>
+  <A, R, E, A2>(elements: Iterable<A>, f: (a: A) => STM<R, E, A2>): STM<R, E, A2[]>
 }
 ```
 
@@ -2956,14 +2913,8 @@ Collects all successes and failures in a tupled fashion.
 
 ```ts
 export declare const partition: {
-  <R, E, A, A2>(f: (a: A) => STM<R, E, A2>): (
-    elements: Iterable<A>
-  ) => STM<R, never, readonly [Chunk.Chunk<E>, Chunk.Chunk<A2>]>
-  <R, E, A, A2>(elements: Iterable<A>, f: (a: A) => STM<R, E, A2>): STM<
-    R,
-    never,
-    readonly [Chunk.Chunk<E>, Chunk.Chunk<A2>]
-  >
+  <R, E, A, A2>(f: (a: A) => STM<R, E, A2>): (elements: Iterable<A>) => STM<R, never, readonly [E[], A2[]]>
+  <R, E, A, A2>(elements: Iterable<A>, f: (a: A) => STM<R, E, A2>): STM<R, never, readonly [E[], A2[]]>
 }
 ```
 

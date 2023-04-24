@@ -173,7 +173,7 @@ describe.concurrent("STM", () => {
         STM.tap((queue) => pipe(queue, TQueue.offer(1))),
         STM.tap((queue) => pipe(queue, TQueue.offer(2))),
         STM.tap((queue) => pipe(queue, TQueue.offer(3))),
-        STM.flatMap((queue) => pipe(Array.from({ length: 3 }, () => TQueue.take(queue)), STM.collectAll))
+        STM.flatMap((queue) => pipe(Array.from({ length: 3 }, () => TQueue.take(queue)), STM.all))
       )
       const result = yield* $(STM.commit(transaction))
       assert.deepStrictEqual(Array.from(result), [1, 2, 3])
@@ -214,7 +214,7 @@ describe.concurrent("STM", () => {
     Effect.gen(function*($) {
       const chunk: Chunk.Chunk<number> = Chunk.range(1, 100)
       const iterable = yield* $(Effect.succeed(pipe(chunk, Chunk.map(TRef.make))))
-      const refs = yield* $(STM.collectAll(iterable))
+      const refs = yield* $(STM.all(iterable))
       const result = yield* $(pipe(refs, Effect.forEachPar(TRef.get)))
       assert.deepStrictEqual(Array.from(result), Array.from(chunk))
     }))
@@ -785,7 +785,7 @@ describe.concurrent("STM", () => {
       const input = Chunk.range(0, 9)
       const transaction = pipe(input, STM.partition(STM.succeed))
       const [left, right] = yield* $(STM.commit(transaction))
-      assert.isTrue(Chunk.isEmpty(left))
+      assert.isTrue(left.length === 0)
       assert.deepStrictEqual(Array.from(right), Array.from(input))
     }))
 
@@ -794,7 +794,7 @@ describe.concurrent("STM", () => {
       const input = Chunk.range(0, 9)
       const transaction = pipe(input, STM.partition(STM.fail))
       const [left, right] = yield* $(STM.commit(transaction))
-      assert.isTrue(Chunk.isEmpty(right))
+      assert.isTrue(right.length === 0)
       assert.deepStrictEqual(Array.from(left), Array.from(input))
     }))
 
@@ -967,21 +967,21 @@ describe.concurrent("STM", () => {
 
   it.effect("replicate - zero", () =>
     Effect.gen(function*($) {
-      const transaction = pipe(STM.succeed(12), STM.replicate(0), STM.collectAll)
+      const transaction = pipe(STM.succeed(12), STM.replicate(0), STM.all)
       const result = yield* $(STM.commit(transaction))
       assert.deepStrictEqual(Array.from(result), [])
     }))
 
   it.effect("replicate - negative", () =>
     Effect.gen(function*($) {
-      const transaction = pipe(STM.succeed(12), STM.replicate(-1), STM.collectAll)
+      const transaction = pipe(STM.succeed(12), STM.replicate(-1), STM.all)
       const result = yield* $(STM.commit(transaction))
       assert.deepStrictEqual(Array.from(result), [])
     }))
 
   it.effect("replicate - positive", () =>
     Effect.gen(function*($) {
-      const transaction = pipe(STM.succeed(12), STM.replicate(2), STM.collectAll)
+      const transaction = pipe(STM.succeed(12), STM.replicate(2), STM.all)
       const result = yield* $(STM.commit(transaction))
       assert.deepStrictEqual(Array.from(result), [12, 12])
     }))

@@ -1,7 +1,6 @@
 /**
  * @since 1.0.0
  */
-import type * as Chunk from "@effect/data/Chunk"
 import type * as Option from "@effect/data/Option"
 import type { Predicate } from "@effect/data/Predicate"
 import type * as Order from "@effect/data/typeclass/Order"
@@ -32,7 +31,7 @@ export interface TArray<A> extends TArray.Variance<A> {}
  */
 export interface TArray<A> {
   /** @internal */
-  readonly chunk: Chunk.Chunk<TRef.TRef<A>>
+  readonly chunk: Array<TRef.TRef<A>>
 }
 
 /**
@@ -448,7 +447,7 @@ export const someSTM: {
  * @since 1.0.0
  * @category destructors
  */
-export const toChunk: <A>(self: TArray<A>) => STM.STM<never, never, Chunk.Chunk<A>> = internal.toChunk
+export const toArray: <A>(self: TArray<A>) => STM.STM<never, never, Array<A>> = internal.toArray
 
 /**
  * Atomically updates all elements using a pure function.
