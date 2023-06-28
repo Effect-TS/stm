@@ -18,8 +18,8 @@ importers:
       '@effect-ts/core': ^0.60.5
       '@effect/babel-plugin': ^0.2.0
       '@effect/core': ^0.0.16
-      '@effect/data': ~0.12.2
-      '@effect/io': ~0.25.2
+      '@effect/data': ~0.12.10
+      '@effect/io': ~0.27.2
       '@effect/language-service': ^0.0.19
       '@effect/vite-plugin': ^0.0.1
       '@repo-tooling/eslint-plugin-dprint': ^0.0.4
@@ -59,8 +59,8 @@ importers:
       vite: ^4.3.1
       vitest: 0.30.1
     dependencies:
-      '@effect/data': 0.12.2
-      '@effect/io': 0.25.2
+      '@effect/data': 0.12.10
+      '@effect/io': 0.27.2
     devDependencies:
       '@babel/cli': 7.21.0_@babel+core@7.21.4
       '@babel/core': 7.21.4
@@ -721,14 +721,14 @@ packages:
       '@tsplus/stdlib': 0.2.8
     dev: true
 
-  /@effect/data/0.12.2:
-    resolution: {integrity: sha512-bmWRTcsSRG1FlBswT+D8SxW6r3c4B3pKJrjYfitCD03tXHnup5gLHaWqbFgIjiyYITS+UsJRRjVrNxvyGG4ZNQ==}
+  /@effect/data/0.12.10:
+    resolution: {integrity: sha512-zIz/DgumH2LgGdr1Wc9ChET5JSG0k/G5kDc8rn4a6yIJ0v2d5rfnbRWIJO2fWmdFvc+128JyaBvYguIyz9JaAQ==}
     dev: false
 
-  /@effect/io/0.25.2:
-    resolution: {integrity: sha512-eGkx616RF3uUqhrHHeLGgZKXR8AXZdWrvwPnPdKSqXcr6Iu+8YqFQ73dCk5ujHfNVDLIHUSrI+kjAzLeKhVITg==}
+  /@effect/io/0.27.2:
+    resolution: {integrity: sha512-J9s+v2JyGUKzxG5I6v1/X5v+I/e9dST4Afk3y6ZYBEXzU3Slo+3ZDf7XlazicS7koAoTEnvJ6zt79aM4LLkoWA==}
     dependencies:
-      '@effect/data': 0.12.2
+      '@effect/data': 0.12.10
     dev: false
 
   /@effect/language-service/0.0.19:
@@ -3748,7 +3748,7 @@ packages:
     resolution: {integrity: sha512-oWb1Z6mkHIskLzEJ/XWX0srkpkTQ7vaopMQkyaEIoq0fmtFVxOthb8cCxeT+p3ynTdkk/RZwbgG4brR5BeWECw==}
     engines: {node: '>= 4.0'}
     os: [darwin]
-    deprecated: fsevents 1 will break on node v14+ and could be using insecure binaries. Upgrade to fsevents 2.
+    deprecated: The v1 package contains DANGEROUS / INSECURE binaries. Upgrade to safe fsevents v2
     requiresBuild: true
     dependencies:
       bindings: 1.5.0
