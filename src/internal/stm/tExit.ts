@@ -2,7 +2,7 @@ import * as Equal from "@effect/data/Equal"
 import { pipe } from "@effect/data/Function"
 import * as Hash from "@effect/data/Hash"
 import type * as FiberId from "@effect/io/Fiber/Id"
-import * as OpCodes from "@effect/stm/internal_effect_untraced/opCodes/tExit"
+import * as OpCodes from "@effect/stm/internal/opCodes/tExit"
 
 /** @internal */
 const TExitSymbolKey = "@effect/io/TExit"

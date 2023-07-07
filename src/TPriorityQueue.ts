@@ -5,7 +5,7 @@ import type * as Option from "@effect/data/Option"
 import type * as Order from "@effect/data/Order"
 import type { Predicate } from "@effect/data/Predicate"
 import type * as SortedMap from "@effect/data/SortedMap"
-import * as internal from "@effect/stm/internal_effect_untraced/tPriorityQueue"
+import * as internal from "@effect/stm/internal/tPriorityQueue"
 import type * as STM from "@effect/stm/STM"
 import type * as TRef from "@effect/stm/TRef"
 

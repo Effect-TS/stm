@@ -12,9 +12,9 @@ import * as Exit from "@effect/io/Exit"
 import type * as FiberId from "@effect/io/Fiber/Id"
 import * as effectCore from "@effect/io/internal/core"
 import * as SingleShotGen from "@effect/io/internal/singleShotGen"
-import * as core from "@effect/stm/internal_effect_untraced/core"
-import * as Journal from "@effect/stm/internal_effect_untraced/stm/journal"
-import * as STMState from "@effect/stm/internal_effect_untraced/stm/stmState"
+import * as core from "@effect/stm/internal/core"
+import * as Journal from "@effect/stm/internal/stm/journal"
+import * as STMState from "@effect/stm/internal/stm/stmState"
 import type * as STM from "@effect/stm/STM"
 
 /** @internal */

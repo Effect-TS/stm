@@ -4,7 +4,7 @@
 
 import type * as Effect from "@effect/io/Effect"
 import type * as Scope from "@effect/io/Scope"
-import * as internal from "@effect/stm/internal_effect_untraced/tSemaphore"
+import * as internal from "@effect/stm/internal/tSemaphore"
 import type * as STM from "@effect/stm/STM"
 import type * as TRef from "@effect/stm/TRef"
 

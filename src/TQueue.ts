@@ -3,7 +3,7 @@
  */
 import type * as Option from "@effect/data/Option"
 import type { Predicate } from "@effect/data/Predicate"
-import * as internal from "@effect/stm/internal_effect_untraced/tQueue"
+import * as internal from "@effect/stm/internal/tQueue"
 import type * as STM from "@effect/stm/STM"
 
 /**

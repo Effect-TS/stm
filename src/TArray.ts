@@ -4,7 +4,7 @@
 import type * as Option from "@effect/data/Option"
 import type * as Order from "@effect/data/Order"
 import type { Predicate } from "@effect/data/Predicate"
-import * as internal from "@effect/stm/internal_effect_untraced/tArray"
+import * as internal from "@effect/stm/internal/tArray"
 import type * as STM from "@effect/stm/STM"
 import type * as TRef from "@effect/stm/TRef"
 

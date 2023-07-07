@@ -3,7 +3,7 @@
  */
 import type * as Effect from "@effect/io/Effect"
 import type * as Scope from "@effect/io/Scope"
-import * as internal from "@effect/stm/internal_effect_untraced/tReentrantLock"
+import * as internal from "@effect/stm/internal/tReentrantLock"
 import type * as STM from "@effect/stm/STM"
 import type * as TRef from "@effect/stm/TRef"
 

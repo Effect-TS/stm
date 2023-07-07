@@ -14,8 +14,8 @@ import type * as Unify from "@effect/data/Unify"
 import * as Cause from "@effect/io/Cause"
 import type * as Effect from "@effect/io/Effect"
 import type * as FiberId from "@effect/io/Fiber/Id"
-import * as core from "@effect/stm/internal_effect_untraced/core"
-import * as stm from "@effect/stm/internal_effect_untraced/stm"
+import * as core from "@effect/stm/internal/core"
+import * as stm from "@effect/stm/internal/stm"
 
 /**
  * @since 1.0.0

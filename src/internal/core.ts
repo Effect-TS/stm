@@ -14,14 +14,14 @@ import * as FiberRef from "@effect/io/FiberRef"
 import { withFiberRuntime } from "@effect/io/internal/core"
 import { OP_COMMIT } from "@effect/io/internal/opCodes/effect"
 import type * as Scheduler from "@effect/io/Scheduler"
-import * as OpCodes from "@effect/stm/internal_effect_untraced/opCodes/stm"
-import * as TExitOpCodes from "@effect/stm/internal_effect_untraced/opCodes/tExit"
-import * as TryCommitOpCodes from "@effect/stm/internal_effect_untraced/opCodes/tryCommit"
-import * as Journal from "@effect/stm/internal_effect_untraced/stm/journal"
-import * as STMState from "@effect/stm/internal_effect_untraced/stm/stmState"
-import * as TExit from "@effect/stm/internal_effect_untraced/stm/tExit"
-import * as TryCommit from "@effect/stm/internal_effect_untraced/stm/tryCommit"
-import * as TxnId from "@effect/stm/internal_effect_untraced/stm/txnId"
+import * as OpCodes from "@effect/stm/internal/opCodes/stm"
+import * as TExitOpCodes from "@effect/stm/internal/opCodes/tExit"
+import * as TryCommitOpCodes from "@effect/stm/internal/opCodes/tryCommit"
+import * as Journal from "@effect/stm/internal/stm/journal"
+import * as STMState from "@effect/stm/internal/stm/stmState"
+import * as TExit from "@effect/stm/internal/stm/tExit"
+import * as TryCommit from "@effect/stm/internal/stm/tryCommit"
+import * as TxnId from "@effect/stm/internal/stm/txnId"
 import type * as STM from "@effect/stm/STM"
 
 /** @internal */
@@ -361,7 +361,7 @@ const completeTodos = <E, A>(
 ): TryCommit.TryCommit<E, A> => {
   const todos = Journal.collectTodos(journal)
   if (todos.size > 0) {
-    // TODO: fix priority
+    // TODO: Set priority?
     scheduler.scheduleTask(() => Journal.execTodos(todos), 0)
   }
   return TryCommit.done(exit)
