@@ -180,7 +180,8 @@ export const unsafeAtomically = <R, E, A>(
     const fiberId = state.id()
     const env = state.getFiberRef(FiberRef.currentContext) as Context.Context<R>
     const scheduler = state.getFiberRef(FiberRef.currentScheduler)
-    const commitResult = tryCommitSync(fiberId, self, env, scheduler)
+    const priority = state.getFiberRef(FiberRef.currentSchedulingPriority)
+    const commitResult = tryCommitSync(fiberId, self, env, scheduler, priority)
     switch (commitResult._tag) {
       case TryCommitOpCodes.OP_DONE: {
         onDone(commitResult.exit)
@@ -191,7 +192,7 @@ export const unsafeAtomically = <R, E, A>(
         const state: { value: STMState.STMState<E, A> } = { value: STMState.running }
         const effect = Effect.async(
           (k: (effect: Effect.Effect<R, E, A>) => unknown): void =>
-            tryCommitAsync(fiberId, self, txnId, state, env, scheduler, k)
+            tryCommitAsync(fiberId, self, txnId, state, env, scheduler, priority, k)
         )
         return Effect.uninterruptibleMask((restore) =>
           pipe(
@@ -221,7 +222,8 @@ const tryCommit = <R, E, A>(
   stm: STM.STM<R, E, A>,
   state: { value: STMState.STMState<E, A> },
   env: Context.Context<R>,
-  scheduler: Scheduler.Scheduler
+  scheduler: Scheduler.Scheduler,
+  priority: number
 ): TryCommit.TryCommit<E, A> => {
   const journal: Journal.Journal = new Map()
   const tExit = new STMDriver(stm, journal, fiberId, env).run()
@@ -236,7 +238,7 @@ const tryCommit = <R, E, A>(
   switch (tExit._tag) {
     case TExitOpCodes.OP_SUCCEED: {
       state.value = STMState.fromTExit(tExit)
-      return completeTodos(Exit.succeed(tExit.value), journal, scheduler)
+      return completeTodos(Exit.succeed(tExit.value), journal, scheduler, priority)
     }
     case TExitOpCodes.OP_FAIL: {
       state.value = STMState.fromTExit(tExit)
@@ -244,7 +246,8 @@ const tryCommit = <R, E, A>(
       return completeTodos(
         Exit.failCause(cause),
         journal,
-        scheduler
+        scheduler,
+        priority
       )
     }
     case TExitOpCodes.OP_DIE: {
@@ -253,7 +256,8 @@ const tryCommit = <R, E, A>(
       return completeTodos(
         Exit.failCause(cause),
         journal,
-        scheduler
+        scheduler,
+        priority
       )
     }
     case TExitOpCodes.OP_INTERRUPT: {
@@ -262,7 +266,8 @@ const tryCommit = <R, E, A>(
       return completeTodos(
         Exit.failCause(cause),
         journal,
-        scheduler
+        scheduler,
+        priority
       )
     }
     case TExitOpCodes.OP_RETRY: {
@@ -276,7 +281,8 @@ const tryCommitSync = <R, E, A>(
   fiberId: FiberId.FiberId,
   stm: STM.STM<R, E, A>,
   env: Context.Context<R>,
-  scheduler: Scheduler.Scheduler
+  scheduler: Scheduler.Scheduler,
+  priority: number
 ): TryCommit.TryCommit<E, A> => {
   const journal: Journal.Journal = new Map()
   const tExit = new STMDriver(stm, journal, fiberId, env).run()
@@ -292,14 +298,15 @@ const tryCommitSync = <R, E, A>(
 
   switch (tExit._tag) {
     case TExitOpCodes.OP_SUCCEED: {
-      return completeTodos(Exit.succeed(tExit.value), journal, scheduler)
+      return completeTodos(Exit.succeed(tExit.value), journal, scheduler, priority)
     }
     case TExitOpCodes.OP_FAIL: {
       const cause = Cause.fail(tExit.error)
       return completeTodos(
         Exit.failCause(cause),
         journal,
-        scheduler
+        scheduler,
+        priority
       )
     }
     case TExitOpCodes.OP_DIE: {
@@ -307,7 +314,8 @@ const tryCommitSync = <R, E, A>(
       return completeTodos(
         Exit.failCause(cause),
         journal,
-        scheduler
+        scheduler,
+        priority
       )
     }
     case TExitOpCodes.OP_INTERRUPT: {
@@ -315,7 +323,8 @@ const tryCommitSync = <R, E, A>(
       return completeTodos(
         Exit.failCause(cause),
         journal,
-        scheduler
+        scheduler,
+        priority
       )
     }
     case TExitOpCodes.OP_RETRY: {
@@ -332,10 +341,11 @@ const tryCommitAsync = <R, E, A>(
   state: { value: STMState.STMState<E, A> },
   context: Context.Context<R>,
   scheduler: Scheduler.Scheduler,
+  priority: number,
   k: (effect: Effect.Effect<R, E, A>) => unknown
 ) => {
   if (STMState.isRunning(state.value)) {
-    const result = tryCommit(fiberId, self, state, context, scheduler)
+    const result = tryCommit(fiberId, self, state, context, scheduler, priority)
     switch (result._tag) {
       case TryCommitOpCodes.OP_DONE: {
         completeTryCommit(result.exit, k)
@@ -345,7 +355,7 @@ const tryCommitAsync = <R, E, A>(
         Journal.addTodo(
           txnId,
           result.journal,
-          () => tryCommitAsync(fiberId, self, txnId, state, context, scheduler, k)
+          () => tryCommitAsync(fiberId, self, txnId, state, context, scheduler, priority, k)
         )
         break
       }
@@ -357,12 +367,12 @@ const tryCommitAsync = <R, E, A>(
 const completeTodos = <E, A>(
   exit: Exit.Exit<E, A>,
   journal: Journal.Journal,
-  scheduler: Scheduler.Scheduler
+  scheduler: Scheduler.Scheduler,
+  priority: number
 ): TryCommit.TryCommit<E, A> => {
   const todos = Journal.collectTodos(journal)
   if (todos.size > 0) {
-    // TODO: Set priority?
-    scheduler.scheduleTask(() => Journal.execTodos(todos), 0)
+    scheduler.scheduleTask(() => Journal.execTodos(todos), priority)
   }
   return TryCommit.done(exit)
 }
