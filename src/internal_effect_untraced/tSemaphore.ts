@@ -1,4 +1,4 @@
-import * as Debug from "@effect/data/Debug"
+import { dual } from "@effect/data/Function"
 import * as Cause from "@effect/io/Cause"
 import * as Effect from "@effect/io/Effect"
 import type * as Scope from "@effect/io/Scope"
@@ -23,66 +23,56 @@ class TSemaphoreImpl implements TSemaphore.TSemaphore {
 }
 
 /** @internal */
-export const make = Debug.methodWithTrace((trace) =>
-  (permits: number): STM.STM<never, never, TSemaphore.TSemaphore> =>
-    STM.map(tRef.make(permits), (permits) => new TSemaphoreImpl(permits)).traced(trace)
-)
+export const make = (permits: number): STM.STM<never, never, TSemaphore.TSemaphore> =>
+  STM.map(tRef.make(permits), (permits) => new TSemaphoreImpl(permits))
 
 /** @internal */
-export const acquire = Debug.methodWithTrace((trace) =>
-  (self: TSemaphore.TSemaphore): STM.STM<never, never, void> => acquireN(self, 1).traced(trace)
-)
+export const acquire = (self: TSemaphore.TSemaphore): STM.STM<never, never, void> => acquireN(self, 1)
 
 /** @internal */
-export const acquireN = Debug.dualWithTrace<
+export const acquireN = dual<
   (n: number) => (self: TSemaphore.TSemaphore) => STM.STM<never, never, void>,
   (self: TSemaphore.TSemaphore, n: number) => STM.STM<never, never, void>
->(2, (trace) =>
-  (self, n) =>
-    core.withSTMRuntime((driver) => {
-      if (n < 0) {
-        throw Cause.IllegalArgumentException(`Unexpected negative value ${n} passed to Semaphore.acquireN`)
-      }
-      const value = tRef.unsafeGet(self.permits, driver.journal)
-      if (value < n) {
-        return STM.retry()
-      } else {
-        return STM.succeed(tRef.unsafeSet(self.permits, value - n, driver.journal))
-      }
-    }).traced(trace))
+>(2, (self, n) =>
+  core.withSTMRuntime((driver) => {
+    if (n < 0) {
+      throw Cause.IllegalArgumentException(`Unexpected negative value ${n} passed to Semaphore.acquireN`)
+    }
+    const value = tRef.unsafeGet(self.permits, driver.journal)
+    if (value < n) {
+      return STM.retry()
+    } else {
+      return STM.succeed(tRef.unsafeSet(self.permits, value - n, driver.journal))
+    }
+  }))
 
 /** @internal */
-export const available = Debug.methodWithTrace((trace) =>
-  (self: TSemaphore.TSemaphore) => tRef.get(self.permits).traced(trace)
-)
+export const available = (self: TSemaphore.TSemaphore) => tRef.get(self.permits)
 
 /** @internal */
-export const release = Debug.methodWithTrace((trace) =>
-  (self: TSemaphore.TSemaphore): STM.STM<never, never, void> => releaseN(self, 1).traced(trace)
-)
+export const release = (self: TSemaphore.TSemaphore): STM.STM<never, never, void> => releaseN(self, 1)
 
 /** @internal */
-export const releaseN = Debug.dualWithTrace<
+export const releaseN = dual<
   (n: number) => (self: TSemaphore.TSemaphore) => STM.STM<never, never, void>,
   (self: TSemaphore.TSemaphore, n: number) => STM.STM<never, never, void>
->(2, (trace) =>
-  (self, n) =>
-    core.withSTMRuntime((driver) => {
-      if (n < 0) {
-        throw Cause.IllegalArgumentException(`Unexpected negative value ${n} passed to Semaphore.releaseN`)
-      }
-      const current = tRef.unsafeGet(self.permits, driver.journal)
-      return STM.succeed(tRef.unsafeSet(self.permits, current + n, driver.journal))
-    }).traced(trace))
+>(2, (self, n) =>
+  core.withSTMRuntime((driver) => {
+    if (n < 0) {
+      throw Cause.IllegalArgumentException(`Unexpected negative value ${n} passed to Semaphore.releaseN`)
+    }
+    const current = tRef.unsafeGet(self.permits, driver.journal)
+    return STM.succeed(tRef.unsafeSet(self.permits, current + n, driver.journal))
+  }))
 
 /** @internal */
-export const withPermit = Debug.dualWithTrace<
+export const withPermit = dual<
   (semaphore: TSemaphore.TSemaphore) => <R, E, A>(self: Effect.Effect<R, E, A>) => Effect.Effect<R, E, A>,
   <R, E, A>(self: Effect.Effect<R, E, A>, semaphore: TSemaphore.TSemaphore) => Effect.Effect<R, E, A>
->(2, (trace) => (self, semaphore) => withPermits(self, semaphore, 1).traced(trace))
+>(2, (self, semaphore) => withPermits(self, semaphore, 1))
 
 /** @internal */
-export const withPermits = Debug.dualWithTrace<
+export const withPermits = dual<
   (
     semaphore: TSemaphore.TSemaphore,
     permits: number
@@ -92,33 +82,31 @@ export const withPermits = Debug.dualWithTrace<
     semaphore: TSemaphore.TSemaphore,
     permits: number
   ) => Effect.Effect<R, E, A>
->(3, (trace) =>
-  (self, semaphore, permits) =>
-    Effect.uninterruptibleMask((restore) =>
-      Effect.zipRight(
-        restore(core.commit(acquireN(permits)(semaphore))),
-        Effect.ensuring(
-          restore(self),
-          core.commit(releaseN(permits)(semaphore))
-        )
+>(3, (self, semaphore, permits) =>
+  Effect.uninterruptibleMask((restore) =>
+    Effect.zipRight(
+      restore(core.commit(acquireN(permits)(semaphore))),
+      Effect.ensuring(
+        self,
+        core.commit(releaseN(permits)(semaphore))
       )
-    ).traced(trace))
+    )
+  ))
 
 /** @internal */
-export const withPermitScoped = Debug.methodWithTrace((trace) =>
-  (self: TSemaphore.TSemaphore): Effect.Effect<Scope.Scope, never, void> => withPermitsScoped(self, 1).traced(trace)
-)
+export const withPermitScoped = (self: TSemaphore.TSemaphore): Effect.Effect<Scope.Scope, never, void> =>
+  withPermitsScoped(self, 1)
 
 /** @internal */
-export const withPermitsScoped = Debug.dualWithTrace<
+export const withPermitsScoped = dual<
   (permits: number) => (self: TSemaphore.TSemaphore) => Effect.Effect<Scope.Scope, never, void>,
   (self: TSemaphore.TSemaphore, permits: number) => Effect.Effect<Scope.Scope, never, void>
->(2, (trace) =>
-  (self, permits) =>
-    Effect.acquireReleaseInterruptible(
-      core.commit(acquireN(self, permits)),
-      () => core.commit(releaseN(self, permits))
-    ).traced(trace))
+>(2, (self, permits) =>
+  Effect.acquireRelease({
+    acquire: core.commit(acquireN(self, permits)),
+    release: () => core.commit(releaseN(self, permits)),
+    interruptable: true
+  }))
 
 /** @internal */
 export const unsafeMakeSemaphore = (permits: number): TSemaphore.TSemaphore => {

@@ -1,5 +1,4 @@
-import * as Debug from "@effect/data/Debug"
-import { dual, pipe } from "@effect/data/Function"
+import { dual } from "@effect/data/Function"
 import * as Option from "@effect/data/Option"
 import * as core from "@effect/stm/internal_effect_untraced/core"
 import * as Entry from "@effect/stm/internal_effect_untraced/stm/entry"
@@ -44,117 +43,118 @@ export class TRefImpl<A> implements TRef.TRef<A> {
 }
 
 /** @internal */
-export const make = Debug.methodWithTrace((trace) =>
-  <A>(value: A): STM.STM<never, never, TRef.TRef<A>> =>
-    core.effect<never, TRef.TRef<A>>((journal) => {
-      const ref = new TRefImpl(value)
-      journal.set(ref, Entry.make(ref, true))
-      return ref
-    }).traced(trace)
-)
+export const make = <A>(value: A): STM.STM<never, never, TRef.TRef<A>> =>
+  core.effect<never, TRef.TRef<A>>((journal) => {
+    const ref = new TRefImpl(value)
+    journal.set(ref, Entry.make(ref, true))
+    return ref
+  })
 
 /** @internal */
-export const get = Debug.methodWithTrace((trace) => <A>(self: TRef.TRef<A>) => self.modify((a) => [a, a]).traced(trace))
+export const get = <A>(self: TRef.TRef<A>) => self.modify((a) => [a, a])
 
 /** @internal */
-export const set = Debug.dualWithTrace<
+export const set = dual<
   <A>(value: A) => (self: TRef.TRef<A>) => STM.STM<never, never, void>,
   <A>(self: TRef.TRef<A>, value: A) => STM.STM<never, never, void>
 >(
   2,
-  (trace) =>
-    <A>(self: TRef.TRef<A>, value: A): STM.STM<never, never, void> =>
-      self.modify((): [void, A] => [void 0, value]).traced(trace)
+  <A>(self: TRef.TRef<A>, value: A): STM.STM<never, never, void> => self.modify((): [void, A] => [void 0, value])
 )
 
 /** @internal */
-export const getAndSet = Debug.dualWithTrace<
+export const getAndSet = dual<
   <A>(value: A) => (self: TRef.TRef<A>) => STM.STM<never, never, A>,
   <A>(self: TRef.TRef<A>, value: A) => STM.STM<never, never, A>
->(2, (trace) => (self, value) => self.modify((a) => [a, value]).traced(trace))
+>(2, (self, value) => self.modify((a) => [a, value]))
 
 /** @internal */
-export const getAndUpdate = Debug.dualWithTrace<
+export const getAndUpdate = dual<
   <A>(f: (a: A) => A) => (self: TRef.TRef<A>) => STM.STM<never, never, A>,
   <A>(self: TRef.TRef<A>, f: (a: A) => A) => STM.STM<never, never, A>
->(2, (trace, restore) => (self, f) => self.modify((a) => [a, restore(f)(a)]).traced(trace))
+>(2, (self, f) => self.modify((a) => [a, f(a)]))
 
 /** @internal */
-export const getAndUpdateSome = Debug.dualWithTrace<
+export const getAndUpdateSome = dual<
   <A>(f: (a: A) => Option.Option<A>) => (self: TRef.TRef<A>) => STM.STM<never, never, A>,
   <A>(self: TRef.TRef<A>, f: (a: A) => Option.Option<A>) => STM.STM<never, never, A>
->(2, (trace, restore) =>
-  (self, f) =>
-    self.modify((a) =>
-      pipe(
-        restore(f)(a),
-        Option.match(() => [a, a], (b) => [a, b])
-      )
-    ).traced(trace))
+>(2, (self, f) =>
+  self.modify((a) =>
+    Option.match(f(a), {
+      onNone: () => [a, a],
+      onSome: (b) => [a, b]
+    })
+  ))
 
 /** @internal */
-export const setAndGet = Debug.dualWithTrace<
+export const setAndGet = dual<
   <A>(value: A) => (self: TRef.TRef<A>) => STM.STM<never, never, A>,
   <A>(self: TRef.TRef<A>, value: A) => STM.STM<never, never, A>
->(2, (trace) => (self, value) => self.modify(() => [value, value]).traced(trace))
+>(2, (self, value) => self.modify(() => [value, value]))
 
 /** @internal */
-export const modify = Debug.dualWithTrace<
+export const modify = dual<
   <A, B>(f: (a: A) => readonly [B, A]) => (self: TRef.TRef<A>) => STM.STM<never, never, B>,
   <A, B>(self: TRef.TRef<A>, f: (a: A) => readonly [B, A]) => STM.STM<never, never, B>
->(2, (trace, restore) => (self, f) => self.modify(restore(f)).traced(trace))
+>(2, (self, f) => self.modify(f))
 
 /** @internal */
-export const modifySome = Debug.dualWithTrace<
+export const modifySome = dual<
   <A, B>(fallback: B, f: (a: A) => Option.Option<readonly [B, A]>) => (self: TRef.TRef<A>) => STM.STM<never, never, B>,
   <A, B>(self: TRef.TRef<A>, fallback: B, f: (a: A) => Option.Option<readonly [B, A]>) => STM.STM<never, never, B>
->(3, (trace, restore) =>
-  (self, fallback, f) =>
-    self.modify((a) =>
-      pipe(
-        restore(f)(a),
-        Option.match(
-          () => [fallback, a],
-          (b) => b
-        )
-      )
-    ).traced(trace))
+>(3, (self, fallback, f) =>
+  self.modify((a) =>
+    Option.match(f(a), {
+      onNone: () => [fallback, a],
+      onSome: (b) => b
+    })
+  ))
 
 /** @internal */
-export const update = Debug.dualWithTrace<
+export const update = dual<
   <A>(f: (a: A) => A) => (self: TRef.TRef<A>) => STM.STM<never, never, void>,
   <A>(self: TRef.TRef<A>, f: (a: A) => A) => STM.STM<never, never, void>
->(2, (trace, restore) => (self, f) => self.modify((a) => [void 0, restore(f)(a)]).traced(trace))
+>(2, (self, f) => self.modify((a) => [void 0, f(a)]))
 
 /** @internal */
-export const updateAndGet = Debug.dualWithTrace<
+export const updateAndGet = dual<
   <A>(f: (a: A) => A) => (self: TRef.TRef<A>) => STM.STM<never, never, A>,
   <A>(self: TRef.TRef<A>, f: (a: A) => A) => STM.STM<never, never, A>
->(2, (trace, restore) =>
-  (self, f) =>
-    self.modify((a) => {
-      const b = restore(f)(a)
-      return [b, b]
-    }).traced(trace))
+>(2, (self, f) =>
+  self.modify((a) => {
+    const b = f(a)
+    return [b, b]
+  }))
 
 /** @internal */
-export const updateSome = Debug.dualWithTrace<
+export const updateSome = dual<
   <A>(f: (a: A) => Option.Option<A>) => (self: TRef.TRef<A>) => STM.STM<never, never, void>,
   <A>(self: TRef.TRef<A>, f: (a: A) => Option.Option<A>) => STM.STM<never, never, void>
 >(
   2,
-  (trace, restore) =>
-    (self, f) => self.modify((a) => [void 0, pipe(restore(f)(a), Option.match(() => a, (b) => b))]).traced(trace)
+  (self, f) =>
+    self.modify((a) => [
+      void 0,
+      Option.match(f(a), {
+        onNone: () => a,
+        onSome: (b) => b
+      })
+    ])
 )
 
 /** @internal */
-export const updateSomeAndGet = Debug.dualWithTrace<
+export const updateSomeAndGet = dual<
   <A>(f: (a: A) => Option.Option<A>) => (self: TRef.TRef<A>) => STM.STM<never, never, A>,
   <A>(self: TRef.TRef<A>, f: (a: A) => Option.Option<A>) => STM.STM<never, never, A>
 >(
   2,
-  (trace, restore) =>
-    (self, f) => self.modify((a) => pipe(restore(f)(a), Option.match(() => [a, a], (b) => [b, b]))).traced(trace)
+  (self, f) =>
+    self.modify((a) =>
+      Option.match(f(a), {
+        onNone: () => [a, a],
+        onSome: (b) => [b, b]
+      })
+    )
 )
 
 /** @internal */

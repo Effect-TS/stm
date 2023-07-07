@@ -3,28 +3,13 @@
  */
 import * as Chunk from "@effect/data/Chunk"
 import type * as Context from "@effect/data/Context"
-import * as Debug from "@effect/data/Debug"
 import type * as Either from "@effect/data/Either"
+import type * as Equal from "@effect/data/Equal"
 import type { LazyArg } from "@effect/data/Function"
 import type { TypeLambda } from "@effect/data/HKT"
 import type * as Option from "@effect/data/Option"
+import type * as Pipeable from "@effect/data/Pipeable"
 import type { Predicate } from "@effect/data/Predicate"
-import * as applicative from "@effect/data/typeclass/Applicative"
-import type * as bicovariant from "@effect/data/typeclass/Bicovariant"
-import * as chainable from "@effect/data/typeclass/Chainable"
-import * as covariant from "@effect/data/typeclass/Covariant"
-import type * as flatMap_ from "@effect/data/typeclass/FlatMap"
-import * as invariant from "@effect/data/typeclass/Invariant"
-import type * as monad from "@effect/data/typeclass/Monad"
-import type { Monoid } from "@effect/data/typeclass/Monoid"
-import * as of_ from "@effect/data/typeclass/Of"
-import type * as pointed from "@effect/data/typeclass/Pointed"
-import type * as product_ from "@effect/data/typeclass/Product"
-import type * as semiAlternative from "@effect/data/typeclass/SemiAlternative"
-import * as semiApplicative from "@effect/data/typeclass/SemiApplicative"
-import * as semiCoproduct from "@effect/data/typeclass/SemiCoproduct"
-import type { Semigroup } from "@effect/data/typeclass/Semigroup"
-import * as semiProduct from "@effect/data/typeclass/SemiProduct"
 import type * as Unify from "@effect/data/Unify"
 import * as Cause from "@effect/io/Cause"
 import type * as Effect from "@effect/io/Effect"
@@ -81,8 +66,9 @@ export type STMTypeId = typeof STMTypeId
  * @since 1.0.0
  * @category models
  */
-export interface STM<R, E, A> extends Effect.Effect<R, E, A>, STM.Variance<R, E, A> {
-  traced(trace: Debug.Trace): STM<R, E, A>
+export interface STM<R, E, A>
+  extends Effect.Effect.Variance<R, E, A>, STM.Variance<R, E, A>, Equal.Equal, Pipeable.Pipeable<STM<R, E, A>>
+{
   [Unify.typeSymbol]?: unknown
   [Unify.unifySymbol]?: STMUnify<this>
   [Unify.blacklistSymbol]?: STMUnifyBlacklist
@@ -2067,8 +2053,8 @@ export const whenSTM: {
  * @category zipping
  */
 export const zip: {
-  <R1, E1, A1>(that: STM<R1, E1, A1>): <R, E, A>(self: STM<R, E, A>) => STM<R1 | R, E1 | E, [A, A1]>
-  <R, E, A, R1, E1, A1>(self: STM<R, E, A>, that: STM<R1, E1, A1>): STM<R | R1, E | E1, [A, A1]>
+  <R1, E1, A1>(that: STM<R1, E1, A1>): <R, E, A>(self: STM<R, E, A>) => STM<R1 | R, E1 | E, readonly [A, A1]>
+  <R, E, A, R1, E1, A1>(self: STM<R, E, A>, that: STM<R1, E1, A1>): STM<R | R1, E | E1, readonly [A, A1]>
 } = core.zip
 
 /**
@@ -2117,118 +2103,6 @@ export const zipWith: {
 } = core.zipWith
 
 /**
- * @category instances
- * @since 1.0.0
- */
-export const Bicovariant: bicovariant.Bicovariant<STMTypeLambda> = {
-  bimap: mapBoth
-}
-
-const imap = covariant.imap<STMTypeLambda>(map)
-
-/**
- * @category instances
- * @since 1.0.0
- */
-export const Covariant: covariant.Covariant<STMTypeLambda> = {
-  imap,
-  map
-}
-
-/**
- * @category instances
- * @since 1.0.0
- */
-export const Invariant: invariant.Invariant<STMTypeLambda> = {
-  imap
-}
-
-/**
- * @category instances
- * @since 1.0.0
- */
-export const Pointed: pointed.Pointed<STMTypeLambda> = {
-  of: succeed,
-  imap,
-  map
-}
-
-/**
- * @category instances
- * @since 1.0.0
- */
-export const FlatMap: flatMap_.FlatMap<STMTypeLambda> = {
-  flatMap
-}
-
-/**
- * @category instances
- * @since 1.0.0
- */
-export const Chainable: chainable.Chainable<STMTypeLambda> = {
-  imap,
-  map,
-  flatMap
-}
-
-/**
- * @category instances
- * @since 1.0.0
- */
-export const Monad: monad.Monad<STMTypeLambda> = {
-  imap,
-  of: succeed,
-  map,
-  flatMap
-}
-
-/**
- * @category instances
- * @since 1.0.0
- */
-export const SemiProduct: semiProduct.SemiProduct<STMTypeLambda> = {
-  imap,
-  product: zip,
-  productMany: (self, rest) => flatMap(self, (a) => map(all(rest), (r) => [a, ...r]))
-}
-
-/**
- * @category instances
- * @since 1.0.0
- */
-export const Product: product_.Product<STMTypeLambda> = {
-  of: succeed,
-  imap,
-  product: SemiProduct.product,
-  productMany: SemiProduct.productMany,
-  productAll: (rest) => map(all(rest), (x) => Array.from(x))
-}
-
-/**
- * @category instances
- * @since 1.0.0
- */
-export const SemiApplicative: semiApplicative.SemiApplicative<STMTypeLambda> = {
-  imap,
-  map,
-  product: SemiProduct.product,
-  productMany: SemiProduct.productMany
-}
-
-/**
- * @category instances
- * @since 1.0.0
- */
-export const Applicative: applicative.Applicative<STMTypeLambda> = {
-  imap,
-  of: succeed,
-  map,
-  product: SemiProduct.product,
-  productMany: SemiProduct.productMany,
-  productAll: Product.productAll
-}
-
-/**
  * This function takes an iterable of `STM` values and returns a new
  * `STM` value that represents the first `STM` value in the iterable
  * that succeeds. If all of the `Effect` values in the iterable fail, then
@@ -2247,75 +2121,52 @@ export const Applicative: applicative.Applicative<STMTypeLambda> = {
  * @since 1.0.0
  * @category elements
  */
-export const firstSuccessOf = Debug.methodWithTrace((trace) =>
-  <R, E, A>(effects: Iterable<STM<R, E, A>>): STM<R, E, A> =>
-    suspend<R, E, A>(() => {
-      const list = Chunk.fromIterable(effects)
-      if (!Chunk.isNonEmpty(list)) {
-        return dieSync(() => Cause.IllegalArgumentException(`Received an empty collection of effects`))
-      }
-      return Chunk.reduce(
-        Chunk.tailNonEmpty(list),
-        Chunk.headNonEmpty(list),
-        (left, right) => orElse(left, () => right)
-      )
-    }).traced(trace)
-)
-
-/**
- * @category instances
- * @since 1.0.0
- */
-export const SemiCoproduct: semiCoproduct.SemiCoproduct<STMTypeLambda> = {
-  imap,
-  coproduct: (self, that) => orElse(self, () => that),
-  coproductMany: (self, rest) => firstSuccessOf([self, ...rest])
-}
-
-/**
- * @category instances
- * @since 1.0.0
- */
-export const SemiAlternative: semiAlternative.SemiAlternative<STMTypeLambda> = {
-  map,
-  imap,
-  coproduct: SemiCoproduct.coproduct,
-  coproductMany: SemiCoproduct.coproductMany
-}
+export const firstSuccessOf = <R, E, A>(effects: Iterable<STM<R, E, A>>): STM<R, E, A> =>
+  suspend<R, E, A>(() => {
+    const list = Chunk.fromIterable(effects)
+    if (!Chunk.isNonEmpty(list)) {
+      return dieSync(() => Cause.IllegalArgumentException(`Received an empty collection of effects`))
+    }
+    return Chunk.reduce(
+      Chunk.tailNonEmpty(list),
+      Chunk.headNonEmpty(list),
+      (left, right) => orElse(left, () => right)
+    )
+  })
 
 /**
  * @category do notation
  * @since 1.0.0
  */
-export const Do: <R = never, E = never>() => STM<R, E, {}> = of_.Do(Pointed)
+export const Do: STM<never, never, {}> = succeed({})
 
 /**
  * @category do notation
  * @since 1.0.0
  */
 export const bind: {
-  <N extends string, A extends object, O2, E2, B>(
-    name: Exclude<N, keyof A>,
-    f: (a: A) => STM<O2, E2, B>
-  ): <O1, E1>(self: STM<O1, E1, A>) => STM<O2 | O1, E2 | E1, { [K in N | keyof A]: K extends keyof A ? A[K] : B }>
-  <O1_1, E1_1, A_1 extends object, N_1 extends string, O2_1, E2_1, B_1>(
-    self: STM<O1_1, E1_1, A_1>,
-    name: Exclude<N_1, keyof A_1>,
-    f: (a: A_1) => STM<O2_1, E2_1, B_1>
-  ): STM<O1_1 | O2_1, E1_1 | E2_1, { [K_1 in N_1 | keyof A_1]: K_1 extends keyof A_1 ? A_1[K_1] : B_1 }>
-} = chainable.bind(Chainable)
+  <N extends string, K, R2, E2, A>(
+    tag: Exclude<N, keyof K>,
+    f: (_: K) => STM<R2, E2, A>
+  ): <R, E>(self: STM<R, E, K>) => STM<R2 | R, E2 | E, Effect.MergeRecord<K, { [k in N]: A }>>
+  <R, E, N extends string, K, R2, E2, A>(
+    self: STM<R, E, K>,
+    tag: Exclude<N, keyof K>,
+    f: (_: K) => STM<R2, E2, A>
+  ): STM<R | R2, E | E2, Effect.MergeRecord<K, { [k in N]: A }>>
+} = stm.bind
 
 const let_: {
-  <N extends string, A extends object, B>(
-    name: Exclude<N, keyof A>,
-    f: (a: A) => B
-  ): <O, E>(self: STM<O, E, A>) => STM<O, E, { [K in N | keyof A]: K extends keyof A ? A[K] : B }>
-  <O_1, E_1, A_1 extends object, N_1 extends string, B_1>(
-    self: STM<O_1, E_1, A_1>,
-    name: Exclude<N_1, keyof A_1>,
-    f: (a: A_1) => B_1
-  ): STM<O_1, E_1, { [K_1 in N_1 | keyof A_1]: K_1 extends keyof A_1 ? A_1[K_1] : B_1 }>
-} = covariant.let(Covariant)
+  <N extends string, K, A>(
+    tag: Exclude<N, keyof K>,
+    f: (_: K) => A
+  ): <R, E>(self: STM<R, E, K>) => STM<R, E, Effect.MergeRecord<K, { [k in N]: A }>>
+  <R, E, K, N extends string, A>(
+    self: STM<R, E, K>,
+    tag: Exclude<N, keyof K>,
+    f: (_: K) => A
+  ): STM<R, E, Effect.MergeRecord<K, { [k in N]: A }>>
+} = stm.let_
 export {
   /**
    * @category do notation
@@ -2328,86 +2179,7 @@ export {
  * @category do notation
  * @since 1.0.0
  */
-export const letDiscard: {
-  <N extends string, A extends object, B>(
-    name: Exclude<N, keyof A>,
-    b: B
-  ): <O, E>(self: STM<O, E, A>) => STM<O, E, { [K in N | keyof A]: K extends keyof A ? A[K] : B }>
-  <O_1, E_1, A_1 extends object, N_1 extends string, B_1>(
-    self: STM<O_1, E_1, A_1>,
-    name: Exclude<N_1, keyof A_1>,
-    b: B_1
-  ): STM<O_1, E_1, { [K_1 in N_1 | keyof A_1]: K_1 extends keyof A_1 ? A_1[K_1] : B_1 }>
-} = covariant.letDiscard(Covariant)
-
-/**
- * @category do notation
- * @since 1.0.0
- */
-export const bindDiscard: {
-  <N extends string, A extends object, O2, E2, B>(
-    name: Exclude<N, keyof A>,
-    that: STM<O2, E2, B>
-  ): <O1, E1>(self: STM<O1, E1, A>) => STM<O2 | O1, E2 | E1, { [K in N | keyof A]: K extends keyof A ? A[K] : B }>
-  <O1_1, E1_1, A_1 extends object, N_1 extends string, O2_1, E2_1, B_1>(
-    self: STM<O1_1, E1_1, A_1>,
-    name: Exclude<N_1, keyof A_1>,
-    that: STM<O2_1, E2_1, B_1>
-  ): STM<O1_1 | O2_1, E1_1 | E2_1, { [K_1 in N_1 | keyof A_1]: K_1 extends keyof A_1 ? A_1[K_1] : B_1 }>
-} = semiProduct.bindDiscard(SemiProduct)
-
-/**
- * @category do notation
- * @since 1.0.0
- */
 export const bindTo: {
-  <N extends string>(name: N): <O, E, A>(self: STM<O, E, A>) => STM<O, E, { [K in N]: A }>
-  <O_1, E_1, A_1, N_1 extends string>(self: STM<O_1, E_1, A_1>, name: N_1): STM<O_1, E_1, { [K_1 in N_1]: A_1 }>
-} = invariant.bindTo(SemiProduct)
-
-/**
- * @category utils
- * @since 1.0.0
- */
-export const nonEmptyStruct: <R extends { readonly [x: string]: STM<any, any, any> }>(
-  fields: (keyof R extends never ? never : R) & { readonly [x: string]: STM<any, any, any> }
-) => STM<
-  [R[keyof R]] extends [STM<infer O, any, any>] ? O : never,
-  [R[keyof R]] extends [STM<any, infer E, any>] ? E : never,
-  { [K in keyof R]: [R[K]] extends [STM<any, any, infer A>] ? A : never }
-> = semiProduct.nonEmptyStruct(SemiProduct)
-
-/**
- * @category utils
- * @since 1.0.0
- */
-export const nonEmptyTuple: <T extends readonly [STM<any, any, any>, ...Array<STM<any, any, any>>]>(
-  ...elements: T
-) => STM<
-  [T[number]] extends [STM<infer O, any, any>] ? O : never,
-  [T[number]] extends [STM<any, infer E, any>] ? E : never,
-  { [I in keyof T]: [T[I]] extends [STM<any, any, infer A>] ? A : never }
-> = semiProduct.nonEmptyTuple(SemiProduct)
-
-/**
- * @category utils
- * @since 1.0.0
- */
-export const getFailureSemigroup: <A, O, E>(S: Semigroup<A>) => Semigroup<STM<O, E, A>> = semiApplicative.getSemigroup(
-  SemiApplicative
-)
-
-/**
- * @category utils
- * @since 1.0.0
- */
-export const getFirstSuccessSemigroup: <A, O, E>(S: Semigroup<A>) => Semigroup<STM<O, E, A>> = semiCoproduct
-  .getSemigroup(
-    SemiCoproduct
-  )
-
-/**
- * @category utils
- * @since 1.0.0
- */
-export const getFailureMonoid: <A, O, E>(M: Monoid<A>) => Monoid<STM<O, E, A>> = applicative.getMonoid(Applicative)
+  <N extends string>(tag: N): <R, E, A>(self: STM<R, E, A>) => STM<R, E, Record<N, A>>
+  <R, E, A, N extends string>(self: STM<R, E, A>, tag: N): STM<R, E, Record<N, A>>
+} = stm.bindTo

@@ -1,5 +1,4 @@
-import * as Debug from "@effect/data/Debug"
-import { pipe } from "@effect/data/Function"
+import { dual, pipe } from "@effect/data/Function"
 import * as HashSet from "@effect/data/HashSet"
 import type * as Option from "@effect/data/Option"
 import type { Predicate } from "@effect/data/Predicate"
@@ -30,177 +29,159 @@ class TSetImpl<A> implements TSet.TSet<A> {
 }
 
 /** @internal */
-export const add = Debug.dualWithTrace<
+export const add = dual<
   <A>(value: A) => (self: TSet.TSet<A>) => STM.STM<never, never, void>,
   <A>(self: TSet.TSet<A>, value: A) => STM.STM<never, never, void>
->(2, (trace) => (self, value) => tMap.set(self.tMap, value, void 0 as void).traced(trace))
+>(2, (self, value) => tMap.set(self.tMap, value, void 0 as void))
 
 /** @internal */
-export const difference = Debug.dualWithTrace<
+export const difference = dual<
   <A>(other: TSet.TSet<A>) => (self: TSet.TSet<A>) => STM.STM<never, never, void>,
   <A>(self: TSet.TSet<A>, other: TSet.TSet<A>) => STM.STM<never, never, void>
->(2, (trace) =>
-  (self, other) =>
-    core.flatMap(
-      toHashSet(other),
-      (values) => removeIfDiscard(self, (value) => HashSet.has(values, value))
-    ).traced(trace))
+>(2, (self, other) =>
+  core.flatMap(
+    toHashSet(other),
+    (values) => removeIfDiscard(self, (value) => HashSet.has(values, value))
+  ))
 
 /** @internal */
-export const empty = Debug.methodWithTrace((trace) =>
-  <A>(): STM.STM<never, never, TSet.TSet<A>> => fromIterable([]).traced(trace)
-)
+export const empty = <A>(): STM.STM<never, never, TSet.TSet<A>> => fromIterable([])
 
 /** @internal */
-export const forEach = Debug.dualWithTrace<
+export const forEach = dual<
   <A, R, E>(f: (value: A) => STM.STM<R, E, void>) => (self: TSet.TSet<A>) => STM.STM<R, E, void>,
   <A, R, E>(self: TSet.TSet<A>, f: (value: A) => STM.STM<R, E, void>) => STM.STM<R, E, void>
->(2, (trace, restore) => (self, f) => reduceSTM(self, void 0 as void, (_, value) => restore(f)(value)).traced(trace))
+>(2, (self, f) => reduceSTM(self, void 0 as void, (_, value) => f(value)))
 
 /** @internal */
-export const fromIterable = Debug.methodWithTrace((trace) =>
-  <A>(iterable: Iterable<A>): STM.STM<never, never, TSet.TSet<A>> =>
-    core.map(
-      tMap.fromIterable(Array.from(iterable).map((a) => [a, void 0])),
-      (tMap) => new TSetImpl(tMap)
-    ).traced(trace)
-)
+export const fromIterable = <A>(iterable: Iterable<A>): STM.STM<never, never, TSet.TSet<A>> =>
+  core.map(
+    tMap.fromIterable(Array.from(iterable).map((a) => [a, void 0])),
+    (tMap) => new TSetImpl(tMap)
+  )
 
 /** @internal */
-export const has = Debug.dualWithTrace<
+export const has = dual<
   <A>(value: A) => (self: TSet.TSet<A>) => STM.STM<never, never, boolean>,
   <A>(self: TSet.TSet<A>, value: A) => STM.STM<never, never, boolean>
->(2, (trace) => (self, value) => tMap.has(self.tMap, value).traced(trace))
+>(2, (self, value) => tMap.has(self.tMap, value))
 
 /** @internal */
-export const intersection = Debug.dualWithTrace<
+export const intersection = dual<
   <A>(other: TSet.TSet<A>) => (self: TSet.TSet<A>) => STM.STM<never, never, void>,
   <A>(self: TSet.TSet<A>, other: TSet.TSet<A>) => STM.STM<never, never, void>
->(2, (trace) =>
-  (self, other) =>
-    core.flatMap(
-      toHashSet(other),
-      (values) => pipe(self, retainIfDiscard((value) => pipe(values, HashSet.has(value))))
-    ).traced(trace))
+>(2, (self, other) =>
+  core.flatMap(
+    toHashSet(other),
+    (values) => pipe(self, retainIfDiscard((value) => pipe(values, HashSet.has(value))))
+  ))
 
 /** @internal */
-export const isEmpty = Debug.methodWithTrace((trace) =>
-  <A>(self: TSet.TSet<A>): STM.STM<never, never, boolean> => tMap.isEmpty(self.tMap).traced(trace)
-)
+export const isEmpty = <A>(self: TSet.TSet<A>): STM.STM<never, never, boolean> => tMap.isEmpty(self.tMap)
 
 /** @internal */
-export const make = Debug.methodWithTrace((trace) =>
-  <Elements extends Array<any>>(
-    ...elements: Elements
-  ): STM.STM<never, never, TSet.TSet<Elements[number]>> => fromIterable(elements).traced(trace)
-)
+export const make = <Elements extends Array<any>>(
+  ...elements: Elements
+): STM.STM<never, never, TSet.TSet<Elements[number]>> => fromIterable(elements)
 
 /** @internal */
-export const reduce = Debug.dualWithTrace<
+export const reduce = dual<
   <Z, A>(zero: Z, f: (accumulator: Z, value: A) => Z) => (self: TSet.TSet<A>) => STM.STM<never, never, Z>,
   <Z, A>(self: TSet.TSet<A>, zero: Z, f: (accumulator: Z, value: A) => Z) => STM.STM<never, never, Z>
->(3, (trace, restore) =>
-  (self, zero, f) =>
-    tMap.reduceWithIndex(
-      self.tMap,
-      zero,
-      (acc, _, key) => restore(f)(acc, key)
-    ).traced(trace))
+>(3, (self, zero, f) =>
+  tMap.reduceWithIndex(
+    self.tMap,
+    zero,
+    (acc, _, key) => f(acc, key)
+  ))
 
 /** @internal */
-export const reduceSTM = Debug.dualWithTrace<
+export const reduceSTM = dual<
   <Z, A, R, E>(zero: Z, f: (accumulator: Z, value: A) => STM.STM<R, E, Z>) => (self: TSet.TSet<A>) => STM.STM<R, E, Z>,
   <Z, A, R, E>(self: TSet.TSet<A>, zero: Z, f: (accumulator: Z, value: A) => STM.STM<R, E, Z>) => STM.STM<R, E, Z>
->(3, (trace, restore) =>
-  (self, zero, f) =>
-    tMap.reduceWithIndexSTM(
-      self.tMap,
-      zero,
-      (acc, _, key) => restore(f)(acc, key)
-    ).traced(trace))
+>(3, (self, zero, f) =>
+  tMap.reduceWithIndexSTM(
+    self.tMap,
+    zero,
+    (acc, _, key) => f(acc, key)
+  ))
 
 /** @internal */
-export const remove = Debug.dualWithTrace<
+export const remove = dual<
   <A>(value: A) => (self: TSet.TSet<A>) => STM.STM<never, never, void>,
   <A>(self: TSet.TSet<A>, value: A) => STM.STM<never, never, void>
->(2, (trace) => (self, value) => tMap.remove(self.tMap, value).traced(trace))
+>(2, (self, value) => tMap.remove(self.tMap, value))
 
 /** @internal */
-export const removeAll = Debug.dualWithTrace<
+export const removeAll = dual<
   <A>(iterable: Iterable<A>) => (self: TSet.TSet<A>) => STM.STM<never, never, void>,
   <A>(self: TSet.TSet<A>, iterable: Iterable<A>) => STM.STM<never, never, void>
->(2, (trace) => (self, iterable) => tMap.removeAll(self.tMap, iterable).traced(trace))
+>(2, (self, iterable) => tMap.removeAll(self.tMap, iterable))
 
 /** @internal */
-export const removeIf = Debug.dualWithTrace<
+export const removeIf = dual<
   <A>(predicate: Predicate<A>) => (self: TSet.TSet<A>) => STM.STM<never, never, Array<A>>,
   <A>(self: TSet.TSet<A>, predicate: Predicate<A>) => STM.STM<never, never, Array<A>>
->(2, (trace, restore) =>
-  (self, predicate) =>
-    pipe(
-      tMap.removeIf(self.tMap, (key) => restore(predicate)(key)),
-      core.map(RA.map((entry) => entry[0]))
-    ).traced(trace))
+>(2, (self, predicate) =>
+  pipe(
+    tMap.removeIf(self.tMap, (key) => predicate(key)),
+    core.map(RA.map((entry) => entry[0]))
+  ))
 
 /** @internal */
-export const removeIfDiscard = Debug.dualWithTrace<
+export const removeIfDiscard = dual<
   <A>(predicate: Predicate<A>) => (self: TSet.TSet<A>) => STM.STM<never, never, void>,
   <A>(self: TSet.TSet<A>, predicate: Predicate<A>) => STM.STM<never, never, void>
->(2, (trace, restore) =>
-  (self, predicate) =>
-    tMap.removeIfDiscard(
-      self.tMap,
-      (key) => restore(predicate)(key)
-    ).traced(trace))
+>(2, (self, predicate) =>
+  tMap.removeIfDiscard(
+    self.tMap,
+    (key) => predicate(key)
+  ))
 
 /** @internal */
-export const retainIf = Debug.dualWithTrace<
+export const retainIf = dual<
   <A>(predicate: Predicate<A>) => (self: TSet.TSet<A>) => STM.STM<never, never, Array<A>>,
   <A>(self: TSet.TSet<A>, predicate: Predicate<A>) => STM.STM<never, never, Array<A>>
->(2, (trace, restore) =>
-  (self, predicate) =>
-    pipe(
-      tMap.retainIf(self.tMap, (key) => restore(predicate)(key)),
-      core.map(RA.map((entry) => entry[0]))
-    ).traced(trace))
+>(2, (self, predicate) =>
+  pipe(
+    tMap.retainIf(self.tMap, (key) => predicate(key)),
+    core.map(RA.map((entry) => entry[0]))
+  ))
 
 /** @internal */
-export const retainIfDiscard = Debug.dualWithTrace<
+export const retainIfDiscard = dual<
   <A>(predicate: Predicate<A>) => (self: TSet.TSet<A>) => STM.STM<never, never, void>,
   <A>(self: TSet.TSet<A>, predicate: Predicate<A>) => STM.STM<never, never, void>
->(2, (trace, restore) =>
-  (self, predicate) =>
-    tMap.retainIfDiscard(
-      self.tMap,
-      (key) => restore(predicate)(key)
-    ).traced(trace))
+>(2, (self, predicate) =>
+  tMap.retainIfDiscard(
+    self.tMap,
+    (key) => predicate(key)
+  ))
 
 /** @internal */
-export const size = Debug.methodWithTrace((trace) =>
-  <A>(self: TSet.TSet<A>): STM.STM<never, never, number> =>
-    core.map(toChunk(self), (chunk) => chunk.length).traced(trace)
-)
+export const size = <A>(self: TSet.TSet<A>): STM.STM<never, never, number> =>
+  core.map(toChunk(self), (chunk) => chunk.length)
 
 /** @internal */
-export const takeFirst = Debug.dualWithTrace<
+export const takeFirst = dual<
   <A, B>(pf: (a: A) => Option.Option<B>) => (self: TSet.TSet<A>) => STM.STM<never, never, B>,
   <A, B>(self: TSet.TSet<A>, pf: (a: A) => Option.Option<B>) => STM.STM<never, never, B>
->(2, (trace, restore) => (self, pf) => tMap.takeFirst(self.tMap, (key) => restore(pf)(key)).traced(trace))
+>(2, (self, pf) => tMap.takeFirst(self.tMap, (key) => pf(key)))
 
 /** @internal */
-export const takeFirstSTM = Debug.dualWithTrace<
+export const takeFirstSTM = dual<
   <A, R, E, B>(pf: (a: A) => STM.STM<R, Option.Option<E>, B>) => (self: TSet.TSet<A>) => STM.STM<R, E, B>,
   <A, R, E, B>(self: TSet.TSet<A>, pf: (a: A) => STM.STM<R, Option.Option<E>, B>) => STM.STM<R, E, B>
->(2, (trace, restore) => (self, pf) => tMap.takeFirstSTM(self.tMap, (key) => restore(pf)(key)).traced(trace))
+>(2, (self, pf) => tMap.takeFirstSTM(self.tMap, (key) => pf(key)))
 
 /** @internal */
-export const takeSome = Debug.dualWithTrace<
+export const takeSome = dual<
   <A, B>(pf: (a: A) => Option.Option<B>) => (self: TSet.TSet<A>) => STM.STM<never, never, RA.NonEmptyArray<B>>,
   <A, B>(self: TSet.TSet<A>, pf: (a: A) => Option.Option<B>) => STM.STM<never, never, RA.NonEmptyArray<B>>
->(2, (trace, restore) => (self, pf) => tMap.takeSome(self.tMap, (key) => restore(pf)(key)).traced(trace))
+>(2, (self, pf) => tMap.takeSome(self.tMap, (key) => pf(key)))
 
 /** @internal */
-export const takeSomeSTM = Debug.dualWithTrace<
+export const takeSomeSTM = dual<
   <A, R, E, B>(
     pf: (a: A) => STM.STM<R, Option.Option<E>, B>
   ) => (self: TSet.TSet<A>) => STM.STM<R, E, RA.NonEmptyArray<B>>,
@@ -208,58 +189,49 @@ export const takeSomeSTM = Debug.dualWithTrace<
     self: TSet.TSet<A>,
     pf: (a: A) => STM.STM<R, Option.Option<E>, B>
   ) => STM.STM<R, E, RA.NonEmptyArray<B>>
->(2, (trace, restore) => (self, pf) => tMap.takeSomeSTM(self.tMap, (key) => restore(pf)(key)).traced(trace))
+>(2, (self, pf) => tMap.takeSomeSTM(self.tMap, (key) => pf(key)))
 
 /** @internal */
-export const toChunk = Debug.methodWithTrace((trace) =>
-  <A>(self: TSet.TSet<A>): STM.STM<never, never, Array<A>> => tMap.keys(self.tMap).traced(trace)
-)
+export const toChunk = <A>(self: TSet.TSet<A>): STM.STM<never, never, Array<A>> => tMap.keys(self.tMap)
 
 /** @internal */
-export const toHashSet = Debug.methodWithTrace((trace) =>
-  <A>(self: TSet.TSet<A>): STM.STM<never, never, HashSet.HashSet<A>> =>
-    reduce(
-      self,
-      HashSet.empty<A>(),
-      (acc, value) => pipe(acc, HashSet.add(value))
-    ).traced(trace)
-)
+export const toHashSet = <A>(self: TSet.TSet<A>): STM.STM<never, never, HashSet.HashSet<A>> =>
+  reduce(
+    self,
+    HashSet.empty<A>(),
+    (acc, value) => pipe(acc, HashSet.add(value))
+  )
 
 /** @internal */
-export const toReadonlyArray = Debug.methodWithTrace((trace) =>
-  <A>(self: TSet.TSet<A>): STM.STM<never, never, ReadonlyArray<A>> =>
-    reduce<ReadonlyArray<A>, A>(
-      self,
-      [],
-      (acc, value) => [...acc, value]
-    ).traced(trace)
-)
+export const toReadonlyArray = <A>(self: TSet.TSet<A>): STM.STM<never, never, ReadonlyArray<A>> =>
+  reduce<ReadonlyArray<A>, A>(
+    self,
+    [],
+    (acc, value) => [...acc, value]
+  )
 
 /** @internal */
-export const toReadonlySet = Debug.methodWithTrace((trace) =>
-  <A>(self: TSet.TSet<A>): STM.STM<never, never, ReadonlySet<A>> =>
-    core.map(toReadonlyArray(self), (values) => new Set(values)).traced(trace)
-)
+export const toReadonlySet = <A>(self: TSet.TSet<A>): STM.STM<never, never, ReadonlySet<A>> =>
+  core.map(toReadonlyArray(self), (values) => new Set(values))
 
 /** @internal */
-export const transform = Debug.dualWithTrace<
+export const transform = dual<
   <A>(f: (a: A) => A) => (self: TSet.TSet<A>) => STM.STM<never, never, void>,
   <A>(self: TSet.TSet<A>, f: (a: A) => A) => STM.STM<never, never, void>
->(2, (trace, restore) => (self, f) => tMap.transform(self.tMap, (key, value) => [restore(f)(key), value]).traced(trace))
+>(2, (self, f) => tMap.transform(self.tMap, (key, value) => [f(key), value]))
 
 /** @internal */
-export const transformSTM = Debug.dualWithTrace<
+export const transformSTM = dual<
   <A, R, E>(f: (a: A) => STM.STM<R, E, A>) => (self: TSet.TSet<A>) => STM.STM<R, E, void>,
   <A, R, E>(self: TSet.TSet<A>, f: (a: A) => STM.STM<R, E, A>) => STM.STM<R, E, void>
->(2, (trace, restore) =>
-  (self, f) =>
-    tMap.transformSTM(
-      self.tMap,
-      (key, value) => core.map(restore(f)(key), (a) => [a, value])
-    ).traced(trace))
+>(2, (self, f) =>
+  tMap.transformSTM(
+    self.tMap,
+    (key, value) => core.map(f(key), (a) => [a, value])
+  ))
 
 /** @internal */
-export const union = Debug.dualWithTrace<
+export const union = dual<
   <A>(other: TSet.TSet<A>) => (self: TSet.TSet<A>) => STM.STM<never, never, void>,
   <A>(self: TSet.TSet<A>, other: TSet.TSet<A>) => STM.STM<never, never, void>
->(2, (trace) => (self, other) => forEach(other, (value) => add(self, value)).traced(trace))
+>(2, (self, other) => forEach(other, (value) => add(self, value)))

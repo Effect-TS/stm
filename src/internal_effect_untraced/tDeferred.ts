@@ -1,5 +1,5 @@
-import * as Debug from "@effect/data/Debug"
 import * as Either from "@effect/data/Either"
+import { dual } from "@effect/data/Function"
 import * as Option from "@effect/data/Option"
 import * as core from "@effect/stm/internal_effect_untraced/core"
 import * as stm from "@effect/stm/internal_effect_untraced/stm"
@@ -29,57 +29,51 @@ class TDeferredImpl<E, A> implements TDeferred.TDeferred<E, A> {
 }
 
 /** @internal */
-export const _await = Debug.methodWithTrace((trace) =>
-  <E, A>(self: TDeferred.TDeferred<E, A>): STM.STM<never, E, A> =>
-    stm.flatten(
-      stm.collect(tRef.get(self.ref), (option) =>
-        Option.isSome(option) ?
-          Option.some(stm.fromEither(option.value)) :
-          Option.none())
-    ).traced(trace)
-)
+export const _await = <E, A>(self: TDeferred.TDeferred<E, A>): STM.STM<never, E, A> =>
+  stm.flatten(
+    stm.collect(tRef.get(self.ref), (option) =>
+      Option.isSome(option) ?
+        Option.some(stm.fromEither(option.value)) :
+        Option.none())
+  )
 
 /** @internal */
-export const done = Debug.dualWithTrace<
+export const done = dual<
   <E, A>(either: Either.Either<E, A>) => (self: TDeferred.TDeferred<E, A>) => STM.STM<never, never, boolean>,
   <E, A>(self: TDeferred.TDeferred<E, A>, either: Either.Either<E, A>) => STM.STM<never, never, boolean>
->(2, (trace) =>
-  (self, either) =>
-    core.flatMap(
-      tRef.get(self.ref),
-      Option.match(
-        () =>
-          core.zipRight(
-            tRef.set(self.ref, Option.some(either)),
-            core.succeed(true)
-          ),
-        () => core.succeed(false)
-      )
-    ).traced(trace))
+>(2, (self, either) =>
+  core.flatMap(
+    tRef.get(self.ref),
+    Option.match({
+      onNone: () =>
+        core.zipRight(
+          tRef.set(self.ref, Option.some(either)),
+          core.succeed(true)
+        ),
+      onSome: () => core.succeed(false)
+    })
+  ))
 
 /** @internal */
-export const fail = Debug.dualWithTrace<
+export const fail = dual<
   <E>(error: E) => <A>(self: TDeferred.TDeferred<E, A>) => STM.STM<never, never, boolean>,
   <E, A>(self: TDeferred.TDeferred<E, A>, error: E) => STM.STM<never, never, boolean>
->(2, (trace) => (self, error) => done(self, Either.left(error)).traced(trace))
+>(2, (self, error) => done(self, Either.left(error)))
 
 /** @internal */
-export const make = Debug.methodWithTrace((trace) =>
-  <E, A>(): STM.STM<never, never, TDeferred.TDeferred<E, A>> =>
-    core.map(
-      tRef.make<Option.Option<Either.Either<E, A>>>(Option.none()),
-      (ref) => new TDeferredImpl(ref)
-    ).traced(trace)
-)
+export const make = <E, A>(): STM.STM<never, never, TDeferred.TDeferred<E, A>> =>
+  core.map(
+    tRef.make<Option.Option<Either.Either<E, A>>>(Option.none()),
+    (ref) => new TDeferredImpl(ref)
+  )
 
 /** @internal */
-export const poll = Debug.methodWithTrace((trace) =>
-  <E, A>(self: TDeferred.TDeferred<E, A>): STM.STM<never, never, Option.Option<Either.Either<E, A>>> =>
-    tRef.get(self.ref).traced(trace)
-)
+export const poll = <E, A>(
+  self: TDeferred.TDeferred<E, A>
+): STM.STM<never, never, Option.Option<Either.Either<E, A>>> => tRef.get(self.ref)
 
 /** @internal */
-export const succeed = Debug.dualWithTrace<
+export const succeed = dual<
   <A>(value: A) => <E>(self: TDeferred.TDeferred<E, A>) => STM.STM<never, never, boolean>,
   <E, A>(self: TDeferred.TDeferred<E, A>, value: A) => STM.STM<never, never, boolean>
->(2, (trace) => (self, value) => done(self, Either.right(value)).traced(trace))
+>(2, (self, value) => done(self, Either.right(value)))

@@ -37,7 +37,7 @@ class UnpureBarrier {
     return Effect.async((cb) => {
       const check = () => {
         if (this.#isOpen) {
-          cb(Effect.unit())
+          cb(Effect.unit)
         } else {
           setTimeout(() => {
             check()
@@ -215,7 +215,11 @@ describe.concurrent("STM", () => {
       const chunk: Chunk.Chunk<number> = Chunk.range(1, 100)
       const iterable = yield* $(Effect.succeed(pipe(chunk, Chunk.map(TRef.make))))
       const refs = yield* $(STM.all(iterable))
-      const result = yield* $(pipe(refs, Effect.forEachPar(TRef.get)))
+      const result = yield* $(
+        Effect.forEach(refs, TRef.get, {
+          concurrency: "unbounded"
+        })
+      )
       assert.deepStrictEqual(Array.from(result), Array.from(chunk))
     }))
 
@@ -1610,7 +1614,7 @@ describe.concurrent("STM", () => {
       const toSender = transfer(sender, receiver, 150)
       const fiber = yield* $(pipe(
         Array.from({ length: 10 }, () => pipe(toReceiver, Effect.zipRight(toSender))),
-        Effect.forkAll
+        Effect.forkAll()
       ))
       yield* $(pipe(sender, TRef.update((n) => n + 50)))
       yield* $(Fiber.join(fiber))
@@ -1628,11 +1632,11 @@ describe.concurrent("STM", () => {
       const toSender = transfer(sender, receiver, 100)
       const fiber1 = yield* $(pipe(
         Array.from({ length: 10 }, () => toReceiver),
-        Effect.forkAll
+        Effect.forkAll()
       ))
       const fiber2 = yield* $(pipe(
         Array.from({ length: 10 }, () => toSender),
-        Effect.forkAll
+        Effect.forkAll()
       ))
       yield* $(pipe(sender, TRef.update((n) => n + 50)))
       yield* $(Fiber.join(fiber1))
@@ -1649,7 +1653,7 @@ describe.concurrent("STM", () => {
       const receiver = yield* $(TRef.make(0))
       const toReceiver = pipe(transfer(receiver, sender, 100), Effect.repeatN(9))
       const toSender = pipe(transfer(sender, receiver, 100), Effect.repeatN(9))
-      const fiber = yield* $(pipe(toReceiver, Effect.zipPar(toSender), Effect.fork))
+      const fiber = yield* $(pipe(toReceiver, Effect.zip(toSender, { parallel: true }), Effect.fork))
       yield* $(pipe(sender, TRef.update((n) => n + 50)))
       yield* $(Fiber.join(fiber))
       const senderValue = yield* $(TRef.get(sender))
@@ -1671,7 +1675,7 @@ describe.concurrent("STM", () => {
             STM.commit
           )
         ),
-        Effect.forkAll
+        Effect.forkAll()
       ))
       yield* $(Fiber.join(fiber))
       const result = yield* $(TRef.get(ref))
@@ -1711,7 +1715,7 @@ describe.concurrent("STM", () => {
             STM.tap(() => pipe(ref, TRef.set(10))),
             STM.commit
           )),
-        Effect.forkAll
+        Effect.forkAll()
       ))
       yield* $(barrier.await())
       yield* $(Fiber.interrupt(fiber))
@@ -1723,7 +1727,7 @@ describe.concurrent("STM", () => {
 
   it.effect("condition locks - interrupt fiber and observe it", () =>
     Effect.gen(function*($) {
-      const fiberId = yield* $(Effect.fiberId())
+      const fiberId = yield* $(Effect.fiberId)
       const ref = yield* $(TRef.make(1))
       const fiber = yield* $(pipe(
         TRef.get(ref),
@@ -1761,7 +1765,7 @@ describe.concurrent("STM", () => {
       const oldValue2 = yield* $(TRef.get(ref2))
       const fiber = yield* $(pipe(
         Array.from({ length: 100 }, () => STM.commit(permutation(ref1, ref2))),
-        Effect.forkAll
+        Effect.forkAll()
       ))
       yield* $(Fiber.join(fiber))
       const result1 = yield* $(TRef.get(ref1))

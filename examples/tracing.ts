@@ -6,4 +6,4 @@ const transaction = STM.flatMap(
   (n) => STM.fail(new Error(`n: ${n}`))
 )
 
-Effect.runFork(Effect.catchAllCause(transaction, Effect.logErrorCause))
+Effect.runFork(Effect.catchAllCause(transaction, Effect.logCause({ level: "Error" })))

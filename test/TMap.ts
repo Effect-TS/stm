@@ -117,8 +117,8 @@ describe.concurrent("TMap", () => {
       )
       const result = await Effect.runPromise(STM.commit(transaction))
       const keys = entries.map((entry) => entry[0])
-      assert.lengthOf(pipe(Array.from(result), ReadonlyArray.difference(equivalentElements())(keys)), 0)
-      assert.lengthOf(pipe(keys, ReadonlyArray.difference(equivalentElements())(result)), 0)
+      assert.lengthOf(pipe(result, ReadonlyArray.differenceWith(equivalentElements())(keys)), 0)
+      assert.lengthOf(pipe(keys, ReadonlyArray.differenceWith(equivalentElements())(result)), 0)
     })))
 
   it.effect("merge", () =>
@@ -287,8 +287,8 @@ describe.concurrent("TMap", () => {
         STM.flatMap(TMap.toReadonlyArray)
       )
       const result = yield* $(STM.commit(transaction))
-      assert.lengthOf(pipe(result, ReadonlyArray.difference(equivalentElements())(entries)), 0)
-      assert.lengthOf(pipe(entries, ReadonlyArray.difference(equivalentElements())(result)), 0)
+      assert.lengthOf(pipe(result, ReadonlyArray.differenceWith(equivalentElements())(entries)), 0)
+      assert.lengthOf(pipe(entries, ReadonlyArray.differenceWith(equivalentElements())(result)), 0)
     }))
 
   it.effect("setIfAbsent", () =>
@@ -301,8 +301,8 @@ describe.concurrent("TMap", () => {
       )
       const result = yield* $(STM.commit(transaction))
       const expected = [["a", 1], ["b", 2]]
-      assert.lengthOf(pipe(result, ReadonlyArray.difference(equivalentElements())(expected)), 0)
-      assert.lengthOf(pipe(expected, ReadonlyArray.difference(equivalentElements())(result)), 0)
+      assert.lengthOf(pipe(result, ReadonlyArray.differenceWith(equivalentElements())(expected)), 0)
+      assert.lengthOf(pipe(expected, ReadonlyArray.differenceWith(equivalentElements())(result)), 0)
     }))
 
   it.effect("size", () =>
@@ -322,8 +322,8 @@ describe.concurrent("TMap", () => {
         STM.flatMap(TMap.toChunk)
       )
       const result = await Effect.runPromise(STM.commit(transaction))
-      assert.lengthOf(pipe(Array.from(result), ReadonlyArray.difference(equivalentElements())(entries)), 0)
-      assert.lengthOf(pipe(entries, ReadonlyArray.difference(equivalentElements())(Array.from(result))), 0)
+      assert.lengthOf(pipe(Array.from(result), ReadonlyArray.differenceWith(equivalentElements())(entries)), 0)
+      assert.lengthOf(pipe(entries, ReadonlyArray.differenceWith(equivalentElements())(Array.from(result))), 0)
     })))
 
   it.it("toReadonlyArray - collect all elements", () =>
@@ -333,8 +333,8 @@ describe.concurrent("TMap", () => {
         STM.flatMap(TMap.toReadonlyArray)
       )
       const result = await Effect.runPromise(STM.commit(transaction))
-      assert.lengthOf(pipe(result, ReadonlyArray.difference(equivalentElements())(entries)), 0)
-      assert.lengthOf(pipe(entries, ReadonlyArray.difference(equivalentElements())(result)), 0)
+      assert.lengthOf(pipe(result, ReadonlyArray.differenceWith(equivalentElements())(entries)), 0)
+      assert.lengthOf(pipe(entries, ReadonlyArray.differenceWith(equivalentElements())(result)), 0)
     })))
 
   it.it("toReadonlyMap - collect all elements", () =>
@@ -344,8 +344,8 @@ describe.concurrent("TMap", () => {
         STM.flatMap(TMap.toReadonlyMap)
       )
       const result = await Effect.runPromise(STM.commit(transaction))
-      assert.lengthOf(pipe(Array.from(result), ReadonlyArray.difference(equivalentElements())(entries)), 0)
-      assert.lengthOf(pipe(entries, ReadonlyArray.difference(equivalentElements())(Array.from(result))), 0)
+      assert.lengthOf(pipe(Array.from(result), ReadonlyArray.differenceWith(equivalentElements())(entries)), 0)
+      assert.lengthOf(pipe(entries, ReadonlyArray.differenceWith(equivalentElements())(Array.from(result))), 0)
     })))
 
   it.effect("transform", () =>
@@ -357,8 +357,8 @@ describe.concurrent("TMap", () => {
       )
       const result = yield* $(STM.commit(transaction))
       const expected = [["b", 2], ["bb", 4], ["bbb", 6]]
-      assert.lengthOf(pipe(result, ReadonlyArray.difference(equivalentElements())(expected)), 0)
-      assert.lengthOf(pipe(expected, ReadonlyArray.difference(equivalentElements())(result)), 0)
+      assert.lengthOf(pipe(result, ReadonlyArray.differenceWith(equivalentElements())(expected)), 0)
+      assert.lengthOf(pipe(expected, ReadonlyArray.differenceWith(equivalentElements())(result)), 0)
     }))
 
   it.effect("transform - handles keys with negative hash codes", () =>
@@ -370,8 +370,8 @@ describe.concurrent("TMap", () => {
       )
       const result = yield* $(STM.commit(transaction))
       const expected = [[new HashContainer(2), 2], [new HashContainer(4), 4], [new HashContainer(6), 6]]
-      assert.lengthOf(pipe(result, ReadonlyArray.difference(equivalentElements())(expected)), 0)
-      assert.lengthOf(pipe(expected, ReadonlyArray.difference(equivalentElements())(result)), 0)
+      assert.lengthOf(pipe(result, ReadonlyArray.differenceWith(equivalentElements())(expected)), 0)
+      assert.lengthOf(pipe(expected, ReadonlyArray.differenceWith(equivalentElements())(result)), 0)
     }))
 
   it.effect("transform - and shrink", () =>
@@ -394,8 +394,8 @@ describe.concurrent("TMap", () => {
       )
       const result = yield* $(STM.commit(transaction))
       const expected = [["b", 2], ["bb", 4], ["bbb", 6]]
-      assert.lengthOf(pipe(result, ReadonlyArray.difference(equivalentElements())(expected)), 0)
-      assert.lengthOf(pipe(expected, ReadonlyArray.difference(equivalentElements())(result)), 0)
+      assert.lengthOf(pipe(result, ReadonlyArray.differenceWith(equivalentElements())(expected)), 0)
+      assert.lengthOf(pipe(expected, ReadonlyArray.differenceWith(equivalentElements())(result)), 0)
     }))
 
   it.effect("transformSTM - and shrink", () =>
@@ -418,8 +418,8 @@ describe.concurrent("TMap", () => {
       )
       const result = yield* $(STM.commit(transaction))
       const expected = [["a", 2], ["aa", 4], ["aaa", 6]]
-      assert.lengthOf(pipe(result, ReadonlyArray.difference(equivalentElements())(expected)), 0)
-      assert.lengthOf(pipe(expected, ReadonlyArray.difference(equivalentElements())(result)), 0)
+      assert.lengthOf(pipe(result, ReadonlyArray.differenceWith(equivalentElements())(expected)), 0)
+      assert.lengthOf(pipe(expected, ReadonlyArray.differenceWith(equivalentElements())(result)), 0)
     }))
 
   it.effect("transformValues - parallel", () =>
@@ -431,7 +431,10 @@ describe.concurrent("TMap", () => {
         STM.commit,
         Effect.repeatN(999)
       )
-      yield* $(Effect.allParDiscard(Array.from({ length: 2 }, () => effect)))
+      yield* $(Effect.all(Array.from({ length: 2 }, () => effect), {
+        concurrency: "unbounded",
+        discard: true
+      }))
       const result = yield* $(pipe(map, TMap.get("a")))
       assert.deepStrictEqual(result, Option.some(2_000))
     }))
@@ -445,8 +448,8 @@ describe.concurrent("TMap", () => {
       )
       const result = yield* $(STM.commit(transaction))
       const expected = [["a", 2], ["aa", 4], ["aaa", 6]]
-      assert.lengthOf(pipe(result, ReadonlyArray.difference(equivalentElements())(expected)), 0)
-      assert.lengthOf(pipe(expected, ReadonlyArray.difference(equivalentElements())(result)), 0)
+      assert.lengthOf(pipe(result, ReadonlyArray.differenceWith(equivalentElements())(expected)), 0)
+      assert.lengthOf(pipe(expected, ReadonlyArray.differenceWith(equivalentElements())(result)), 0)
     }))
 
   it.effect("updateWith", () =>
@@ -471,8 +474,8 @@ describe.concurrent("TMap", () => {
       )
       const result = await Effect.runPromise(STM.commit(transaction))
       const values = entries.map((entry) => entry[1])
-      assert.lengthOf(pipe(Array.from(result), ReadonlyArray.difference(equivalentElements())(values)), 0)
-      assert.lengthOf(pipe(values, ReadonlyArray.difference(equivalentElements())(result)), 0)
+      assert.lengthOf(pipe(Array.from(result), ReadonlyArray.differenceWith(equivalentElements())(values)), 0)
+      assert.lengthOf(pipe(values, ReadonlyArray.differenceWith(equivalentElements())(result)), 0)
     })))
 
   it.effect("avoid issues due to race conditions (ZIO Issue #4648)", () =>
@@ -480,18 +483,16 @@ describe.concurrent("TMap", () => {
       const keys = ReadonlyArray.range(0, 10)
       const map = yield* $(TMap.fromIterable(ReadonlyArray.map(keys, (n, i) => [n, i])))
       const result = yield* $(pipe(
-        keys,
-        Effect.forEachDiscard((key) =>
+        Effect.forEach(keys, (key) =>
           pipe(
             TMap.remove(map, key),
             STM.commit,
             Effect.fork,
             Effect.zipRight(TMap.toChunk(map)),
             Effect.asUnit
-          )
-        ),
+          ), { discard: true }),
         Effect.exit
       ))
-      assert.deepStrictEqual(Exit.unannotate(result), Exit.unit())
+      assert.deepStrictEqual(Exit.unannotate(result), Exit.unit)
     }))
 })
