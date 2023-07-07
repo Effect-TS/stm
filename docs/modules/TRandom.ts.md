@@ -27,8 +27,6 @@ Added in v1.0.0
 - [symbols](#symbols)
   - [TRandomTypeId](#trandomtypeid)
   - [TRandomTypeId (type alias)](#trandomtypeid-type-alias)
-- [utils](#utils)
-  - [TRandom (interface)](#trandom-interface-1)
 
 ---
 
@@ -192,21 +190,6 @@ Added in v1.0.0
 
 ```ts
 export type TRandomTypeId = typeof TRandomTypeId
-```
-
-Added in v1.0.0
-
-# utils
-
-## TRandom (interface)
-
-**Signature**
-
-```ts
-export interface TRandom {
-  /** @internal */
-  readonly state: TRef.TRef<Random.PCGRandomState>
-}
 ```
 
 Added in v1.0.0

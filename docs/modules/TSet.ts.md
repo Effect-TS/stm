@@ -52,8 +52,6 @@ Added in v1.0.0
 - [symbols](#symbols)
   - [TSetTypeId](#tsettypeid)
   - [TSetTypeId (type alias)](#tsettypeid-type-alias)
-- [utils](#utils)
-  - [TSet (interface)](#tset-interface-1)
 
 ---
 
@@ -514,21 +512,6 @@ Added in v1.0.0
 
 ```ts
 export type TSetTypeId = typeof TSetTypeId
-```
-
-Added in v1.0.0
-
-# utils
-
-## TSet (interface)
-
-**Signature**
-
-```ts
-export interface TSet<A> {
-  /** @internal */
-  readonly tMap: TMap.TMap<A, void>
-}
 ```
 
 Added in v1.0.0

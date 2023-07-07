@@ -64,8 +64,6 @@ Added in v1.0.0
 - [symbols](#symbols)
   - [TMapTypeId](#tmaptypeid)
   - [TMapTypeId (type alias)](#tmaptypeid-type-alias)
-- [utils](#utils)
-  - [TMap (interface)](#tmap-interface-1)
 
 ---
 
@@ -725,23 +723,6 @@ Added in v1.0.0
 
 ```ts
 export type TMapTypeId = typeof TMapTypeId
-```
-
-Added in v1.0.0
-
-# utils
-
-## TMap (interface)
-
-**Signature**
-
-```ts
-export interface TMap<K, V> {
-  /** @internal */
-  readonly tBuckets: TRef.TRef<TArray.TArray<Chunk.Chunk<readonly [K, V]>>>
-  /** @internal */
-  readonly tSize: TRef.TRef<number>
-}
 ```
 
 Added in v1.0.0

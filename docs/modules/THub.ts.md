@@ -34,8 +34,6 @@ Added in v1.0.0
 - [symbols](#symbols)
   - [THubTypeId](#thubtypeid)
   - [THubTypeId (type alias)](#thubtypeid-type-alias)
-- [utils](#utils)
-  - [THub (interface)](#thub-interface-1)
 
 ---
 
@@ -267,34 +265,6 @@ Added in v1.0.0
 
 ```ts
 export type THubTypeId = typeof THubTypeId
-```
-
-Added in v1.0.0
-
-# utils
-
-## THub (interface)
-
-**Signature**
-
-```ts
-export interface THub<A> {
-  readonly [THubTypeId]: THubTypeId
-  /** @internal */
-  readonly hubSize: TRef.TRef<number>
-  /** @internal */
-  readonly publisherHead: TRef.TRef<TRef.TRef<internal.Node<A> | undefined>>
-  /** @internal */
-  readonly publisherTail: TRef.TRef<TRef.TRef<internal.Node<A> | undefined> | undefined>
-  /** @internal */
-  readonly requestedCapacity: number
-  /** @internal */
-  readonly strategy: tQueue.TQueueStrategy
-  /** @internal */
-  readonly subscriberCount: TRef.TRef<number>
-  /** @internal */
-  readonly subscribers: TRef.TRef<HashSet.HashSet<TRef.TRef<TRef.TRef<internal.Node<A>> | undefined>>>
-}
 ```
 
 Added in v1.0.0

@@ -37,8 +37,6 @@ Added in v1.0.0
 - [symbols](#symbols)
   - [TReentrantLockTypeId](#treentrantlocktypeid)
   - [TReentrantLockTypeId (type alias)](#treentrantlocktypeid-type-alias)
-- [utils](#utils)
-  - [TReentrantLock (interface)](#treentrantlock-interface-1)
 
 ---
 
@@ -325,21 +323,6 @@ Added in v1.0.0
 
 ```ts
 export type TReentrantLockTypeId = typeof TReentrantLockTypeId
-```
-
-Added in v1.0.0
-
-# utils
-
-## TReentrantLock (interface)
-
-**Signature**
-
-```ts
-export interface TReentrantLock {
-  /** @internal */
-  readonly state: TRef.TRef<internal.LockState>
-}
 ```
 
 Added in v1.0.0
