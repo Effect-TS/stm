@@ -177,15 +177,6 @@ export interface STMGen<R, E, A> {
 export const isSTM: (u: unknown) => u is STM<unknown, unknown, unknown> = core.isSTM
 
 /**
- * Returns an effect that submerges the error case of an `Either` into the
- * `STM`. The inverse operation of `STM.either`.
- *
- * @since 1.0.0
- * @category mutations
- */
-export const absolve: <R, E, E2, A>(self: STM<R, E, Either.Either<E2, A>>) => STM<R, E | E2, A> = stm.absolve
-
-/**
  * Treats the specified `acquire` transaction as the acquisition of a
  * resource. The `acquire` transaction will be executed interruptibly. If it
  * is a success and is committed the specified `release` workflow will be
@@ -366,17 +357,6 @@ export const catchSome: {
 export const check: (predicate: LazyArg<boolean>) => STM<never, never, void> = stm.check
 
 /**
- * Simultaneously filters and maps the value produced by this effect.
- *
- * @since 1.0.0
- * @category mutations
- */
-export const collect: {
-  <A, A2>(pf: (a: A) => Option.Option<A2>): <R, E>(self: STM<R, E, A>) => STM<R, E, A2>
-  <R, E, A, A2>(self: STM<R, E, A>, pf: (a: A) => Option.Option<A2>): STM<R, E, A2>
-} = stm.collect
-
-/**
  * Collects all the transactional effects, returning a single transactional
  * effect that produces `Unit`.
  *
@@ -399,17 +379,6 @@ export const collectFirst: {
   <A, R, E, A2>(pf: (a: A) => STM<R, E, Option.Option<A2>>): (iterable: Iterable<A>) => STM<R, E, Option.Option<A2>>
   <A, R, E, A2>(iterable: Iterable<A>, pf: (a: A) => STM<R, E, Option.Option<A2>>): STM<R, E, Option.Option<A2>>
 } = stm.collectFirst
-
-/**
- * Simultaneously filters and flatMaps the value produced by this effect.
- *
- * @since 1.0.0
- * @category mutations
- */
-export const collectSTM: {
-  <A, R2, E2, A2>(pf: (a: A) => Option.Option<STM<R2, E2, A2>>): <R, E>(self: STM<R, E, A>) => STM<R2 | R, E2 | E, A2>
-  <R, E, A, R2, E2, A2>(self: STM<R, E, A>, pf: (a: A) => Option.Option<STM<R2, E2, A2>>): STM<R | R2, E | E2, A2>
-} = stm.collectSTM
 
 /**
  * Commits this transaction atomically.
@@ -689,35 +658,12 @@ export const flatMap: {
 } = core.flatMap
 
 /**
- * Creates a composite effect that represents this effect followed by another
- * one that may depend on the error produced by this one.
- *
- * @since 1.0.0
- * @category sequencing
- */
-export const flatMapError: {
-  <E, R2, E2>(f: (error: E) => STM<R2, never, E2>): <R, A>(self: STM<R, E, A>) => STM<R2 | R, E2, A>
-  <R, A, E, R2, E2>(self: STM<R, E, A>, f: (error: E) => STM<R2, never, E2>): STM<R | R2, E2, A>
-} = stm.flatMapError
-
-/**
  * Flattens out a nested `STM` effect.
  *
  * @since 1.0.0
  * @category sequencing
  */
 export const flatten: <R, E, R2, E2, A>(self: STM<R, E, STM<R2, E2, A>>) => STM<R | R2, E | E2, A> = stm.flatten
-
-/**
- * Unwraps the optional error, defaulting to the provided value.
- *
- * @since 1.0.0
- * @category sequencing
- */
-export const flattenErrorOption: {
-  <R, E, A, E2>(self: STM<R, Option.Option<E>, A>, fallback: LazyArg<E2>): STM<R, E | E2, A>
-  <E2>(fallback: LazyArg<E2>): <R, E, A>(self: STM<R, Option.Option<E>, A>) => STM<R, E2 | E, A>
-} = stm.flattenErrorOption
 
 /**
  * Flips the success and failure channels of this transactional effect. This
@@ -1182,15 +1128,6 @@ export const isSuccess: <R, E, A>(self: STM<R, E, A>) => STM<R, never, boolean> 
  */
 export const iterate: <R, E, Z>(initial: Z, cont: (z: Z) => boolean, body: (z: Z) => STM<R, E, Z>) => STM<R, E, Z> =
   stm.iterate
-
-/**
- * "Zooms in" on the value in the `Left` side of an `Either`, moving the
- * possibility that the value is a `Right` to the error channel.
- *
- * @since 1.0.0
- * @category getters
- */
-export const left: <R, E, A, A2>(self: STM<R, E, Either.Either<A, A2>>) => STM<R, Either.Either<E, A2>, A> = stm.left
 
 /**
  * Loops with the specified transactional function, collecting the results
@@ -1711,15 +1648,6 @@ export const retryWhile: {
 } = stm.retryWhile
 
 /**
- * "Zooms in" on the value in the `Right` side of an `Either`, moving the
- * possibility that the value is a `Left` to the error channel.
- *
- * @since 1.0.0
- * @category getters
- */
-export const right: <R, E, A, A2>(self: STM<R, E, Either.Either<A, A2>>) => STM<R, Either.Either<A, E>, A2> = stm.right
-
-/**
  * Converts an option on values into an option on errors.
  *
  * @since 1.0.0
@@ -1757,28 +1685,6 @@ export const someOrElseSTM: {
 } = stm.someOrElseSTM
 
 /**
- * Extracts the optional value, or fails with the given error 'e'.
- *
- * @since 1.0.0
- * @category getters
- */
-export const someOrFail: {
-  <E2>(error: LazyArg<E2>): <R, E, A>(self: STM<R, E, Option.Option<A>>) => STM<R, E2 | E, A>
-  <R, E, A, E2>(self: STM<R, E, Option.Option<A>>, error: LazyArg<E2>): STM<R, E | E2, A>
-} = stm.someOrFail
-
-/**
- * Extracts the optional value, or fails with a
- * `Cause.NoSuchElementException`.
- *
- * @since 1.0.0
- * @category getters
- */
-export const someOrFailException: <R, E, A>(
-  self: STM<R, E, Option.Option<A>>
-) => STM<R, E | Cause.NoSuchElementException, A> = stm.someOrFailException
-
-/**
  * Returns an `STM` effect that succeeds with the specified value.
  *
  * @since 1.0.0
@@ -1787,28 +1693,12 @@ export const someOrFailException: <R, E, A>(
 export const succeed: <A>(value: A) => STM<never, never, A> = core.succeed
 
 /**
- * Returns an effect with the value on the left part.
- *
- * @since 1.0.0
- * @category constructors
- */
-export const succeedLeft: <A>(value: A) => STM<never, never, Either.Either<A, never>> = stm.succeedLeft
-
-/**
  * Returns an effect with the empty value.
  *
  * @since 1.0.0
  * @category constructors
  */
 export const succeedNone: () => STM<never, never, Option.Option<never>> = stm.succeedNone
-
-/**
- * Returns an effect with the value on the right part.
- *
- * @since 1.0.0
- * @category constructors
- */
-export const succeedRight: <A>(value: A) => STM<never, never, Either.Either<never, A>> = stm.succeedRight
 
 /**
  * Returns an effect with the optional value.
@@ -1909,16 +1799,6 @@ export const tapError: {
 export const tryCatch: <E, A>(attempt: () => A, onThrow: (u: unknown) => E) => Effect.Effect<never, E, A> = stm.tryCatch
 
 /**
- * Converts a `STM<R, Either<E, A>, A2>` into a `STM<R, E, Either<A2, A>>`.
- * The inverse of `left`.
- *
- * @since 1.0.0
- * @category getters
- */
-export const unleft: <R, E, A, A2>(self: STM<R, Either.Either<E, A>, A2>) => STM<R, E, Either.Either<A2, A>> =
-  stm.unleft
-
-/**
  * The moral equivalent of `if (!p) exp`
  *
  * @since 1.0.0
@@ -1939,16 +1819,6 @@ export const unlessSTM: {
   <R2, E2>(predicate: STM<R2, E2, boolean>): <R, E, A>(self: STM<R, E, A>) => STM<R2 | R, E2 | E, Option.Option<A>>
   <R, E, A, R2, E2>(self: STM<R, E, A>, predicate: STM<R2, E2, boolean>): STM<R | R2, E | E2, Option.Option<A>>
 } = stm.unlessSTM
-
-/**
- * Converts a `STM<R, Either<A, E>, A2>` into a `STM<R, E, Either<A, A2>>`.
- * The inverse of `right`.
- *
- * @since 1.0.0
- * @category getters
- */
-export const unright: <R, E, A, A2>(self: STM<R, Either.Either<A, E>, A2>) => STM<R, E, Either.Either<A, A2>> =
-  stm.unright
 
 /**
  * Converts an option on errors into an option on values.
@@ -2003,37 +1873,6 @@ export const when: {
   (predicate: LazyArg<boolean>): <R, E, A>(self: STM<R, E, A>) => STM<R, E, Option.Option<A>>
   <R, E, A>(self: STM<R, E, A>, predicate: LazyArg<boolean>): STM<R, E, Option.Option<A>>
 } = stm.when
-
-/**
- * Runs an effect when the supplied partial function matches for the given
- * value, otherwise does nothing.
- *
- * @since 1.0.0
- * @category mutations
- */
-export const whenCase: <R, E, A, B>(
-  evaluate: LazyArg<A>,
-  pf: (a: A) => Option.Option<STM<R, E, B>>
-) => STM<R, E, Option.Option<B>> = stm.whenCase
-
-/**
- * Runs an effect when the supplied partial function matches for the given
- * effectful value, otherwise does nothing.
- *
- * @since 1.0.0
- * @category mutations
- */
-export const whenCaseSTM: {
-  <A, R2, E2, A2>(
-    pf: (a: A) => Option.Option<STM<R2, E2, A2>>
-  ): <R, E>(
-    self: STM<R, E, A>
-  ) => STM<R2 | R, E2 | E, Option.Option<A2>>
-  <R, E, A, R2, E2, A2>(
-    self: STM<R, E, A>,
-    pf: (a: A) => Option.Option<STM<R2, E2, A2>>
-  ): STM<R | R2, E | E2, Option.Option<A2>>
-} = stm.whenCaseSTM
 
 /**
  * The moral equivalent of `if (p) exp` when `p` has side-effects.
