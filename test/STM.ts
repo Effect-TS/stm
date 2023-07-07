@@ -141,20 +141,6 @@ const permutation = (ref1: TRef.TRef<number>, ref2: TRef.TRef<number>): STM.STM<
   )
 
 describe.concurrent("STM", () => {
-  it.effect("absolve - convert a Right", () =>
-    Effect.gen(function*($) {
-      const transaction = STM.absolve(STM.succeed(Either.right(42)))
-      const result = yield* $(STM.commit(transaction))
-      assert.strictEqual(result, 42)
-    }))
-
-  it.effect("absolve - convert a Left", () =>
-    Effect.gen(function*($) {
-      const transaction = STM.absolve(STM.succeed(Either.left("Ouch")))
-      const result = yield* $(Effect.exit(STM.commit(transaction)))
-      assert.deepStrictEqual(Exit.unannotate(result), Exit.fail("Ouch"))
-    }))
-
   it.effect("catchAll", () =>
     Effect.gen(function*($) {
       const transaction = pipe(
@@ -394,41 +380,11 @@ describe.concurrent("STM", () => {
       assert.deepStrictEqual(Exit.unannotate(result), Exit.fail(error))
     }))
 
-  it.effect("flatMapError - flatMaps from one error to another", () =>
-    Effect.gen(function*($) {
-      const transaction = pipe(
-        STM.fail(-1),
-        STM.flatMapError((n) => STM.succeed(`log: ${n}`))
-      )
-      const result = yield* $(Effect.exit(STM.commit(transaction)))
-      assert.deepStrictEqual(Exit.unannotate(result), Exit.fail("log: -1"))
-    }))
-
   it.effect("flatten", () =>
     Effect.gen(function*($) {
       const transaction = STM.flatten(STM.succeed(STM.succeed("test")))
       const result = yield* $(STM.commit(transaction))
       assert.strictEqual(result, "test")
-    }))
-
-  it.effect("flattenErrorOption - with an existing error and return it", () =>
-    Effect.gen(function*($) {
-      const transaction = pipe(
-        STM.fail(Option.some("Ouch")),
-        STM.flattenErrorOption(() => "default error")
-      )
-      const result = yield* $(Effect.exit(STM.commit(transaction)))
-      assert.deepStrictEqual(Exit.unannotate(result), Exit.fail("Ouch"))
-    }))
-
-  it.effect("flattenErrorOption - with no error and default to value", () =>
-    Effect.gen(function*($) {
-      const transaction = pipe(
-        STM.fail(Option.none()),
-        STM.flattenErrorOption(() => "default error")
-      )
-      const result = yield* $(Effect.exit(STM.commit(transaction)))
-      assert.deepStrictEqual(Exit.unannotate(result), Exit.fail("default error"))
     }))
 
   it.effect("forEach - performs an action on each chunk element and return a single transaction", () =>
@@ -512,27 +468,6 @@ describe.concurrent("STM", () => {
       )
       const result = yield* $(STM.commit(transaction))
       assert.strictEqual(result, -1)
-    }))
-
-  it.effect("left - on Left value", () =>
-    Effect.gen(function*($) {
-      const transaction = STM.left(STM.succeed(Either.left("left")))
-      const result = yield* $(STM.commit(transaction))
-      assert.strictEqual(result, "left")
-    }))
-
-  it.effect("left - on Right value", () =>
-    Effect.gen(function*($) {
-      const transaction = STM.left(STM.succeed(Either.right("right")))
-      const result = yield* $(Effect.exit(STM.commit(transaction)))
-      assert.deepStrictEqual(Exit.unannotate(result), Exit.fail(Either.right("right")))
-    }))
-
-  it.effect("left - on failure", () =>
-    Effect.gen(function*($) {
-      const transaction = STM.left(STM.fail("Ouch"))
-      const result = yield* $(Effect.exit(STM.commit(transaction)))
-      assert.deepStrictEqual(Exit.unannotate(result), Exit.fail(Either.left("Ouch")))
     }))
 
   it.effect("mapBoth - success value", () =>
@@ -990,27 +925,6 @@ describe.concurrent("STM", () => {
       assert.deepStrictEqual(Array.from(result), [12, 12])
     }))
 
-  it.effect("right - on Right", () =>
-    Effect.gen(function*($) {
-      const transaction = STM.right(STM.succeed(Either.right("right")))
-      const result = yield* $(STM.commit(transaction))
-      assert.strictEqual(result, "right")
-    }))
-
-  it.effect("right - on Left", () =>
-    Effect.gen(function*($) {
-      const transaction = STM.right(STM.succeed(Either.left("left")))
-      const result = yield* $(Effect.exit(STM.commit(transaction)))
-      assert.deepStrictEqual(Exit.unannotate(result), Exit.fail(Either.left("left")))
-    }))
-
-  it.effect("right - on failure", () =>
-    Effect.gen(function*($) {
-      const transaction = STM.right(STM.fail("Ouch"))
-      const result = yield* $(Effect.exit(STM.commit(transaction)))
-      assert.deepStrictEqual(Exit.unannotate(result), Exit.fail(Either.right("Ouch")))
-    }))
-
   it.effect("some - extracts the value from Some", () =>
     Effect.gen(function*($) {
       const transaction = STM.some(STM.succeed(Option.some(1)))
@@ -1075,45 +989,6 @@ describe.concurrent("STM", () => {
       const transaction = pipe(STM.fail(error), STM.someOrElseSTM(() => STM.succeed(42)))
       const result = yield* $(Effect.exit(STM.commit(transaction)))
       assert.deepStrictEqual(Exit.unannotate(result), Exit.fail(error))
-    }))
-
-  it.effect("someOrFail - extracts the value from Some", () =>
-    Effect.gen(function*($) {
-      const error = Cause.RuntimeException("Ouch")
-      const transaction = pipe(STM.succeed(Option.some(1)), STM.someOrFail(() => error))
-      const result = yield* $(STM.commit(transaction))
-      assert.strictEqual(result, 1)
-    }))
-
-  it.effect("someOrFail - fails on None", () =>
-    Effect.gen(function*($) {
-      const error = Cause.RuntimeException("Ouch")
-      const transaction = pipe(STM.succeed(Option.none()), STM.someOrFail(() => error))
-      const result = yield* $(Effect.exit(STM.commit(transaction)))
-      assert.deepStrictEqual(Exit.unannotate(result), Exit.fail(error))
-    }))
-
-  it.effect("someOrFail - fails with the original error", () =>
-    Effect.gen(function*($) {
-      const error1 = Cause.RuntimeException("Ouch 1")
-      const error2 = Cause.RuntimeException("Ouch 2")
-      const transaction = pipe(STM.fail(error1), STM.someOrFail(() => error2))
-      const result = yield* $(Effect.exit(STM.commit(transaction)))
-      assert.deepStrictEqual(Exit.unannotate(result), Exit.fail(error1))
-    }))
-
-  it.effect("someOrFailException - extracts the optional value", () =>
-    Effect.gen(function*($) {
-      const transaction = STM.someOrFailException(STM.succeed(Option.some(42)))
-      const result = yield* $(STM.commit(transaction))
-      assert.strictEqual(result, 42)
-    }))
-
-  it.effect("someOrFailException - fails when given a None", () =>
-    Effect.gen(function*($) {
-      const transaction = STM.someOrFailException(STM.succeed(Option.none()))
-      const result = yield* $(Effect.exit(STM.commit(transaction)))
-      assert.deepStrictEqual(Exit.unannotate(result), Exit.fail(Cause.NoSuchElementException()))
     }))
 
   it.effect("succeed", () =>
@@ -1323,54 +1198,6 @@ describe.concurrent("STM", () => {
       )
       const result = yield* $(STM.commit(transaction))
       assert.strictEqual(result, 1)
-    }))
-
-  it.effect("whenCase - executes correct branch only", () =>
-    Effect.gen(function*($) {
-      const transaction = STM.gen(function*($) {
-        const ref = yield* $(TRef.make(false))
-        yield* $(STM.whenCase(
-          (): Option.Option<number> => Option.none(),
-          (option) => Option.isSome(option) ? Option.some(pipe(ref, TRef.set(true))) : Option.none()
-        ))
-        const result1 = yield* $(TRef.get(ref))
-        yield* $(STM.whenCase(
-          () => Option.some(1),
-          (option) => Option.isSome(option) ? Option.some(pipe(ref, TRef.set(true))) : Option.none()
-        ))
-        const result2 = yield* $(TRef.get(ref))
-        return [result1, result2] as const
-      })
-      const result = yield* $(STM.commit(transaction))
-      assert.deepStrictEqual(result, [false, true])
-    }))
-
-  it.effect("whenCaseSTM - executes correct branch only", () =>
-    Effect.gen(function*($) {
-      const transaction = STM.gen(function*($) {
-        const ref = yield* $(TRef.make(false))
-        yield* $(pipe(
-          STM.succeed<Option.Option<number>>(Option.none()),
-          STM.whenCaseSTM((option) =>
-            Option.isSome(option) ?
-              Option.some(pipe(ref, TRef.set(true))) :
-              Option.none()
-          )
-        ))
-        const result1 = yield* $(TRef.get(ref))
-        yield* $(pipe(
-          STM.succeed<Option.Option<number>>(Option.some(0)),
-          STM.whenCaseSTM((option) =>
-            Option.isSome(option) ?
-              Option.some(pipe(ref, TRef.set(true))) :
-              Option.none()
-          )
-        ))
-        const result2 = yield* $(TRef.get(ref))
-        return [result1, result2] as const
-      })
-      const result = yield* $(STM.commit(transaction))
-      assert.deepStrictEqual(result, [false, true])
     }))
 
   it.effect("whenSTM - false", () =>

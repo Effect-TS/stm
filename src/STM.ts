@@ -369,6 +369,28 @@ export const check: (predicate: LazyArg<boolean>) => STM<never, never, void> = s
 export const allDiscard: <R, E, A>(iterable: Iterable<STM<R, E, A>>) => STM<R, E, void> = stm.collectAllDiscard
 
 /**
+ * Simultaneously filters and maps the value produced by this effect.
+ *
+ * @since 1.0.0
+ * @category mutations
+ */
+export const collect: {
+  <A, A2>(pf: (a: A) => Option.Option<A2>): <R, E>(self: STM<R, E, A>) => STM<R, E, A2>
+  <R, E, A, A2>(self: STM<R, E, A>, pf: (a: A) => Option.Option<A2>): STM<R, E, A2>
+} = stm.collect
+
+/**
+ * Simultaneously filters and maps the value produced by this effect.
+ *
+ * @since 1.0.0
+ * @category mutations
+ */
+export const collectSTM: {
+  <A, R2, E2, A2>(pf: (a: A) => Option.Option<STM<R2, E2, A2>>): <R, E>(self: STM<R, E, A>) => STM<R2 | R, E2 | E, A2>
+  <R, E, A, R2, E2, A2>(self: STM<R, E, A>, pf: (a: A) => Option.Option<STM<R2, E2, A2>>): STM<R | R2, E | E2, A2>
+} = stm.collectSTM
+
+/**
  * Collects the first element of the `Iterable<A>` for which the effectual
  * function `f` returns `Some`.
  *
