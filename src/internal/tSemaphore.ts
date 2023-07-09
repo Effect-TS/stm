@@ -102,11 +102,11 @@ export const withPermitsScoped = dual<
   (permits: number) => (self: TSemaphore.TSemaphore) => Effect.Effect<Scope.Scope, never, void>,
   (self: TSemaphore.TSemaphore, permits: number) => Effect.Effect<Scope.Scope, never, void>
 >(2, (self, permits) =>
-  Effect.acquireRelease({
-    acquire: core.commit(acquireN(self, permits)),
-    release: () => core.commit(releaseN(self, permits)),
-    interruptable: true
-  }))
+  Effect.acquireRelease(
+    core.commit(acquireN(self, permits)),
+    () => core.commit(releaseN(self, permits)),
+    { interruptible: true }
+  ))
 
 /** @internal */
 export const unsafeMakeSemaphore = (permits: number): TSemaphore.TSemaphore => {

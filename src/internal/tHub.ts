@@ -565,10 +565,10 @@ export const subscribe = <A>(self: THub.THub<A>): STM.STM<never, never, TQueue.T
 
 /** @internal */
 export const subscribeScoped = <A>(self: THub.THub<A>): Effect.Effect<Scope.Scope, never, TQueue.TDequeue<A>> =>
-  Effect.acquireRelease({
-    acquire: subscribe(self),
-    release: (dequeue) => tQueue.shutdown(dequeue)
-  })
+  Effect.acquireRelease(
+    subscribe(self),
+    (dequeue) => tQueue.shutdown(dequeue)
+  )
 
 /** @internal */
 export const unbounded = <A>(): STM.STM<never, never, THub.THub<A>> =>

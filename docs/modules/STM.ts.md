@@ -49,9 +49,7 @@ Added in v1.0.0
   - [replicateSTM](#replicatestm)
   - [replicateSTMDiscard](#replicatestmdiscard)
   - [succeed](#succeed)
-  - [succeedLeft](#succeedleft)
   - [succeedNone](#succeednone)
-  - [succeedRight](#succeedright)
   - [succeedSome](#succeedsome)
   - [suspend](#suspend)
   - [sync](#sync)
@@ -100,15 +98,9 @@ Added in v1.0.0
   - [head](#head)
   - [isFailure](#isfailure)
   - [isSuccess](#issuccess)
-  - [left](#left)
-  - [right](#right)
   - [some](#some)
   - [someOrElse](#someorelse)
   - [someOrElseSTM](#someorelsestm)
-  - [someOrFail](#someorfail)
-  - [someOrFailException](#someorfailexception)
-  - [unleft](#unleft)
-  - [unright](#unright)
   - [unsome](#unsome)
 - [mapping](#mapping)
   - [as](#as)
@@ -126,7 +118,6 @@ Added in v1.0.0
   - [STMUnify (interface)](#stmunify-interface)
   - [STMUnifyBlacklist (interface)](#stmunifyblacklist-interface)
 - [mutations](#mutations)
-  - [absolve](#absolve)
   - [collect](#collect)
   - [collectSTM](#collectstm)
   - [either](#either)
@@ -153,16 +144,12 @@ Added in v1.0.0
   - [validateAll](#validateall)
   - [validateFirst](#validatefirst)
   - [when](#when)
-  - [whenCase](#whencase)
-  - [whenCaseSTM](#whencasestm)
   - [whenSTM](#whenstm)
 - [refinements](#refinements)
   - [isSTM](#isstm)
 - [sequencing](#sequencing)
   - [flatMap](#flatmap)
-  - [flatMapError](#flatmaperror)
   - [flatten](#flatten)
-  - [flattenErrorOption](#flattenerroroption)
   - [tap](#tap)
   - [tapBoth](#tapboth)
   - [tapError](#taperror)
@@ -748,18 +735,6 @@ export declare const succeed: <A>(value: A) => STM<never, never, A>
 
 Added in v1.0.0
 
-## succeedLeft
-
-Returns an effect with the value on the left part.
-
-**Signature**
-
-```ts
-export declare const succeedLeft: <A>(value: A) => STM<never, never, Either.Either<A, never>>
-```
-
-Added in v1.0.0
-
 ## succeedNone
 
 Returns an effect with the empty value.
@@ -768,18 +743,6 @@ Returns an effect with the empty value.
 
 ```ts
 export declare const succeedNone: () => STM<never, never, Option.Option<never>>
-```
-
-Added in v1.0.0
-
-## succeedRight
-
-Returns an effect with the value on the right part.
-
-**Signature**
-
-```ts
-export declare const succeedRight: <A>(value: A) => STM<never, never, Either.Either<never, A>>
 ```
 
 Added in v1.0.0
@@ -1422,32 +1385,6 @@ export declare const isSuccess: <R, E, A>(self: STM<R, E, A>) => STM<R, never, b
 
 Added in v1.0.0
 
-## left
-
-"Zooms in" on the value in the `Left` side of an `Either`, moving the
-possibility that the value is a `Right` to the error channel.
-
-**Signature**
-
-```ts
-export declare const left: <R, E, A, A2>(self: STM<R, E, Either.Either<A, A2>>) => STM<R, Either.Either<E, A2>, A>
-```
-
-Added in v1.0.0
-
-## right
-
-"Zooms in" on the value in the `Right` side of an `Either`, moving the
-possibility that the value is a `Left` to the error channel.
-
-**Signature**
-
-```ts
-export declare const right: <R, E, A, A2>(self: STM<R, E, Either.Either<A, A2>>) => STM<R, Either.Either<A, E>, A2>
-```
-
-Added in v1.0.0
-
 ## some
 
 Converts an option on values into an option on errors.
@@ -1492,62 +1429,6 @@ export declare const someOrElseSTM: {
     A | A2
   >
 }
-```
-
-Added in v1.0.0
-
-## someOrFail
-
-Extracts the optional value, or fails with the given error 'e'.
-
-**Signature**
-
-```ts
-export declare const someOrFail: {
-  <E2>(error: LazyArg<E2>): <R, E, A>(self: STM<R, E, Option.Option<A>>) => STM<R, E2 | E, A>
-  <R, E, A, E2>(self: STM<R, E, Option.Option<A>>, error: LazyArg<E2>): STM<R, E | E2, A>
-}
-```
-
-Added in v1.0.0
-
-## someOrFailException
-
-Extracts the optional value, or fails with a
-`Cause.NoSuchElementException`.
-
-**Signature**
-
-```ts
-export declare const someOrFailException: <R, E, A>(
-  self: STM<R, E, Option.Option<A>>
-) => STM<R, E | Cause.NoSuchElementException, A>
-```
-
-Added in v1.0.0
-
-## unleft
-
-Converts a `STM<R, Either<E, A>, A2>` into a `STM<R, E, Either<A2, A>>`.
-The inverse of `left`.
-
-**Signature**
-
-```ts
-export declare const unleft: <R, E, A, A2>(self: STM<R, Either.Either<E, A>, A2>) => STM<R, E, Either.Either<A2, A>>
-```
-
-Added in v1.0.0
-
-## unright
-
-Converts a `STM<R, Either<A, E>, A2>` into a `STM<R, E, Either<A, A2>>`.
-The inverse of `right`.
-
-**Signature**
-
-```ts
-export declare const unright: <R, E, A, A2>(self: STM<R, Either.Either<A, E>, A2>) => STM<R, E, Either.Either<A, A2>>
 ```
 
 Added in v1.0.0
@@ -2047,19 +1928,6 @@ Added in v1.0.0
 
 # mutations
 
-## absolve
-
-Returns an effect that submerges the error case of an `Either` into the
-`STM`. The inverse operation of `STM.either`.
-
-**Signature**
-
-```ts
-export declare const absolve: <R, E, E2, A>(self: STM<R, E, Either.Either<E2, A>>) => STM<R, E | E2, A>
-```
-
-Added in v1.0.0
-
 ## collect
 
 Simultaneously filters and maps the value produced by this effect.
@@ -2077,7 +1945,7 @@ Added in v1.0.0
 
 ## collectSTM
 
-Simultaneously filters and flatMaps the value produced by this effect.
+Simultaneously filters and maps the value produced by this effect.
 
 **Signature**
 
@@ -2477,44 +2345,6 @@ export declare const when: {
 
 Added in v1.0.0
 
-## whenCase
-
-Runs an effect when the supplied partial function matches for the given
-value, otherwise does nothing.
-
-**Signature**
-
-```ts
-export declare const whenCase: <R, E, A, B>(
-  evaluate: LazyArg<A>,
-  pf: (a: A) => Option.Option<STM<R, E, B>>
-) => STM<R, E, Option.Option<B>>
-```
-
-Added in v1.0.0
-
-## whenCaseSTM
-
-Runs an effect when the supplied partial function matches for the given
-effectful value, otherwise does nothing.
-
-**Signature**
-
-```ts
-export declare const whenCaseSTM: {
-  <A, R2, E2, A2>(pf: (a: A) => Option.Option<STM<R2, E2, A2>>): <R, E>(
-    self: STM<R, E, A>
-  ) => STM<R2 | R, E2 | E, Option.Option<A2>>
-  <R, E, A, R2, E2, A2>(self: STM<R, E, A>, pf: (a: A) => Option.Option<STM<R2, E2, A2>>): STM<
-    R | R2,
-    E | E2,
-    Option.Option<A2>
-  >
-}
-```
-
-Added in v1.0.0
-
 ## whenSTM
 
 The moral equivalent of `if (p) exp` when `p` has side-effects.
@@ -2562,22 +2392,6 @@ export declare const flatMap: {
 
 Added in v1.0.0
 
-## flatMapError
-
-Creates a composite effect that represents this effect followed by another
-one that may depend on the error produced by this one.
-
-**Signature**
-
-```ts
-export declare const flatMapError: {
-  <E, R2, E2>(f: (error: E) => STM<R2, never, E2>): <R, A>(self: STM<R, E, A>) => STM<R2 | R, E2, A>
-  <R, A, E, R2, E2>(self: STM<R, E, A>, f: (error: E) => STM<R2, never, E2>): STM<R | R2, E2, A>
-}
-```
-
-Added in v1.0.0
-
 ## flatten
 
 Flattens out a nested `STM` effect.
@@ -2586,21 +2400,6 @@ Flattens out a nested `STM` effect.
 
 ```ts
 export declare const flatten: <R, E, R2, E2, A>(self: STM<R, E, STM<R2, E2, A>>) => STM<R | R2, E | E2, A>
-```
-
-Added in v1.0.0
-
-## flattenErrorOption
-
-Unwraps the optional error, defaulting to the provided value.
-
-**Signature**
-
-```ts
-export declare const flattenErrorOption: {
-  <R, E, A, E2>(self: STM<R, Option.Option<E>, A>, fallback: LazyArg<E2>): STM<R, E | E2, A>
-  <E2>(fallback: LazyArg<E2>): <R, E, A>(self: STM<R, Option.Option<E>, A>) => STM<R, E2 | E, A>
-}
 ```
 
 Added in v1.0.0

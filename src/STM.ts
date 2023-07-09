@@ -103,8 +103,7 @@ export interface STMTypeLambda extends TypeLambda {
  * @category models
  */
 declare module "@effect/data/Context" {
-  interface Tag<Identifier, Service> extends STM<Identifier, never, Service> {}
-  interface TracedTag<Identifier, Service> extends STM<Identifier, never, Service> {}
+  interface Tag<Identifier, Service> extends Omit<STM<Identifier, never, Service>, "pipe"> {}
 }
 
 /**
