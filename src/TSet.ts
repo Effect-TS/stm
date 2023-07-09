@@ -4,7 +4,7 @@
 import type * as HashSet from "@effect/data/HashSet"
 import type * as Option from "@effect/data/Option"
 import type { Predicate } from "@effect/data/Predicate"
-import * as internal from "@effect/stm/internal_effect_untraced/tSet"
+import * as internal from "@effect/stm/internal/tSet"
 import type * as STM from "@effect/stm/STM"
 import type * as TMap from "@effect/stm/TMap"
 

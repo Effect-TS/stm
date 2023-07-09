@@ -3,34 +3,19 @@
  */
 import * as Chunk from "@effect/data/Chunk"
 import type * as Context from "@effect/data/Context"
-import * as Debug from "@effect/data/Debug"
 import type * as Either from "@effect/data/Either"
+import type * as Equal from "@effect/data/Equal"
 import type { LazyArg } from "@effect/data/Function"
 import type { TypeLambda } from "@effect/data/HKT"
 import type * as Option from "@effect/data/Option"
+import type * as Pipeable from "@effect/data/Pipeable"
 import type { Predicate } from "@effect/data/Predicate"
-import * as applicative from "@effect/data/typeclass/Applicative"
-import type * as bicovariant from "@effect/data/typeclass/Bicovariant"
-import * as chainable from "@effect/data/typeclass/Chainable"
-import * as covariant from "@effect/data/typeclass/Covariant"
-import type * as flatMap_ from "@effect/data/typeclass/FlatMap"
-import * as invariant from "@effect/data/typeclass/Invariant"
-import type * as monad from "@effect/data/typeclass/Monad"
-import type { Monoid } from "@effect/data/typeclass/Monoid"
-import * as of_ from "@effect/data/typeclass/Of"
-import type * as pointed from "@effect/data/typeclass/Pointed"
-import type * as product_ from "@effect/data/typeclass/Product"
-import type * as semiAlternative from "@effect/data/typeclass/SemiAlternative"
-import * as semiApplicative from "@effect/data/typeclass/SemiApplicative"
-import * as semiCoproduct from "@effect/data/typeclass/SemiCoproduct"
-import type { Semigroup } from "@effect/data/typeclass/Semigroup"
-import * as semiProduct from "@effect/data/typeclass/SemiProduct"
 import type * as Unify from "@effect/data/Unify"
 import * as Cause from "@effect/io/Cause"
 import type * as Effect from "@effect/io/Effect"
 import type * as FiberId from "@effect/io/Fiber/Id"
-import * as core from "@effect/stm/internal_effect_untraced/core"
-import * as stm from "@effect/stm/internal_effect_untraced/stm"
+import * as core from "@effect/stm/internal/core"
+import * as stm from "@effect/stm/internal/stm"
 
 /**
  * @since 1.0.0
@@ -81,8 +66,9 @@ export type STMTypeId = typeof STMTypeId
  * @since 1.0.0
  * @category models
  */
-export interface STM<R, E, A> extends Effect.Effect<R, E, A>, STM.Variance<R, E, A> {
-  traced(trace: Debug.Trace): STM<R, E, A>
+export interface STM<R, E, A>
+  extends Effect.Effect.Variance<R, E, A>, STM.Variance<R, E, A>, Equal.Equal, Pipeable.Pipeable<STM<R, E, A>>
+{
   [Unify.typeSymbol]?: unknown
   [Unify.unifySymbol]?: STMUnify<this>
   [Unify.blacklistSymbol]?: STMUnifyBlacklist
@@ -117,8 +103,7 @@ export interface STMTypeLambda extends TypeLambda {
  * @category models
  */
 declare module "@effect/data/Context" {
-  interface Tag<Identifier, Service> extends STM<Identifier, never, Service> {}
-  interface TracedTag<Identifier, Service> extends STM<Identifier, never, Service> {}
+  interface Tag<Identifier, Service> extends Omit<STM<Identifier, never, Service>, "pipe"> {}
 }
 
 /**
@@ -189,15 +174,6 @@ export interface STMGen<R, E, A> {
  * @category refinements
  */
 export const isSTM: (u: unknown) => u is STM<unknown, unknown, unknown> = core.isSTM
-
-/**
- * Returns an effect that submerges the error case of an `Either` into the
- * `STM`. The inverse operation of `STM.either`.
- *
- * @since 1.0.0
- * @category mutations
- */
-export const absolve: <R, E, E2, A>(self: STM<R, E, Either.Either<E2, A>>) => STM<R, E | E2, A> = stm.absolve
 
 /**
  * Treats the specified `acquire` transaction as the acquisition of a
@@ -380,17 +356,6 @@ export const catchSome: {
 export const check: (predicate: LazyArg<boolean>) => STM<never, never, void> = stm.check
 
 /**
- * Simultaneously filters and maps the value produced by this effect.
- *
- * @since 1.0.0
- * @category mutations
- */
-export const collect: {
-  <A, A2>(pf: (a: A) => Option.Option<A2>): <R, E>(self: STM<R, E, A>) => STM<R, E, A2>
-  <R, E, A, A2>(self: STM<R, E, A>, pf: (a: A) => Option.Option<A2>): STM<R, E, A2>
-} = stm.collect
-
-/**
  * Collects all the transactional effects, returning a single transactional
  * effect that produces `Unit`.
  *
@@ -403,6 +368,28 @@ export const collect: {
 export const allDiscard: <R, E, A>(iterable: Iterable<STM<R, E, A>>) => STM<R, E, void> = stm.collectAllDiscard
 
 /**
+ * Simultaneously filters and maps the value produced by this effect.
+ *
+ * @since 1.0.0
+ * @category mutations
+ */
+export const collect: {
+  <A, A2>(pf: (a: A) => Option.Option<A2>): <R, E>(self: STM<R, E, A>) => STM<R, E, A2>
+  <R, E, A, A2>(self: STM<R, E, A>, pf: (a: A) => Option.Option<A2>): STM<R, E, A2>
+} = stm.collect
+
+/**
+ * Simultaneously filters and maps the value produced by this effect.
+ *
+ * @since 1.0.0
+ * @category mutations
+ */
+export const collectSTM: {
+  <A, R2, E2, A2>(pf: (a: A) => Option.Option<STM<R2, E2, A2>>): <R, E>(self: STM<R, E, A>) => STM<R2 | R, E2 | E, A2>
+  <R, E, A, R2, E2, A2>(self: STM<R, E, A>, pf: (a: A) => Option.Option<STM<R2, E2, A2>>): STM<R | R2, E | E2, A2>
+} = stm.collectSTM
+
+/**
  * Collects the first element of the `Iterable<A>` for which the effectual
  * function `f` returns `Some`.
  *
@@ -413,17 +400,6 @@ export const collectFirst: {
   <A, R, E, A2>(pf: (a: A) => STM<R, E, Option.Option<A2>>): (iterable: Iterable<A>) => STM<R, E, Option.Option<A2>>
   <A, R, E, A2>(iterable: Iterable<A>, pf: (a: A) => STM<R, E, Option.Option<A2>>): STM<R, E, Option.Option<A2>>
 } = stm.collectFirst
-
-/**
- * Simultaneously filters and flatMaps the value produced by this effect.
- *
- * @since 1.0.0
- * @category mutations
- */
-export const collectSTM: {
-  <A, R2, E2, A2>(pf: (a: A) => Option.Option<STM<R2, E2, A2>>): <R, E>(self: STM<R, E, A>) => STM<R2 | R, E2 | E, A2>
-  <R, E, A, R2, E2, A2>(self: STM<R, E, A>, pf: (a: A) => Option.Option<STM<R2, E2, A2>>): STM<R | R2, E | E2, A2>
-} = stm.collectSTM
 
 /**
  * Commits this transaction atomically.
@@ -703,35 +679,12 @@ export const flatMap: {
 } = core.flatMap
 
 /**
- * Creates a composite effect that represents this effect followed by another
- * one that may depend on the error produced by this one.
- *
- * @since 1.0.0
- * @category sequencing
- */
-export const flatMapError: {
-  <E, R2, E2>(f: (error: E) => STM<R2, never, E2>): <R, A>(self: STM<R, E, A>) => STM<R2 | R, E2, A>
-  <R, A, E, R2, E2>(self: STM<R, E, A>, f: (error: E) => STM<R2, never, E2>): STM<R | R2, E2, A>
-} = stm.flatMapError
-
-/**
  * Flattens out a nested `STM` effect.
  *
  * @since 1.0.0
  * @category sequencing
  */
 export const flatten: <R, E, R2, E2, A>(self: STM<R, E, STM<R2, E2, A>>) => STM<R | R2, E | E2, A> = stm.flatten
-
-/**
- * Unwraps the optional error, defaulting to the provided value.
- *
- * @since 1.0.0
- * @category sequencing
- */
-export const flattenErrorOption: {
-  <R, E, A, E2>(self: STM<R, Option.Option<E>, A>, fallback: LazyArg<E2>): STM<R, E | E2, A>
-  <E2>(fallback: LazyArg<E2>): <R, E, A>(self: STM<R, Option.Option<E>, A>) => STM<R, E2 | E, A>
-} = stm.flattenErrorOption
 
 /**
  * Flips the success and failure channels of this transactional effect. This
@@ -1196,15 +1149,6 @@ export const isSuccess: <R, E, A>(self: STM<R, E, A>) => STM<R, never, boolean> 
  */
 export const iterate: <R, E, Z>(initial: Z, cont: (z: Z) => boolean, body: (z: Z) => STM<R, E, Z>) => STM<R, E, Z> =
   stm.iterate
-
-/**
- * "Zooms in" on the value in the `Left` side of an `Either`, moving the
- * possibility that the value is a `Right` to the error channel.
- *
- * @since 1.0.0
- * @category getters
- */
-export const left: <R, E, A, A2>(self: STM<R, E, Either.Either<A, A2>>) => STM<R, Either.Either<E, A2>, A> = stm.left
 
 /**
  * Loops with the specified transactional function, collecting the results
@@ -1725,15 +1669,6 @@ export const retryWhile: {
 } = stm.retryWhile
 
 /**
- * "Zooms in" on the value in the `Right` side of an `Either`, moving the
- * possibility that the value is a `Left` to the error channel.
- *
- * @since 1.0.0
- * @category getters
- */
-export const right: <R, E, A, A2>(self: STM<R, E, Either.Either<A, A2>>) => STM<R, Either.Either<A, E>, A2> = stm.right
-
-/**
  * Converts an option on values into an option on errors.
  *
  * @since 1.0.0
@@ -1771,28 +1706,6 @@ export const someOrElseSTM: {
 } = stm.someOrElseSTM
 
 /**
- * Extracts the optional value, or fails with the given error 'e'.
- *
- * @since 1.0.0
- * @category getters
- */
-export const someOrFail: {
-  <E2>(error: LazyArg<E2>): <R, E, A>(self: STM<R, E, Option.Option<A>>) => STM<R, E2 | E, A>
-  <R, E, A, E2>(self: STM<R, E, Option.Option<A>>, error: LazyArg<E2>): STM<R, E | E2, A>
-} = stm.someOrFail
-
-/**
- * Extracts the optional value, or fails with a
- * `Cause.NoSuchElementException`.
- *
- * @since 1.0.0
- * @category getters
- */
-export const someOrFailException: <R, E, A>(
-  self: STM<R, E, Option.Option<A>>
-) => STM<R, E | Cause.NoSuchElementException, A> = stm.someOrFailException
-
-/**
  * Returns an `STM` effect that succeeds with the specified value.
  *
  * @since 1.0.0
@@ -1801,28 +1714,12 @@ export const someOrFailException: <R, E, A>(
 export const succeed: <A>(value: A) => STM<never, never, A> = core.succeed
 
 /**
- * Returns an effect with the value on the left part.
- *
- * @since 1.0.0
- * @category constructors
- */
-export const succeedLeft: <A>(value: A) => STM<never, never, Either.Either<A, never>> = stm.succeedLeft
-
-/**
  * Returns an effect with the empty value.
  *
  * @since 1.0.0
  * @category constructors
  */
 export const succeedNone: () => STM<never, never, Option.Option<never>> = stm.succeedNone
-
-/**
- * Returns an effect with the value on the right part.
- *
- * @since 1.0.0
- * @category constructors
- */
-export const succeedRight: <A>(value: A) => STM<never, never, Either.Either<never, A>> = stm.succeedRight
 
 /**
  * Returns an effect with the optional value.
@@ -1923,16 +1820,6 @@ export const tapError: {
 export const tryCatch: <E, A>(attempt: () => A, onThrow: (u: unknown) => E) => Effect.Effect<never, E, A> = stm.tryCatch
 
 /**
- * Converts a `STM<R, Either<E, A>, A2>` into a `STM<R, E, Either<A2, A>>`.
- * The inverse of `left`.
- *
- * @since 1.0.0
- * @category getters
- */
-export const unleft: <R, E, A, A2>(self: STM<R, Either.Either<E, A>, A2>) => STM<R, E, Either.Either<A2, A>> =
-  stm.unleft
-
-/**
  * The moral equivalent of `if (!p) exp`
  *
  * @since 1.0.0
@@ -1953,16 +1840,6 @@ export const unlessSTM: {
   <R2, E2>(predicate: STM<R2, E2, boolean>): <R, E, A>(self: STM<R, E, A>) => STM<R2 | R, E2 | E, Option.Option<A>>
   <R, E, A, R2, E2>(self: STM<R, E, A>, predicate: STM<R2, E2, boolean>): STM<R | R2, E | E2, Option.Option<A>>
 } = stm.unlessSTM
-
-/**
- * Converts a `STM<R, Either<A, E>, A2>` into a `STM<R, E, Either<A, A2>>`.
- * The inverse of `right`.
- *
- * @since 1.0.0
- * @category getters
- */
-export const unright: <R, E, A, A2>(self: STM<R, Either.Either<A, E>, A2>) => STM<R, E, Either.Either<A, A2>> =
-  stm.unright
 
 /**
  * Converts an option on errors into an option on values.
@@ -2019,37 +1896,6 @@ export const when: {
 } = stm.when
 
 /**
- * Runs an effect when the supplied partial function matches for the given
- * value, otherwise does nothing.
- *
- * @since 1.0.0
- * @category mutations
- */
-export const whenCase: <R, E, A, B>(
-  evaluate: LazyArg<A>,
-  pf: (a: A) => Option.Option<STM<R, E, B>>
-) => STM<R, E, Option.Option<B>> = stm.whenCase
-
-/**
- * Runs an effect when the supplied partial function matches for the given
- * effectful value, otherwise does nothing.
- *
- * @since 1.0.0
- * @category mutations
- */
-export const whenCaseSTM: {
-  <A, R2, E2, A2>(
-    pf: (a: A) => Option.Option<STM<R2, E2, A2>>
-  ): <R, E>(
-    self: STM<R, E, A>
-  ) => STM<R2 | R, E2 | E, Option.Option<A2>>
-  <R, E, A, R2, E2, A2>(
-    self: STM<R, E, A>,
-    pf: (a: A) => Option.Option<STM<R2, E2, A2>>
-  ): STM<R | R2, E | E2, Option.Option<A2>>
-} = stm.whenCaseSTM
-
-/**
  * The moral equivalent of `if (p) exp` when `p` has side-effects.
  *
  * @since 1.0.0
@@ -2067,8 +1913,8 @@ export const whenSTM: {
  * @category zipping
  */
 export const zip: {
-  <R1, E1, A1>(that: STM<R1, E1, A1>): <R, E, A>(self: STM<R, E, A>) => STM<R1 | R, E1 | E, [A, A1]>
-  <R, E, A, R1, E1, A1>(self: STM<R, E, A>, that: STM<R1, E1, A1>): STM<R | R1, E | E1, [A, A1]>
+  <R1, E1, A1>(that: STM<R1, E1, A1>): <R, E, A>(self: STM<R, E, A>) => STM<R1 | R, E1 | E, readonly [A, A1]>
+  <R, E, A, R1, E1, A1>(self: STM<R, E, A>, that: STM<R1, E1, A1>): STM<R | R1, E | E1, readonly [A, A1]>
 } = core.zip
 
 /**
@@ -2117,118 +1963,6 @@ export const zipWith: {
 } = core.zipWith
 
 /**
- * @category instances
- * @since 1.0.0
- */
-export const Bicovariant: bicovariant.Bicovariant<STMTypeLambda> = {
-  bimap: mapBoth
-}
-
-const imap = covariant.imap<STMTypeLambda>(map)
-
-/**
- * @category instances
- * @since 1.0.0
- */
-export const Covariant: covariant.Covariant<STMTypeLambda> = {
-  imap,
-  map
-}
-
-/**
- * @category instances
- * @since 1.0.0
- */
-export const Invariant: invariant.Invariant<STMTypeLambda> = {
-  imap
-}
-
-/**
- * @category instances
- * @since 1.0.0
- */
-export const Pointed: pointed.Pointed<STMTypeLambda> = {
-  of: succeed,
-  imap,
-  map
-}
-
-/**
- * @category instances
- * @since 1.0.0
- */
-export const FlatMap: flatMap_.FlatMap<STMTypeLambda> = {
-  flatMap
-}
-
-/**
- * @category instances
- * @since 1.0.0
- */
-export const Chainable: chainable.Chainable<STMTypeLambda> = {
-  imap,
-  map,
-  flatMap
-}
-
-/**
- * @category instances
- * @since 1.0.0
- */
-export const Monad: monad.Monad<STMTypeLambda> = {
-  imap,
-  of: succeed,
-  map,
-  flatMap
-}
-
-/**
- * @category instances
- * @since 1.0.0
- */
-export const SemiProduct: semiProduct.SemiProduct<STMTypeLambda> = {
-  imap,
-  product: zip,
-  productMany: (self, rest) => flatMap(self, (a) => map(all(rest), (r) => [a, ...r]))
-}
-
-/**
- * @category instances
- * @since 1.0.0
- */
-export const Product: product_.Product<STMTypeLambda> = {
-  of: succeed,
-  imap,
-  product: SemiProduct.product,
-  productMany: SemiProduct.productMany,
-  productAll: (rest) => map(all(rest), (x) => Array.from(x))
-}
-
-/**
- * @category instances
- * @since 1.0.0
- */
-export const SemiApplicative: semiApplicative.SemiApplicative<STMTypeLambda> = {
-  imap,
-  map,
-  product: SemiProduct.product,
-  productMany: SemiProduct.productMany
-}
-
-/**
- * @category instances
- * @since 1.0.0
- */
-export const Applicative: applicative.Applicative<STMTypeLambda> = {
-  imap,
-  of: succeed,
-  map,
-  product: SemiProduct.product,
-  productMany: SemiProduct.productMany,
-  productAll: Product.productAll
-}
-
-/**
  * This function takes an iterable of `STM` values and returns a new
  * `STM` value that represents the first `STM` value in the iterable
  * that succeeds. If all of the `Effect` values in the iterable fail, then
@@ -2247,75 +1981,52 @@ export const Applicative: applicative.Applicative<STMTypeLambda> = {
  * @since 1.0.0
  * @category elements
  */
-export const firstSuccessOf = Debug.methodWithTrace((trace) =>
-  <R, E, A>(effects: Iterable<STM<R, E, A>>): STM<R, E, A> =>
-    suspend<R, E, A>(() => {
-      const list = Chunk.fromIterable(effects)
-      if (!Chunk.isNonEmpty(list)) {
-        return dieSync(() => Cause.IllegalArgumentException(`Received an empty collection of effects`))
-      }
-      return Chunk.reduce(
-        Chunk.tailNonEmpty(list),
-        Chunk.headNonEmpty(list),
-        (left, right) => orElse(left, () => right)
-      )
-    }).traced(trace)
-)
-
-/**
- * @category instances
- * @since 1.0.0
- */
-export const SemiCoproduct: semiCoproduct.SemiCoproduct<STMTypeLambda> = {
-  imap,
-  coproduct: (self, that) => orElse(self, () => that),
-  coproductMany: (self, rest) => firstSuccessOf([self, ...rest])
-}
-
-/**
- * @category instances
- * @since 1.0.0
- */
-export const SemiAlternative: semiAlternative.SemiAlternative<STMTypeLambda> = {
-  map,
-  imap,
-  coproduct: SemiCoproduct.coproduct,
-  coproductMany: SemiCoproduct.coproductMany
-}
+export const firstSuccessOf = <R, E, A>(effects: Iterable<STM<R, E, A>>): STM<R, E, A> =>
+  suspend<R, E, A>(() => {
+    const list = Chunk.fromIterable(effects)
+    if (!Chunk.isNonEmpty(list)) {
+      return dieSync(() => Cause.IllegalArgumentException(`Received an empty collection of effects`))
+    }
+    return Chunk.reduce(
+      Chunk.tailNonEmpty(list),
+      Chunk.headNonEmpty(list),
+      (left, right) => orElse(left, () => right)
+    )
+  })
 
 /**
  * @category do notation
  * @since 1.0.0
  */
-export const Do: <R = never, E = never>() => STM<R, E, {}> = of_.Do(Pointed)
+export const Do: STM<never, never, {}> = succeed({})
 
 /**
  * @category do notation
  * @since 1.0.0
  */
 export const bind: {
-  <N extends string, A extends object, O2, E2, B>(
-    name: Exclude<N, keyof A>,
-    f: (a: A) => STM<O2, E2, B>
-  ): <O1, E1>(self: STM<O1, E1, A>) => STM<O2 | O1, E2 | E1, { [K in N | keyof A]: K extends keyof A ? A[K] : B }>
-  <O1_1, E1_1, A_1 extends object, N_1 extends string, O2_1, E2_1, B_1>(
-    self: STM<O1_1, E1_1, A_1>,
-    name: Exclude<N_1, keyof A_1>,
-    f: (a: A_1) => STM<O2_1, E2_1, B_1>
-  ): STM<O1_1 | O2_1, E1_1 | E2_1, { [K_1 in N_1 | keyof A_1]: K_1 extends keyof A_1 ? A_1[K_1] : B_1 }>
-} = chainable.bind(Chainable)
+  <N extends string, K, R2, E2, A>(
+    tag: Exclude<N, keyof K>,
+    f: (_: K) => STM<R2, E2, A>
+  ): <R, E>(self: STM<R, E, K>) => STM<R2 | R, E2 | E, Effect.MergeRecord<K, { [k in N]: A }>>
+  <R, E, N extends string, K, R2, E2, A>(
+    self: STM<R, E, K>,
+    tag: Exclude<N, keyof K>,
+    f: (_: K) => STM<R2, E2, A>
+  ): STM<R | R2, E | E2, Effect.MergeRecord<K, { [k in N]: A }>>
+} = stm.bind
 
 const let_: {
-  <N extends string, A extends object, B>(
-    name: Exclude<N, keyof A>,
-    f: (a: A) => B
-  ): <O, E>(self: STM<O, E, A>) => STM<O, E, { [K in N | keyof A]: K extends keyof A ? A[K] : B }>
-  <O_1, E_1, A_1 extends object, N_1 extends string, B_1>(
-    self: STM<O_1, E_1, A_1>,
-    name: Exclude<N_1, keyof A_1>,
-    f: (a: A_1) => B_1
-  ): STM<O_1, E_1, { [K_1 in N_1 | keyof A_1]: K_1 extends keyof A_1 ? A_1[K_1] : B_1 }>
-} = covariant.let(Covariant)
+  <N extends string, K, A>(
+    tag: Exclude<N, keyof K>,
+    f: (_: K) => A
+  ): <R, E>(self: STM<R, E, K>) => STM<R, E, Effect.MergeRecord<K, { [k in N]: A }>>
+  <R, E, K, N extends string, A>(
+    self: STM<R, E, K>,
+    tag: Exclude<N, keyof K>,
+    f: (_: K) => A
+  ): STM<R, E, Effect.MergeRecord<K, { [k in N]: A }>>
+} = stm.let_
 export {
   /**
    * @category do notation
@@ -2328,86 +2039,7 @@ export {
  * @category do notation
  * @since 1.0.0
  */
-export const letDiscard: {
-  <N extends string, A extends object, B>(
-    name: Exclude<N, keyof A>,
-    b: B
-  ): <O, E>(self: STM<O, E, A>) => STM<O, E, { [K in N | keyof A]: K extends keyof A ? A[K] : B }>
-  <O_1, E_1, A_1 extends object, N_1 extends string, B_1>(
-    self: STM<O_1, E_1, A_1>,
-    name: Exclude<N_1, keyof A_1>,
-    b: B_1
-  ): STM<O_1, E_1, { [K_1 in N_1 | keyof A_1]: K_1 extends keyof A_1 ? A_1[K_1] : B_1 }>
-} = covariant.letDiscard(Covariant)
-
-/**
- * @category do notation
- * @since 1.0.0
- */
-export const bindDiscard: {
-  <N extends string, A extends object, O2, E2, B>(
-    name: Exclude<N, keyof A>,
-    that: STM<O2, E2, B>
-  ): <O1, E1>(self: STM<O1, E1, A>) => STM<O2 | O1, E2 | E1, { [K in N | keyof A]: K extends keyof A ? A[K] : B }>
-  <O1_1, E1_1, A_1 extends object, N_1 extends string, O2_1, E2_1, B_1>(
-    self: STM<O1_1, E1_1, A_1>,
-    name: Exclude<N_1, keyof A_1>,
-    that: STM<O2_1, E2_1, B_1>
-  ): STM<O1_1 | O2_1, E1_1 | E2_1, { [K_1 in N_1 | keyof A_1]: K_1 extends keyof A_1 ? A_1[K_1] : B_1 }>
-} = semiProduct.bindDiscard(SemiProduct)
-
-/**
- * @category do notation
- * @since 1.0.0
- */
 export const bindTo: {
-  <N extends string>(name: N): <O, E, A>(self: STM<O, E, A>) => STM<O, E, { [K in N]: A }>
-  <O_1, E_1, A_1, N_1 extends string>(self: STM<O_1, E_1, A_1>, name: N_1): STM<O_1, E_1, { [K_1 in N_1]: A_1 }>
-} = invariant.bindTo(SemiProduct)
-
-/**
- * @category utils
- * @since 1.0.0
- */
-export const nonEmptyStruct: <R extends { readonly [x: string]: STM<any, any, any> }>(
-  fields: (keyof R extends never ? never : R) & { readonly [x: string]: STM<any, any, any> }
-) => STM<
-  [R[keyof R]] extends [STM<infer O, any, any>] ? O : never,
-  [R[keyof R]] extends [STM<any, infer E, any>] ? E : never,
-  { [K in keyof R]: [R[K]] extends [STM<any, any, infer A>] ? A : never }
-> = semiProduct.nonEmptyStruct(SemiProduct)
-
-/**
- * @category utils
- * @since 1.0.0
- */
-export const nonEmptyTuple: <T extends readonly [STM<any, any, any>, ...Array<STM<any, any, any>>]>(
-  ...elements: T
-) => STM<
-  [T[number]] extends [STM<infer O, any, any>] ? O : never,
-  [T[number]] extends [STM<any, infer E, any>] ? E : never,
-  { [I in keyof T]: [T[I]] extends [STM<any, any, infer A>] ? A : never }
-> = semiProduct.nonEmptyTuple(SemiProduct)
-
-/**
- * @category utils
- * @since 1.0.0
- */
-export const getFailureSemigroup: <A, O, E>(S: Semigroup<A>) => Semigroup<STM<O, E, A>> = semiApplicative.getSemigroup(
-  SemiApplicative
-)
-
-/**
- * @category utils
- * @since 1.0.0
- */
-export const getFirstSuccessSemigroup: <A, O, E>(S: Semigroup<A>) => Semigroup<STM<O, E, A>> = semiCoproduct
-  .getSemigroup(
-    SemiCoproduct
-  )
-
-/**
- * @category utils
- * @since 1.0.0
- */
-export const getFailureMonoid: <A, O, E>(M: Monoid<A>) => Monoid<STM<O, E, A>> = applicative.getMonoid(Applicative)
+  <N extends string>(tag: N): <R, E, A>(self: STM<R, E, A>) => STM<R, E, Record<N, A>>
+  <R, E, A, N extends string>(self: STM<R, E, A>, tag: N): STM<R, E, Record<N, A>>
+} = stm.bindTo

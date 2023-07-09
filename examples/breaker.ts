@@ -45,7 +45,6 @@ export const makeCircuitBreaker = (opts?: CircuitBreakerOptions) =>
   Effect.gen(function*($) {
     const schedule = opts?.schedule ?? pipe(
       Schedule.exponential(Duration.millis(100), 1.5),
-      Schedule.zipRight(Schedule.elapsed()),
       Schedule.whileOutput(Duration.lessThanOrEqualTo(Duration.seconds(10)))
     )
 

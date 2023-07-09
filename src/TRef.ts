@@ -3,10 +3,10 @@
  */
 
 import type * as Option from "@effect/data/Option"
-import type * as Journal from "@effect/stm/internal_effect_untraced/stm/journal"
-import type * as TxnId from "@effect/stm/internal_effect_untraced/stm/txnId"
-import type * as Versioned from "@effect/stm/internal_effect_untraced/stm/versioned"
-import * as internal from "@effect/stm/internal_effect_untraced/tRef"
+import type * as Journal from "@effect/stm/internal/stm/journal"
+import type * as TxnId from "@effect/stm/internal/stm/txnId"
+import type * as Versioned from "@effect/stm/internal/stm/versioned"
+import * as internal from "@effect/stm/internal/tRef"
 import type * as STM from "@effect/stm/STM"
 
 /**

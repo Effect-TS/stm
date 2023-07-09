@@ -32,8 +32,6 @@ Added in v1.0.0
 - [symbols](#symbols)
   - [TRefTypeId](#treftypeid)
   - [TRefTypeId (type alias)](#treftypeid-type-alias)
-- [utils](#utils)
-  - [TRef (interface)](#tref-interface-1)
 
 ---
 
@@ -247,23 +245,6 @@ Added in v1.0.0
 
 ```ts
 export type TRefTypeId = typeof TRefTypeId
-```
-
-Added in v1.0.0
-
-# utils
-
-## TRef (interface)
-
-**Signature**
-
-```ts
-export interface TRef<A> {
-  /** @internal */
-  todos: Map<TxnId.TxnId, Journal.Todo>
-  /** @internal */
-  versioned: Versioned.Versioned<A>
-}
 ```
 
 Added in v1.0.0

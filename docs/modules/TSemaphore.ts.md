@@ -32,8 +32,6 @@ Added in v1.0.0
   - [TSemaphoreTypeId (type alias)](#tsemaphoretypeid-type-alias)
 - [unsafe](#unsafe)
   - [unsafeMake](#unsafemake)
-- [utils](#utils)
-  - [TSemaphore (interface)](#tsemaphore-interface-1)
 
 ---
 
@@ -200,21 +198,6 @@ Added in v1.0.0
 
 ```ts
 export declare const unsafeMake: (permits: number) => TSemaphore
-```
-
-Added in v1.0.0
-
-# utils
-
-## TSemaphore (interface)
-
-**Signature**
-
-```ts
-export interface TSemaphore {
-  /** @internal */
-  readonly permits: TRef.TRef<number>
-}
 ```
 
 Added in v1.0.0

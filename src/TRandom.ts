@@ -4,7 +4,7 @@
 import type * as Context from "@effect/data/Context"
 import type * as Random from "@effect/data/Random"
 import type * as Layer from "@effect/io/Layer"
-import * as internal from "@effect/stm/internal_effect_untraced/tRandom"
+import * as internal from "@effect/stm/internal/tRandom"
 import type * as STM from "@effect/stm/STM"
 import type * as TRef from "@effect/stm/TRef"
 

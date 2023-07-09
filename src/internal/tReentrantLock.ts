@@ -1,12 +1,12 @@
-import * as Debug from "@effect/data/Debug"
 import * as Equal from "@effect/data/Equal"
+import { dual } from "@effect/data/Function"
 import * as HashMap from "@effect/data/HashMap"
 import * as Option from "@effect/data/Option"
 import * as Effect from "@effect/io/Effect"
 import * as FiberId from "@effect/io/Fiber/Id"
 import type * as Scope from "@effect/io/src/Scope"
-import * as core from "@effect/stm/internal_effect_untraced/core"
-import * as tRef from "@effect/stm/internal_effect_untraced/tRef"
+import * as core from "@effect/stm/internal/core"
+import * as tRef from "@effect/stm/internal/tRef"
 import type * as STM from "@effect/stm/STM"
 import type * as TReentrantLock from "@effect/stm/TReentrantLock"
 import type * as TRef from "@effect/stm/TRef"
@@ -181,136 +181,112 @@ const adjustRead = (self: TReentrantLock.TReentrantLock, delta: number): STM.STM
   })
 
 /** @internal */
-export const acquireRead = Debug.methodWithTrace((trace) =>
-  (self: TReentrantLock.TReentrantLock): STM.STM<never, never, number> => adjustRead(self, 1).traced(trace)
-)
+export const acquireRead = (self: TReentrantLock.TReentrantLock): STM.STM<never, never, number> => adjustRead(self, 1)
 
 /** @internal */
-export const acquireWrite = Debug.methodWithTrace((trace) =>
-  (self: TReentrantLock.TReentrantLock): STM.STM<never, never, number> =>
-    core.withSTMRuntime((runtime) => {
-      const lock = tRef.unsafeGet(self.state, runtime.journal)
-      if (isReadLock(lock) && noOtherHolder(lock, runtime.fiberId)) {
-        tRef.unsafeSet(
-          self.state,
-          new WriteLock(lock.readLocksHeld(runtime.fiberId), 1, runtime.fiberId),
-          runtime.journal
-        )
-        return core.succeed(1)
-      }
-      if (isWriteLock(lock) && Equal.equals(runtime.fiberId)(lock.fiberId)) {
-        tRef.unsafeSet(
-          self.state,
-          new WriteLock(lock.readLocks, lock.writeLocks + 1, runtime.fiberId),
-          runtime.journal
-        )
-        return core.succeed(lock.writeLocks + 1)
-      }
-      return core.retry()
-    }).traced(trace)
-)
-
-/** @internal */
-export const fiberReadLocks = Debug.methodWithTrace((trace) =>
-  (self: TReentrantLock.TReentrantLock): STM.STM<never, never, number> =>
-    core.effect<never, number>((journal, fiberId) =>
-      tRef.unsafeGet(
+export const acquireWrite = (self: TReentrantLock.TReentrantLock): STM.STM<never, never, number> =>
+  core.withSTMRuntime((runtime) => {
+    const lock = tRef.unsafeGet(self.state, runtime.journal)
+    if (isReadLock(lock) && noOtherHolder(lock, runtime.fiberId)) {
+      tRef.unsafeSet(
         self.state,
-        journal
-      ).readLocksHeld(fiberId)
-    ).traced(trace)
-)
-
-/** @internal */
-export const fiberWriteLocks = Debug.methodWithTrace((trace) =>
-  (self: TReentrantLock.TReentrantLock): STM.STM<never, never, number> =>
-    core.effect<never, number>((journal, fiberId) =>
-      tRef.unsafeGet(
-        self.state,
-        journal
-      ).writeLocksHeld(fiberId)
-    ).traced(trace)
-)
-
-/** @internal */
-export const lock = Debug.methodWithTrace((trace) =>
-  (self: TReentrantLock.TReentrantLock): Effect.Effect<Scope.Scope, never, number> => writeLock(self).traced(trace)
-)
-
-/** @internal */
-export const locked = Debug.methodWithTrace((trace) =>
-  (self: TReentrantLock.TReentrantLock): STM.STM<never, never, boolean> =>
-    core.zipWith(
-      readLocked(self),
-      writeLocked(self),
-      (x, y) => x || y
-    ).traced(trace)
-)
-
-/** @internal */
-export const make = Debug.methodWithTrace((trace) =>
-  (): STM.STM<never, never, TReentrantLock.TReentrantLock> =>
-    core.map(
-      tRef.make(emptyReadLock),
-      (readLock) => new TReentranLockImpl(readLock)
-    ).traced(trace)
-)
-
-/** @internal */
-export const readLock = Debug.methodWithTrace((trace) =>
-  (self: TReentrantLock.TReentrantLock): Effect.Effect<Scope.Scope, never, number> =>
-    Effect.acquireRelease(
-      core.commit(acquireRead(self)),
-      () => core.commit(releaseRead(self))
-    ).traced(trace)
-)
-
-/** @internal */
-export const readLocks = Debug.methodWithTrace((trace) =>
-  (self: TReentrantLock.TReentrantLock): STM.STM<never, never, number> =>
-    core.map(
-      tRef.get(self.state),
-      (state) => state.readLocks
-    ).traced(trace)
-)
-
-/** @internal */
-export const readLocked = Debug.methodWithTrace((trace) =>
-  (self: TReentrantLock.TReentrantLock): STM.STM<never, never, boolean> =>
-    core.map(
-      tRef.get(self.state),
-      (state) => state.readLocks > 0
-    ).traced(trace)
-)
-
-/** @internal */
-export const releaseRead = Debug.methodWithTrace((trace) =>
-  (self: TReentrantLock.TReentrantLock): STM.STM<never, never, number> => adjustRead(self, -1).traced(trace)
-)
-
-/** @internal */
-export const releaseWrite = Debug.methodWithTrace((trace) =>
-  (self: TReentrantLock.TReentrantLock): STM.STM<never, never, number> =>
-    core.withSTMRuntime((runtime) => {
-      const lock = tRef.unsafeGet(self.state, runtime.journal)
-      if (isWriteLock(lock) && lock.writeLocks === 1 && Equal.equals(runtime.fiberId)(lock.fiberId)) {
-        const result = makeReadLock(lock.fiberId, lock.readLocks)
-        tRef.unsafeSet(self.state, result, runtime.journal)
-        return core.succeed(result.writeLocksHeld(runtime.fiberId))
-      }
-      if (isWriteLock(lock) && Equal.equals(runtime.fiberId)(lock.fiberId)) {
-        const result = new WriteLock(lock.readLocks, lock.writeLocks - 1, runtime.fiberId)
-        tRef.unsafeSet(self.state, result, runtime.journal)
-        return core.succeed(result.writeLocksHeld(runtime.fiberId))
-      }
-      throw new Error(
-        `Defect: Fiber ${FiberId.threadName(runtime.fiberId)} releasing write lock it does not hold`
+        new WriteLock(lock.readLocksHeld(runtime.fiberId), 1, runtime.fiberId),
+        runtime.journal
       )
-    }).traced(trace)
-)
+      return core.succeed(1)
+    }
+    if (isWriteLock(lock) && Equal.equals(runtime.fiberId)(lock.fiberId)) {
+      tRef.unsafeSet(
+        self.state,
+        new WriteLock(lock.readLocks, lock.writeLocks + 1, runtime.fiberId),
+        runtime.journal
+      )
+      return core.succeed(lock.writeLocks + 1)
+    }
+    return core.retry()
+  })
 
 /** @internal */
-export const withLock = Debug.dualWithTrace<
+export const fiberReadLocks = (self: TReentrantLock.TReentrantLock): STM.STM<never, never, number> =>
+  core.effect<never, number>((journal, fiberId) =>
+    tRef.unsafeGet(
+      self.state,
+      journal
+    ).readLocksHeld(fiberId)
+  )
+
+/** @internal */
+export const fiberWriteLocks = (self: TReentrantLock.TReentrantLock): STM.STM<never, never, number> =>
+  core.effect<never, number>((journal, fiberId) =>
+    tRef.unsafeGet(
+      self.state,
+      journal
+    ).writeLocksHeld(fiberId)
+  )
+
+/** @internal */
+export const lock = (self: TReentrantLock.TReentrantLock): Effect.Effect<Scope.Scope, never, number> => writeLock(self)
+
+/** @internal */
+export const locked = (self: TReentrantLock.TReentrantLock): STM.STM<never, never, boolean> =>
+  core.zipWith(
+    readLocked(self),
+    writeLocked(self),
+    (x, y) => x || y
+  )
+
+/** @internal */
+export const make = (): STM.STM<never, never, TReentrantLock.TReentrantLock> =>
+  core.map(
+    tRef.make(emptyReadLock),
+    (readLock) => new TReentranLockImpl(readLock)
+  )
+
+/** @internal */
+export const readLock = (self: TReentrantLock.TReentrantLock): Effect.Effect<Scope.Scope, never, number> =>
+  Effect.acquireRelease(
+    core.commit(acquireRead(self)),
+    () => core.commit(releaseRead(self))
+  )
+
+/** @internal */
+export const readLocks = (self: TReentrantLock.TReentrantLock): STM.STM<never, never, number> =>
+  core.map(
+    tRef.get(self.state),
+    (state) => state.readLocks
+  )
+
+/** @internal */
+export const readLocked = (self: TReentrantLock.TReentrantLock): STM.STM<never, never, boolean> =>
+  core.map(
+    tRef.get(self.state),
+    (state) => state.readLocks > 0
+  )
+
+/** @internal */
+export const releaseRead = (self: TReentrantLock.TReentrantLock): STM.STM<never, never, number> => adjustRead(self, -1)
+
+/** @internal */
+export const releaseWrite = (self: TReentrantLock.TReentrantLock): STM.STM<never, never, number> =>
+  core.withSTMRuntime((runtime) => {
+    const lock = tRef.unsafeGet(self.state, runtime.journal)
+    if (isWriteLock(lock) && lock.writeLocks === 1 && Equal.equals(runtime.fiberId)(lock.fiberId)) {
+      const result = makeReadLock(lock.fiberId, lock.readLocks)
+      tRef.unsafeSet(self.state, result, runtime.journal)
+      return core.succeed(result.writeLocksHeld(runtime.fiberId))
+    }
+    if (isWriteLock(lock) && Equal.equals(runtime.fiberId)(lock.fiberId)) {
+      const result = new WriteLock(lock.readLocks, lock.writeLocks - 1, runtime.fiberId)
+      tRef.unsafeSet(self.state, result, runtime.journal)
+      return core.succeed(result.writeLocksHeld(runtime.fiberId))
+    }
+    throw new Error(
+      `Defect: Fiber ${FiberId.threadName(runtime.fiberId)} releasing write lock it does not hold`
+    )
+  })
+
+/** @internal */
+export const withLock = dual<
   (
     self: TReentrantLock.TReentrantLock
   ) => <R, E, A>(effect: Effect.Effect<R, E, A>) => Effect.Effect<R, E, A>,
@@ -318,10 +294,10 @@ export const withLock = Debug.dualWithTrace<
     effect: Effect.Effect<R, E, A>,
     self: TReentrantLock.TReentrantLock
   ) => Effect.Effect<R, E, A>
->(2, (trace) => (effect, self) => withWriteLock(effect, self).traced(trace))
+>(2, (effect, self) => withWriteLock(effect, self))
 
 /** @internal */
-export const withReadLock = Debug.dualWithTrace<
+export const withReadLock = dual<
   (self: TReentrantLock.TReentrantLock) => <R, E, A>(
     effect: Effect.Effect<R, E, A>
   ) => Effect.Effect<R, E, A>,
@@ -329,57 +305,49 @@ export const withReadLock = Debug.dualWithTrace<
     effect: Effect.Effect<R, E, A>,
     self: TReentrantLock.TReentrantLock
   ) => Effect.Effect<R, E, A>
->(2, (trace) =>
-  (effect, self) =>
-    Effect.uninterruptibleMask((restore) =>
-      Effect.zipRight(
-        restore(core.commit(acquireRead(self))),
-        Effect.ensuring(
-          restore(effect),
-          core.commit(releaseRead(self))
-        )
+>(2, (effect, self) =>
+  Effect.uninterruptibleMask((restore) =>
+    Effect.zipRight(
+      restore(core.commit(acquireRead(self))),
+      Effect.ensuring(
+        effect,
+        core.commit(releaseRead(self))
       )
-    ).traced(trace))
+    )
+  ))
 
 /** @internal */
-export const withWriteLock = Debug.dualWithTrace<
+export const withWriteLock = dual<
   (self: TReentrantLock.TReentrantLock) => <R, E, A>(effect: Effect.Effect<R, E, A>) => Effect.Effect<R, E, A>,
   <R, E, A>(effect: Effect.Effect<R, E, A>, self: TReentrantLock.TReentrantLock) => Effect.Effect<R, E, A>
->(2, (trace) =>
-  (effect, self) =>
-    Effect.uninterruptibleMask((restore) =>
-      Effect.zipRight(
-        restore(core.commit(acquireWrite(self))),
-        Effect.ensuring(
-          restore(effect),
-          core.commit(releaseWrite(self))
-        )
+>(2, (effect, self) =>
+  Effect.uninterruptibleMask((restore) =>
+    Effect.zipRight(
+      restore(core.commit(acquireWrite(self))),
+      Effect.ensuring(
+        effect,
+        core.commit(releaseWrite(self))
       )
-    ).traced(trace))
+    )
+  ))
 
 /** @internal */
-export const writeLock = Debug.methodWithTrace((trace) =>
-  (self: TReentrantLock.TReentrantLock): Effect.Effect<Scope.Scope, never, number> =>
-    Effect.acquireRelease(
-      core.commit(acquireWrite(self)),
-      () => core.commit(releaseWrite(self))
-    ).traced(trace)
-)
+export const writeLock = (self: TReentrantLock.TReentrantLock): Effect.Effect<Scope.Scope, never, number> =>
+  Effect.acquireRelease(
+    core.commit(acquireWrite(self)),
+    () => core.commit(releaseWrite(self))
+  )
 
 /** @internal */
-export const writeLocked = Debug.methodWithTrace((trace) =>
-  (self: TReentrantLock.TReentrantLock): STM.STM<never, never, boolean> =>
-    core.map(
-      tRef.get(self.state),
-      (state) => state.writeLocks > 0
-    ).traced(trace)
-)
+export const writeLocked = (self: TReentrantLock.TReentrantLock): STM.STM<never, never, boolean> =>
+  core.map(
+    tRef.get(self.state),
+    (state) => state.writeLocks > 0
+  )
 
 /** @internal */
-export const writeLocks = Debug.methodWithTrace((trace) =>
-  (self: TReentrantLock.TReentrantLock): STM.STM<never, never, number> =>
-    core.map(
-      tRef.get(self.state),
-      (state) => state.writeLocks
-    ).traced(trace)
-)
+export const writeLocks = (self: TReentrantLock.TReentrantLock): STM.STM<never, never, number> =>
+  core.map(
+    tRef.get(self.state),
+    (state) => state.writeLocks
+  )

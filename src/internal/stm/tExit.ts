@@ -1,9 +1,8 @@
 import * as Equal from "@effect/data/Equal"
 import { pipe } from "@effect/data/Function"
 import * as Hash from "@effect/data/Hash"
-import type { StackAnnotation } from "@effect/io/Cause"
 import type * as FiberId from "@effect/io/Fiber/Id"
-import * as OpCodes from "@effect/stm/internal_effect_untraced/opCodes/tExit"
+import * as OpCodes from "@effect/stm/internal/opCodes/tExit"
 
 /** @internal */
 const TExitSymbolKey = "@effect/io/TExit"
@@ -38,21 +37,18 @@ const variance = {
 export interface Fail<E> extends TExit.Variance<E, never>, Equal.Equal {
   readonly _tag: OpCodes.OP_FAIL
   readonly error: E
-  readonly annotation: StackAnnotation
 }
 
 /** @internal */
 export interface Die extends TExit.Variance<never, never>, Equal.Equal {
   readonly _tag: OpCodes.OP_DIE
   readonly defect: unknown
-  readonly annotation: StackAnnotation
 }
 
 /** @internal */
 export interface Interrupt extends TExit.Variance<never, never>, Equal.Equal {
   readonly _tag: OpCodes.OP_INTERRUPT
   readonly fiberId: FiberId.FiberId
-  readonly annotation: StackAnnotation
 }
 
 /** @internal */
@@ -97,11 +93,10 @@ export const isRetry = <E, A>(self: TExit<E, A>): self is Retry => {
 }
 
 /** @internal */
-export const fail = <E>(error: E, annotation: StackAnnotation): TExit<E, never> => ({
+export const fail = <E>(error: E): TExit<E, never> => ({
   [TExitTypeId]: variance,
   _tag: OpCodes.OP_FAIL,
   error,
-  annotation,
   [Hash.symbol](): number {
     return pipe(
       Hash.hash(TExitSymbolKey),
@@ -115,11 +110,10 @@ export const fail = <E>(error: E, annotation: StackAnnotation): TExit<E, never> 
 })
 
 /** @internal */
-export const die = (defect: unknown, annotation: StackAnnotation): TExit<never, never> => ({
+export const die = (defect: unknown): TExit<never, never> => ({
   [TExitTypeId]: variance,
   _tag: OpCodes.OP_DIE,
   defect,
-  annotation,
   [Hash.symbol](): number {
     return pipe(
       Hash.hash(TExitSymbolKey),
@@ -133,11 +127,10 @@ export const die = (defect: unknown, annotation: StackAnnotation): TExit<never, 
 })
 
 /** @internal */
-export const interrupt = (fiberId: FiberId.FiberId, annotation: StackAnnotation): TExit<never, never> => ({
+export const interrupt = (fiberId: FiberId.FiberId): TExit<never, never> => ({
   [TExitTypeId]: variance,
   _tag: OpCodes.OP_INTERRUPT,
   fiberId,
-  annotation,
   [Hash.symbol](): number {
     return pipe(
       Hash.hash(TExitSymbolKey),

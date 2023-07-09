@@ -3,7 +3,7 @@
  */
 import type * as Either from "@effect/data/Either"
 import type * as Option from "@effect/data/Option"
-import * as internal from "@effect/stm/internal_effect_untraced/tDeferred"
+import * as internal from "@effect/stm/internal/tDeferred"
 import type * as STM from "@effect/stm/STM"
 import type * as TRef from "@effect/stm/TRef"
 

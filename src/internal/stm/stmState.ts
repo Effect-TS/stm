@@ -2,9 +2,9 @@ import * as Equal from "@effect/data/Equal"
 import { pipe } from "@effect/data/Function"
 import * as Hash from "@effect/data/Hash"
 import * as Exit from "@effect/io/Exit"
-import * as OpCodes from "@effect/stm/internal_effect_untraced/opCodes/stmState"
-import * as TExitOpCodes from "@effect/stm/internal_effect_untraced/opCodes/tExit"
-import type * as TExit from "@effect/stm/internal_effect_untraced/stm/tExit"
+import * as OpCodes from "@effect/stm/internal/opCodes/stmState"
+import * as TExitOpCodes from "@effect/stm/internal/opCodes/tExit"
+import type * as TExit from "@effect/stm/internal/stm/tExit"
 
 /** @internal */
 const STMStateSymbolKey = "@effect/io/STM/State"

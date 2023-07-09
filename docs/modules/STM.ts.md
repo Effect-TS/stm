@@ -49,9 +49,7 @@ Added in v1.0.0
   - [replicateSTM](#replicatestm)
   - [replicateSTMDiscard](#replicatestmdiscard)
   - [succeed](#succeed)
-  - [succeedLeft](#succeedleft)
   - [succeedNone](#succeednone)
-  - [succeedRight](#succeedright)
   - [succeedSome](#succeedsome)
   - [suspend](#suspend)
   - [sync](#sync)
@@ -69,10 +67,8 @@ Added in v1.0.0
 - [do notation](#do-notation)
   - [Do](#do)
   - [bind](#bind)
-  - [bindDiscard](#binddiscard)
   - [bindTo](#bindto)
   - [let](#let)
-  - [letDiscard](#letdiscard)
 - [elements](#elements)
   - [firstSuccessOf](#firstsuccessof)
 - [error handling](#error-handling)
@@ -102,30 +98,10 @@ Added in v1.0.0
   - [head](#head)
   - [isFailure](#isfailure)
   - [isSuccess](#issuccess)
-  - [left](#left)
-  - [right](#right)
   - [some](#some)
   - [someOrElse](#someorelse)
   - [someOrElseSTM](#someorelsestm)
-  - [someOrFail](#someorfail)
-  - [someOrFailException](#someorfailexception)
-  - [unleft](#unleft)
-  - [unright](#unright)
   - [unsome](#unsome)
-- [instances](#instances)
-  - [Applicative](#applicative)
-  - [Bicovariant](#bicovariant)
-  - [Chainable](#chainable)
-  - [Covariant](#covariant)
-  - [FlatMap](#flatmap)
-  - [Invariant](#invariant)
-  - [Monad](#monad)
-  - [Pointed](#pointed)
-  - [Product](#product)
-  - [SemiAlternative](#semialternative)
-  - [SemiApplicative](#semiapplicative)
-  - [SemiCoproduct](#semicoproduct)
-  - [SemiProduct](#semiproduct)
 - [mapping](#mapping)
   - [as](#as)
   - [asSome](#assome)
@@ -142,7 +118,6 @@ Added in v1.0.0
   - [STMUnify (interface)](#stmunify-interface)
   - [STMUnifyBlacklist (interface)](#stmunifyblacklist-interface)
 - [mutations](#mutations)
-  - [absolve](#absolve)
   - [collect](#collect)
   - [collectSTM](#collectstm)
   - [either](#either)
@@ -169,16 +144,12 @@ Added in v1.0.0
   - [validateAll](#validateall)
   - [validateFirst](#validatefirst)
   - [when](#when)
-  - [whenCase](#whencase)
-  - [whenCaseSTM](#whencasestm)
   - [whenSTM](#whenstm)
 - [refinements](#refinements)
   - [isSTM](#isstm)
 - [sequencing](#sequencing)
   - [flatMap](#flatmap)
-  - [flatMapError](#flatmaperror)
   - [flatten](#flatten)
-  - [flattenErrorOption](#flattenerroroption)
   - [tap](#tap)
   - [tapBoth](#tapboth)
   - [tapError](#taperror)
@@ -191,12 +162,6 @@ Added in v1.0.0
   - [partition](#partition)
 - [type lambdas](#type-lambdas)
   - [STMTypeLambda (interface)](#stmtypelambda-interface)
-- [utils](#utils)
-  - [getFailureMonoid](#getfailuremonoid)
-  - [getFailureSemigroup](#getfailuresemigroup)
-  - [getFirstSuccessSemigroup](#getfirstsuccesssemigroup)
-  - [nonEmptyStruct](#nonemptystruct)
-  - [nonEmptyTuple](#nonemptytuple)
 - [zipping](#zipping)
   - [zip](#zip)
   - [zipLeft](#zipleft)
@@ -770,18 +735,6 @@ export declare const succeed: <A>(value: A) => STM<never, never, A>
 
 Added in v1.0.0
 
-## succeedLeft
-
-Returns an effect with the value on the left part.
-
-**Signature**
-
-```ts
-export declare const succeedLeft: <A>(value: A) => STM<never, never, Either.Either<A, never>>
-```
-
-Added in v1.0.0
-
 ## succeedNone
 
 Returns an effect with the empty value.
@@ -790,18 +743,6 @@ Returns an effect with the empty value.
 
 ```ts
 export declare const succeedNone: () => STM<never, never, Option.Option<never>>
-```
-
-Added in v1.0.0
-
-## succeedRight
-
-Returns an effect with the value on the right part.
-
-**Signature**
-
-```ts
-export declare const succeedRight: <A>(value: A) => STM<never, never, Either.Either<never, A>>
 ```
 
 Added in v1.0.0
@@ -996,7 +937,7 @@ Added in v1.0.0
 **Signature**
 
 ```ts
-export declare const Do: <R = never, E = never>() => STM<R, E, {}>
+export declare const Do: STM<never, never, {}>
 ```
 
 Added in v1.0.0
@@ -1007,33 +948,14 @@ Added in v1.0.0
 
 ```ts
 export declare const bind: {
-  <N extends string, A extends object, O2, E2, B>(name: Exclude<N, keyof A>, f: (a: A) => STM<O2, E2, B>): <O1, E1>(
-    self: STM<O1, E1, A>
-  ) => STM<O2 | O1, E2 | E1, { [K in N | keyof A]: K extends keyof A ? A[K] : B }>
-  <O1_1, E1_1, A_1 extends object, N_1 extends string, O2_1, E2_1, B_1>(
-    self: STM<O1_1, E1_1, A_1>,
-    name: Exclude<N_1, keyof A_1>,
-    f: (a: A_1) => STM<O2_1, E2_1, B_1>
-  ): STM<O1_1 | O2_1, E1_1 | E2_1, { [K_1 in N_1 | keyof A_1]: K_1 extends keyof A_1 ? A_1[K_1] : B_1 }>
-}
-```
-
-Added in v1.0.0
-
-## bindDiscard
-
-**Signature**
-
-```ts
-export declare const bindDiscard: {
-  <N extends string, A extends object, O2, E2, B>(name: Exclude<N, keyof A>, that: STM<O2, E2, B>): <O1, E1>(
-    self: STM<O1, E1, A>
-  ) => STM<O2 | O1, E2 | E1, { [K in N | keyof A]: K extends keyof A ? A[K] : B }>
-  <O1_1, E1_1, A_1 extends object, N_1 extends string, O2_1, E2_1, B_1>(
-    self: STM<O1_1, E1_1, A_1>,
-    name: Exclude<N_1, keyof A_1>,
-    that: STM<O2_1, E2_1, B_1>
-  ): STM<O1_1 | O2_1, E1_1 | E2_1, { [K_1 in N_1 | keyof A_1]: K_1 extends keyof A_1 ? A_1[K_1] : B_1 }>
+  <N extends string, K, R2, E2, A>(tag: Exclude<N, keyof K>, f: (_: K) => STM<R2, E2, A>): <R, E>(
+    self: STM<R, E, K>
+  ) => STM<R2 | R, E2 | E, Effect.MergeRecord<K, { [k in N]: A }>>
+  <R, E, N extends string, K, R2, E2, A>(
+    self: STM<R, E, K>,
+    tag: Exclude<N, keyof K>,
+    f: (_: K) => STM<R2, E2, A>
+  ): STM<R | R2, E | E2, Effect.MergeRecord<K, { [k in N]: A }>>
 }
 ```
 
@@ -1045,8 +967,8 @@ Added in v1.0.0
 
 ```ts
 export declare const bindTo: {
-  <N extends string>(name: N): <O, E, A>(self: STM<O, E, A>) => STM<O, E, { [K in N]: A }>
-  <O_1, E_1, A_1, N_1 extends string>(self: STM<O_1, E_1, A_1>, name: N_1): STM<O_1, E_1, { [K_1 in N_1]: A_1 }>
+  <N extends string>(tag: N): <R, E, A>(self: STM<R, E, A>) => STM<R, E, Record<N, A>>
+  <R, E, A, N extends string>(self: STM<R, E, A>, tag: N): STM<R, E, Record<N, A>>
 }
 ```
 
@@ -1058,33 +980,14 @@ Added in v1.0.0
 
 ```ts
 export declare const let: {
-  <N extends string, A extends object, B>(name: Exclude<N, keyof A>, f: (a: A) => B): <O, E>(
-    self: STM<O, E, A>
-  ) => STM<O, E, { [K in N | keyof A]: K extends keyof A ? A[K] : B }>
-  <O_1, E_1, A_1 extends object, N_1 extends string, B_1>(
-    self: STM<O_1, E_1, A_1>,
-    name: Exclude<N_1, keyof A_1>,
-    f: (a: A_1) => B_1
-  ): STM<O_1, E_1, { [K_1 in N_1 | keyof A_1]: K_1 extends keyof A_1 ? A_1[K_1] : B_1 }>
-}
-```
-
-Added in v1.0.0
-
-## letDiscard
-
-**Signature**
-
-```ts
-export declare const letDiscard: {
-  <N extends string, A extends object, B>(name: Exclude<N, keyof A>, b: B): <O, E>(
-    self: STM<O, E, A>
-  ) => STM<O, E, { [K in N | keyof A]: K extends keyof A ? A[K] : B }>
-  <O_1, E_1, A_1 extends object, N_1 extends string, B_1>(
-    self: STM<O_1, E_1, A_1>,
-    name: Exclude<N_1, keyof A_1>,
-    b: B_1
-  ): STM<O_1, E_1, { [K_1 in N_1 | keyof A_1]: K_1 extends keyof A_1 ? A_1[K_1] : B_1 }>
+  <N extends string, K, A>(tag: Exclude<N, keyof K>, f: (_: K) => A): <R, E>(
+    self: STM<R, E, K>
+  ) => STM<R, E, Effect.MergeRecord<K, { [k in N]: A }>>
+  <R, E, K, N extends string, A>(self: STM<R, E, K>, tag: Exclude<N, keyof K>, f: (_: K) => A): STM<
+    R,
+    E,
+    Effect.MergeRecord<K, { [k in N]: A }>
+  >
 }
 ```
 
@@ -1482,32 +1385,6 @@ export declare const isSuccess: <R, E, A>(self: STM<R, E, A>) => STM<R, never, b
 
 Added in v1.0.0
 
-## left
-
-"Zooms in" on the value in the `Left` side of an `Either`, moving the
-possibility that the value is a `Right` to the error channel.
-
-**Signature**
-
-```ts
-export declare const left: <R, E, A, A2>(self: STM<R, E, Either.Either<A, A2>>) => STM<R, Either.Either<E, A2>, A>
-```
-
-Added in v1.0.0
-
-## right
-
-"Zooms in" on the value in the `Right` side of an `Either`, moving the
-possibility that the value is a `Left` to the error channel.
-
-**Signature**
-
-```ts
-export declare const right: <R, E, A, A2>(self: STM<R, E, Either.Either<A, A2>>) => STM<R, Either.Either<A, E>, A2>
-```
-
-Added in v1.0.0
-
 ## some
 
 Converts an option on values into an option on errors.
@@ -1556,62 +1433,6 @@ export declare const someOrElseSTM: {
 
 Added in v1.0.0
 
-## someOrFail
-
-Extracts the optional value, or fails with the given error 'e'.
-
-**Signature**
-
-```ts
-export declare const someOrFail: {
-  <E2>(error: LazyArg<E2>): <R, E, A>(self: STM<R, E, Option.Option<A>>) => STM<R, E2 | E, A>
-  <R, E, A, E2>(self: STM<R, E, Option.Option<A>>, error: LazyArg<E2>): STM<R, E | E2, A>
-}
-```
-
-Added in v1.0.0
-
-## someOrFailException
-
-Extracts the optional value, or fails with a
-`Cause.NoSuchElementException`.
-
-**Signature**
-
-```ts
-export declare const someOrFailException: <R, E, A>(
-  self: STM<R, E, Option.Option<A>>
-) => STM<R, E | Cause.NoSuchElementException, A>
-```
-
-Added in v1.0.0
-
-## unleft
-
-Converts a `STM<R, Either<E, A>, A2>` into a `STM<R, E, Either<A2, A>>`.
-The inverse of `left`.
-
-**Signature**
-
-```ts
-export declare const unleft: <R, E, A, A2>(self: STM<R, Either.Either<E, A>, A2>) => STM<R, E, Either.Either<A2, A>>
-```
-
-Added in v1.0.0
-
-## unright
-
-Converts a `STM<R, Either<A, E>, A2>` into a `STM<R, E, Either<A, A2>>`.
-The inverse of `right`.
-
-**Signature**
-
-```ts
-export declare const unright: <R, E, A, A2>(self: STM<R, Either.Either<A, E>, A2>) => STM<R, E, Either.Either<A, A2>>
-```
-
-Added in v1.0.0
-
 ## unsome
 
 Converts an option on errors into an option on values.
@@ -1620,138 +1441,6 @@ Converts an option on errors into an option on values.
 
 ```ts
 export declare const unsome: <R, E, A>(self: STM<R, Option.Option<E>, A>) => STM<R, E, Option.Option<A>>
-```
-
-Added in v1.0.0
-
-# instances
-
-## Applicative
-
-**Signature**
-
-```ts
-export declare const Applicative: applicative.Applicative<STMTypeLambda>
-```
-
-Added in v1.0.0
-
-## Bicovariant
-
-**Signature**
-
-```ts
-export declare const Bicovariant: bicovariant.Bicovariant<STMTypeLambda>
-```
-
-Added in v1.0.0
-
-## Chainable
-
-**Signature**
-
-```ts
-export declare const Chainable: chainable.Chainable<STMTypeLambda>
-```
-
-Added in v1.0.0
-
-## Covariant
-
-**Signature**
-
-```ts
-export declare const Covariant: covariant.Covariant<STMTypeLambda>
-```
-
-Added in v1.0.0
-
-## FlatMap
-
-**Signature**
-
-```ts
-export declare const FlatMap: flatMap_.FlatMap<STMTypeLambda>
-```
-
-Added in v1.0.0
-
-## Invariant
-
-**Signature**
-
-```ts
-export declare const Invariant: invariant.Invariant<STMTypeLambda>
-```
-
-Added in v1.0.0
-
-## Monad
-
-**Signature**
-
-```ts
-export declare const Monad: monad.Monad<STMTypeLambda>
-```
-
-Added in v1.0.0
-
-## Pointed
-
-**Signature**
-
-```ts
-export declare const Pointed: pointed.Pointed<STMTypeLambda>
-```
-
-Added in v1.0.0
-
-## Product
-
-**Signature**
-
-```ts
-export declare const Product: product_.Product<STMTypeLambda>
-```
-
-Added in v1.0.0
-
-## SemiAlternative
-
-**Signature**
-
-```ts
-export declare const SemiAlternative: semiAlternative.SemiAlternative<STMTypeLambda>
-```
-
-Added in v1.0.0
-
-## SemiApplicative
-
-**Signature**
-
-```ts
-export declare const SemiApplicative: semiApplicative.SemiApplicative<STMTypeLambda>
-```
-
-Added in v1.0.0
-
-## SemiCoproduct
-
-**Signature**
-
-```ts
-export declare const SemiCoproduct: semiCoproduct.SemiCoproduct<STMTypeLambda>
-```
-
-Added in v1.0.0
-
-## SemiProduct
-
-**Signature**
-
-```ts
-export declare const SemiProduct: semiProduct.SemiProduct<STMTypeLambda>
 ```
 
 Added in v1.0.0
@@ -2184,8 +1873,11 @@ synchronization of Fibers and transactional data-types can be quite useful.
 **Signature**
 
 ```ts
-export interface STM<R, E, A> extends Effect.Effect<R, E, A>, STM.Variance<R, E, A> {
-  traced(trace: Debug.Trace): STM<R, E, A>
+export interface STM<R, E, A>
+  extends Effect.Effect.Variance<R, E, A>,
+    STM.Variance<R, E, A>,
+    Equal.Equal,
+    Pipeable.Pipeable<STM<R, E, A>> {
   [Unify.typeSymbol]?: unknown
   [Unify.unifySymbol]?: STMUnify<this>
   [Unify.blacklistSymbol]?: STMUnifyBlacklist
@@ -2236,19 +1928,6 @@ Added in v1.0.0
 
 # mutations
 
-## absolve
-
-Returns an effect that submerges the error case of an `Either` into the
-`STM`. The inverse operation of `STM.either`.
-
-**Signature**
-
-```ts
-export declare const absolve: <R, E, E2, A>(self: STM<R, E, Either.Either<E2, A>>) => STM<R, E | E2, A>
-```
-
-Added in v1.0.0
-
 ## collect
 
 Simultaneously filters and maps the value produced by this effect.
@@ -2266,7 +1945,7 @@ Added in v1.0.0
 
 ## collectSTM
 
-Simultaneously filters and flatMaps the value produced by this effect.
+Simultaneously filters and maps the value produced by this effect.
 
 **Signature**
 
@@ -2666,44 +2345,6 @@ export declare const when: {
 
 Added in v1.0.0
 
-## whenCase
-
-Runs an effect when the supplied partial function matches for the given
-value, otherwise does nothing.
-
-**Signature**
-
-```ts
-export declare const whenCase: <R, E, A, B>(
-  evaluate: LazyArg<A>,
-  pf: (a: A) => Option.Option<STM<R, E, B>>
-) => STM<R, E, Option.Option<B>>
-```
-
-Added in v1.0.0
-
-## whenCaseSTM
-
-Runs an effect when the supplied partial function matches for the given
-effectful value, otherwise does nothing.
-
-**Signature**
-
-```ts
-export declare const whenCaseSTM: {
-  <A, R2, E2, A2>(pf: (a: A) => Option.Option<STM<R2, E2, A2>>): <R, E>(
-    self: STM<R, E, A>
-  ) => STM<R2 | R, E2 | E, Option.Option<A2>>
-  <R, E, A, R2, E2, A2>(self: STM<R, E, A>, pf: (a: A) => Option.Option<STM<R2, E2, A2>>): STM<
-    R | R2,
-    E | E2,
-    Option.Option<A2>
-  >
-}
-```
-
-Added in v1.0.0
-
 ## whenSTM
 
 The moral equivalent of `if (p) exp` when `p` has side-effects.
@@ -2751,22 +2392,6 @@ export declare const flatMap: {
 
 Added in v1.0.0
 
-## flatMapError
-
-Creates a composite effect that represents this effect followed by another
-one that may depend on the error produced by this one.
-
-**Signature**
-
-```ts
-export declare const flatMapError: {
-  <E, R2, E2>(f: (error: E) => STM<R2, never, E2>): <R, A>(self: STM<R, E, A>) => STM<R2 | R, E2, A>
-  <R, A, E, R2, E2>(self: STM<R, E, A>, f: (error: E) => STM<R2, never, E2>): STM<R | R2, E2, A>
-}
-```
-
-Added in v1.0.0
-
 ## flatten
 
 Flattens out a nested `STM` effect.
@@ -2775,21 +2400,6 @@ Flattens out a nested `STM` effect.
 
 ```ts
 export declare const flatten: <R, E, R2, E2, A>(self: STM<R, E, STM<R2, E2, A>>) => STM<R | R2, E | E2, A>
-```
-
-Added in v1.0.0
-
-## flattenErrorOption
-
-Unwraps the optional error, defaulting to the provided value.
-
-**Signature**
-
-```ts
-export declare const flattenErrorOption: {
-  <R, E, A, E2>(self: STM<R, Option.Option<E>, A>, fallback: LazyArg<E2>): STM<R, E | E2, A>
-  <E2>(fallback: LazyArg<E2>): <R, E, A>(self: STM<R, Option.Option<E>, A>) => STM<R, E2 | E, A>
-}
 ```
 
 Added in v1.0.0
@@ -2934,70 +2544,6 @@ export interface STMTypeLambda extends TypeLambda {
 
 Added in v1.0.0
 
-# utils
-
-## getFailureMonoid
-
-**Signature**
-
-```ts
-export declare const getFailureMonoid: <A, O, E>(M: Monoid<A>) => Monoid<STM<O, E, A>>
-```
-
-Added in v1.0.0
-
-## getFailureSemigroup
-
-**Signature**
-
-```ts
-export declare const getFailureSemigroup: <A, O, E>(S: Semigroup<A>) => Semigroup<STM<O, E, A>>
-```
-
-Added in v1.0.0
-
-## getFirstSuccessSemigroup
-
-**Signature**
-
-```ts
-export declare const getFirstSuccessSemigroup: <A, O, E>(S: Semigroup<A>) => Semigroup<STM<O, E, A>>
-```
-
-Added in v1.0.0
-
-## nonEmptyStruct
-
-**Signature**
-
-```ts
-export declare const nonEmptyStruct: <R extends { readonly [x: string]: STM<any, any, any> }>(
-  fields: (keyof R extends never ? never : R) & { readonly [x: string]: STM<any, any, any> }
-) => STM<
-  [R[keyof R]] extends [STM<infer O, any, any>] ? O : never,
-  [R[keyof R]] extends [STM<any, infer E, any>] ? E : never,
-  { [K in keyof R]: [R[K]] extends [STM<any, any, infer A>] ? A : never }
->
-```
-
-Added in v1.0.0
-
-## nonEmptyTuple
-
-**Signature**
-
-```ts
-export declare const nonEmptyTuple: <T extends readonly [STM<any, any, any>, ...STM<any, any, any>[]]>(
-  ...elements: T
-) => STM<
-  [T[number]] extends [STM<infer O, any, any>] ? O : never,
-  [T[number]] extends [STM<any, infer E, any>] ? E : never,
-  { [I in keyof T]: [T[I]] extends [STM<any, any, infer A>] ? A : never }
->
-```
-
-Added in v1.0.0
-
 # zipping
 
 ## zip
@@ -3008,8 +2554,8 @@ Sequentially zips this value with the specified one.
 
 ```ts
 export declare const zip: {
-  <R1, E1, A1>(that: STM<R1, E1, A1>): <R, E, A>(self: STM<R, E, A>) => STM<R1 | R, E1 | E, [A, A1]>
-  <R, E, A, R1, E1, A1>(self: STM<R, E, A>, that: STM<R1, E1, A1>): STM<R | R1, E | E1, [A, A1]>
+  <R1, E1, A1>(that: STM<R1, E1, A1>): <R, E, A>(self: STM<R, E, A>) => STM<R1 | R, E1 | E, readonly [A, A1]>
+  <R, E, A, R1, E1, A1>(self: STM<R, E, A>, that: STM<R1, E1, A1>): STM<R | R1, E | E1, readonly [A, A1]>
 }
 ```
 

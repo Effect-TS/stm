@@ -26,8 +26,6 @@ Added in v1.0.0
 - [symbols](#symbols)
   - [TDeferredTypeId](#tdeferredtypeid)
   - [TDeferredTypeId (type alias)](#tdeferredtypeid-type-alias)
-- [utils](#utils)
-  - [TDeferred (interface)](#tdeferred-interface-1)
 
 ---
 
@@ -136,21 +134,6 @@ Added in v1.0.0
 
 ```ts
 export type TDeferredTypeId = typeof TDeferredTypeId
-```
-
-Added in v1.0.0
-
-# utils
-
-## TDeferred (interface)
-
-**Signature**
-
-```ts
-export interface TDeferred<E, A> {
-  /** @internal */
-  readonly ref: TRef.TRef<Option.Option<Either.Either<E, A>>>
-}
 ```
 
 Added in v1.0.0

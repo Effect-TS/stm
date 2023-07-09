@@ -62,8 +62,6 @@ Added in v1.0.0
 - [symbols](#symbols)
   - [TArrayTypeId](#tarraytypeid)
   - [TArrayTypeId (type alias)](#tarraytypeid-type-alias)
-- [utils](#utils)
-  - [TArray (interface)](#tarray-interface-1)
 
 ---
 
@@ -705,21 +703,6 @@ Added in v1.0.0
 
 ```ts
 export type TArrayTypeId = typeof TArrayTypeId
-```
-
-Added in v1.0.0
-
-# utils
-
-## TArray (interface)
-
-**Signature**
-
-```ts
-export interface TArray<A> {
-  /** @internal */
-  readonly chunk: Array<TRef.TRef<A>>
-}
 ```
 
 Added in v1.0.0

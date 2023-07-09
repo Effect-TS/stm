@@ -1,4 +1,4 @@
-import * as Versioned from "@effect/stm/internal_effect_untraced/stm/versioned"
+import * as Versioned from "@effect/stm/internal/stm/versioned"
 import type * as TRef from "@effect/stm/TRef"
 
 /** @internal */
