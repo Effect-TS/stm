@@ -1,4 +1,4 @@
-lockfileVersion: '6.0'
+lockfileVersion: '6.1'
 
 settings:
   autoInstallPeers: true
@@ -12,8 +12,8 @@ importers:
         specifier: ~0.13.6
         version: 0.13.6
       '@effect/io':
-        specifier: ~0.31.3
-        version: 0.31.3
+        specifier: ~0.31.4
+        version: 0.31.4
     devDependencies:
       '@babel/cli':
         specifier: ^7.22.6
@@ -825,8 +825,8 @@ packages:
       - '@types/node'
     dev: true
 
-  /@effect/io@0.31.3:
-    resolution: {integrity: sha512-v8OltakxYj+TBUYk8ZnhrcebGd8xKavZZLjZm1p/uJqnqU8EgJq1aKCHaH7H5UdMsaZIunJG1W0NL2zDtdDYbw==}
+  /@effect/io@0.31.4:
+    resolution: {integrity: sha512-8OnD8jzQqe4SjLixKqhIu5jUc6JhiqXCyAxTsdz7gjYRuJ+E3OPiIh5nqexX5vDlCIDdNMGBolcKdYO9csD3JQ==}
     dependencies:
       '@effect/data': 0.13.6
     dev: false

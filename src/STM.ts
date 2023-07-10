@@ -4,7 +4,6 @@
 import * as Chunk from "@effect/data/Chunk"
 import type * as Context from "@effect/data/Context"
 import type * as Either from "@effect/data/Either"
-import type * as Equal from "@effect/data/Equal"
 import type { LazyArg } from "@effect/data/Function"
 import type { TypeLambda } from "@effect/data/HKT"
 import type * as Option from "@effect/data/Option"
@@ -67,7 +66,7 @@ export type STMTypeId = typeof STMTypeId
  * @category models
  */
 export interface STM<R, E, A>
-  extends Effect.Effect.Variance<R, E, A>, STM.Variance<R, E, A>, Equal.Equal, Pipeable.Pipeable<STM<R, E, A>>
+  extends Pipeable.PipeableOverride<Effect.Effect<R, E, A>, STM<R, E, A>>, STM.Variance<R, E, A>
 {
   [Unify.typeSymbol]?: unknown
   [Unify.unifySymbol]?: STMUnify<this>
