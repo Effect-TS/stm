@@ -1,5 +1,11 @@
 # @effect/stm
 
+## 0.13.1
+
+### Patch Changes
+
+- [#92](https://github.com/Effect-TS/stm/pull/92) [`c476c7d`](https://github.com/Effect-TS/stm/commit/c476c7df4dc23257ec1afa070b3a1ad8f87d9fa1) Thanks [@tim-smart](https://github.com/tim-smart)! - fix STM extends Effect
+
 ## 0.13.0
 
 ### Minor Changes
