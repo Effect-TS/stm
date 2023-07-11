@@ -1873,11 +1873,7 @@ synchronization of Fibers and transactional data-types can be quite useful.
 **Signature**
 
 ```ts
-export interface STM<R, E, A>
-  extends Effect.Effect.Variance<R, E, A>,
-    STM.Variance<R, E, A>,
-    Equal.Equal,
-    Pipeable.Pipeable<STM<R, E, A>> {
+export interface STM<R, E, A> extends Effect.Effect<R, E, A>, STM.Variance<R, E, A>, Pipeable {
   [Unify.typeSymbol]?: unknown
   [Unify.unifySymbol]?: STMUnify<this>
   [Unify.blacklistSymbol]?: STMUnifyBlacklist
