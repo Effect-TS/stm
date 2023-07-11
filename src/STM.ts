@@ -7,7 +7,7 @@ import type * as Either from "@effect/data/Either"
 import type { LazyArg } from "@effect/data/Function"
 import type { TypeLambda } from "@effect/data/HKT"
 import type * as Option from "@effect/data/Option"
-import type * as Pipeable from "@effect/data/Pipeable"
+import type { Pipeable } from "@effect/data/Pipeable"
 import type { Predicate } from "@effect/data/Predicate"
 import type * as Unify from "@effect/data/Unify"
 import * as Cause from "@effect/io/Cause"
@@ -65,9 +65,7 @@ export type STMTypeId = typeof STMTypeId
  * @since 1.0.0
  * @category models
  */
-export interface STM<R, E, A>
-  extends Pipeable.PipeableOverride<Effect.Effect<R, E, A>, STM<R, E, A>>, STM.Variance<R, E, A>
-{
+export interface STM<R, E, A> extends Effect.Effect<R, E, A>, STM.Variance<R, E, A>, Pipeable {
   [Unify.typeSymbol]?: unknown
   [Unify.unifySymbol]?: STMUnify<this>
   [Unify.blacklistSymbol]?: STMUnifyBlacklist
@@ -102,7 +100,7 @@ export interface STMTypeLambda extends TypeLambda {
  * @category models
  */
 declare module "@effect/data/Context" {
-  interface Tag<Identifier, Service> extends Omit<STM<Identifier, never, Service>, "pipe"> {}
+  interface Tag<Identifier, Service> extends STM<Identifier, never, Service> {}
 }
 
 /**

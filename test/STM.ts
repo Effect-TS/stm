@@ -1480,7 +1480,7 @@ describe.concurrent("STM", () => {
       const receiver = yield* $(TRef.make(0))
       const toReceiver = pipe(transfer(receiver, sender, 100), Effect.repeatN(9))
       const toSender = pipe(transfer(sender, receiver, 100), Effect.repeatN(9))
-      const fiber = yield* $(pipe(toReceiver, Effect.zip(toSender, { parallel: true }), Effect.fork))
+      const fiber = yield* $(pipe(toReceiver, Effect.zip(toSender, { concurrent: true }), Effect.fork))
       yield* $(pipe(sender, TRef.update((n) => n + 50)))
       yield* $(Fiber.join(fiber))
       const senderValue = yield* $(TRef.get(sender))
