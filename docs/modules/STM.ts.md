@@ -51,7 +51,7 @@ Added in v1.0.0
   - [succeedSome](#succeedsome)
   - [suspend](#suspend)
   - [sync](#sync)
-  - [tryCatch](#trycatch)
+  - [try](#try)
   - [unit](#unit)
 - [context](#context-1)
   - [contramapContext](#contramapcontext)
@@ -751,7 +751,7 @@ export declare const sync: <A>(evaluate: () => A) => STM<never, never, A>
 
 Added in v1.0.0
 
-## tryCatch
+## try
 
 Imports a synchronous side-effect into a pure value, translating any thrown
 exceptions into typed failed effects.
@@ -759,7 +759,7 @@ exceptions into typed failed effects.
 **Signature**
 
 ```ts
-export declare const tryCatch: <E, A>(attempt: () => A, onThrow: (u: unknown) => E) => Effect.Effect<never, E, A>
+export declare const try: { <A>(try_: LazyArg<A>): STM<never, unknown, A>; <A, E>(options: { readonly try: LazyArg<A>; readonly catch: (u: unknown) => E; }): STM<never, E, A>; }
 ```
 
 Added in v1.0.0

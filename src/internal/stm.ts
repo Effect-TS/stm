@@ -1333,17 +1333,27 @@ export const tapError = dual<
   }))
 
 /** @internal */
-export const tryCatch = <E, A>(
-  attempt: () => A,
-  onThrow: (u: unknown) => E
-): Effect.Effect<never, E, A> =>
-  suspend(() => {
+export const try_: {
+  <A>(try_: LazyArg<A>): STM.STM<never, unknown, A>
+  <A, E>(options: {
+    readonly try: LazyArg<A>
+    readonly catch: (u: unknown) => E
+  }): STM.STM<never, E, A>
+} = <A, E>(
+  arg: LazyArg<A> | {
+    readonly try: LazyArg<A>
+    readonly catch: (u: unknown) => E
+  }
+) => {
+  const evaluate = typeof arg === "function" ? arg : arg.try
+  return suspend(() => {
     try {
-      return core.succeed(attempt())
+      return core.succeed(evaluate())
     } catch (error) {
-      return core.fail(onThrow(error))
+      return core.fail("catch" in arg ? arg.catch(error) : error)
     }
   })
+}
 
 /** @internal */
 export const unit = (): STM.STM<never, never, void> => core.succeed(void 0)

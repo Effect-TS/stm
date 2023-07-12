@@ -1831,14 +1831,23 @@ export const tapError: {
   <R, A, E, R2, E2, _>(self: STM<R, E, A>, f: (error: E) => STM<R2, E2, _>): STM<R | R2, E | E2, A>
 } = stm.tapError
 
-/**
- * Imports a synchronous side-effect into a pure value, translating any thrown
- * exceptions into typed failed effects.
- *
- * @since 1.0.0
- * @category constructors
- */
-export const tryCatch: <E, A>(attempt: () => A, onThrow: (u: unknown) => E) => Effect.Effect<never, E, A> = stm.tryCatch
+const try_: {
+  <A>(try_: LazyArg<A>): STM<never, unknown, A>
+  <A, E>(options: {
+    readonly try: LazyArg<A>
+    readonly catch: (u: unknown) => E
+  }): STM<never, E, A>
+} = stm.try_
+export {
+  /**
+   * Imports a synchronous side-effect into a pure value, translating any thrown
+   * exceptions into typed failed effects.
+   *
+   * @since 1.0.0
+   * @category constructors
+   */
+  try_ as try
+}
 
 /**
  * The moral equivalent of `if (!p) exp`
