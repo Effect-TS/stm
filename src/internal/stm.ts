@@ -218,14 +218,6 @@ export const collect = dual<
   ))
 
 /** @internal */
-export const collectAll = <R, E, A>(iterable: Iterable<STM.STM<R, E, A>>): STM.STM<R, E, Array<A>> =>
-  forEach(iterable, identity)
-
-/** @internal */
-export const collectAllDiscard = <R, E, A>(iterable: Iterable<STM.STM<R, E, A>>): STM.STM<R, E, void> =>
-  pipe(iterable, forEachDiscard(identity))
-
-/** @internal */
 export const collectFirst = dual<
   <A, R, E, A2>(
     pf: (a: A) => STM.STM<R, E, Option.Option<A2>>
@@ -1085,13 +1077,13 @@ export const replicate = dual<
 export const replicateSTM = dual<
   (n: number) => <R, E, A>(self: STM.STM<R, E, A>) => STM.STM<R, E, Array<A>>,
   <R, E, A>(self: STM.STM<R, E, A>, n: number) => STM.STM<R, E, Array<A>>
->(2, (self, n) => pipe(self, replicate(n), collectAll))
+>(2, (self, n) => pipe(self, replicate(n), all()))
 
 /** @internal */
 export const replicateSTMDiscard = dual<
   (n: number) => <R, E, A>(self: STM.STM<R, E, A>) => STM.STM<R, E, void>,
   <R, E, A>(self: STM.STM<R, E, A>, n: number) => STM.STM<R, E, void>
->(2, (self, n) => pipe(self, replicate(n), collectAllDiscard))
+>(2, (self, n) => pipe(self, replicate(n), all({ discard: true })))
 
 /** @internal */
 export const retryUntil = dual<
@@ -1175,71 +1167,47 @@ export const someOrElseSTM = dual<
     })
   ))
 
-/* @internal */
-export const all: {
-  <R, E, A, T extends ReadonlyArray<STM.STM<any, any, any>>>(
-    self: STM.STM<R, E, A>,
-    ...args: T
-  ): STM.STM<
-    R | T["length"] extends 0 ? never
-      : [T[number]] extends [{ [STM.STMTypeId]: { _R: (_: never) => infer R } }] ? R
-      : never,
-    E | T["length"] extends 0 ? never
-      : [T[number]] extends [{ [STM.STMTypeId]: { _E: (_: never) => infer E } }] ? E
-      : never,
-    readonly [
-      A,
-      ...(T["length"] extends 0 ? []
-        : Readonly<{ [K in keyof T]: [T[K]] extends [STM.STM<any, any, infer A>] ? A : never }>)
-    ]
-  >
-  <T extends ReadonlyArray<STM.STM<any, any, any>>>(
-    args: [...T]
-  ): STM.STM<
-    T[number] extends never ? never
-      : [T[number]] extends [{ [STM.STMTypeId]: { _R: (_: never) => infer R } }] ? R
-      : never,
-    T[number] extends never ? never
-      : [T[number]] extends [{ [STM.STMTypeId]: { _E: (_: never) => infer E } }] ? E
-      : never,
-    T[number] extends never ? []
-      : Readonly<{ [K in keyof T]: [T[K]] extends [STM.STM<any, any, infer A>] ? A : never }>
-  >
-  <T extends Readonly<{ [K: string]: STM.STM<any, any, any> }>>(
-    args: T
-  ): STM.STM<
-    keyof T extends never ? never
-      : [T[keyof T]] extends [{ [STM.STMTypeId]: { _R: (_: never) => infer R } }] ? R
-      : never,
-    keyof T extends never ? never
-      : [T[keyof T]] extends [{ [STM.STMTypeId]: { _E: (_: never) => infer E } }] ? E
-      : never,
-    Readonly<{ [K in keyof T]: [T[K]] extends [STM.STM<any, any, infer A>] ? A : never }>
-  >
-} = function() {
-  if (arguments.length === 1) {
-    if (core.isSTM(arguments[0])) {
-      return core.map(arguments[0], (x) => [x])
-    } else if (Symbol.iterator in arguments[0]) {
-      return collectAll(arguments[0])
-    } else {
-      return pipe(
-        forEach(
-          Object.entries(arguments[0] as Readonly<{ [K: string]: STM.STM<any, any, any> }>),
-          ([_, e]) => core.map(e, (a) => [_, a] as const)
-        ),
-        core.map((values) => {
-          const res = {}
-          for (const [k, v] of values) {
-            ;(res as any)[k] = v
-          }
-          return res
-        })
-      ) as any
-    }
+const allIsDataFirst = (args: IArguments) => {
+  if (args.length === 0) {
+    return false
+  } else if (args.length > 1) {
+    return true
+  } else if (Symbol.iterator in args[0]) {
+    return true
   }
-  return collectAll(arguments)
+
+  const obj: STM.All.Options = args[0]
+
+  return (
+    typeof obj.discard === "boolean"
+  ) === false
 }
+
+/* @internal */
+export const all = dual<
+  (options?: STM.All.Options) => (arg: Iterable<STM.All.STMAny> | Record<string, STM.All.STMAny>) => STM.All.STMAny,
+  (arg: Iterable<STM.All.STMAny> | Record<string, STM.All.STMAny>, options?: STM.All.Options) => STM.All.STMAny
+>(allIsDataFirst, (input, options) => {
+  if (Symbol.iterator in input) {
+    return options?.discard ? forEachDiscard(input, identity) : forEach(input, identity)
+  } else if (options?.discard) {
+    return forEachDiscard(Object.values(input), identity)
+  }
+
+  return pipe(
+    forEach(
+      Object.entries(input),
+      ([_, e]) => core.map(e, (a) => [_, a] as const)
+    ),
+    core.map((values) => {
+      const res = {}
+      for (const [k, v] of values) {
+        ;(res as any)[k] = v
+      }
+      return res
+    })
+  )
+}) as STM.All.Signature
 
 /** @internal */
 export const succeedNone = (): STM.STM<never, never, Option.Option<never>> => core.succeed(Option.none())

@@ -201,60 +201,64 @@ export const acquireUseRelease: {
  */
 export declare namespace All {
   export type STMAny = STM<any, any, any>
-  export type ReturnArray<T> = [T] extends [ReadonlyArray<STMAny>] ? STM<
+
+  export type ReturnTuple<T extends ReadonlyArray<STM<any, any, any>>, Discard extends boolean> = STM<
     T[number] extends never ? never
       : [T[number]] extends [{ [STMTypeId]: { _R: (_: never) => infer R } }] ? R
       : never,
     T[number] extends never ? never
       : [T[number]] extends [{ [STMTypeId]: { _E: (_: never) => infer E } }] ? E
       : never,
-    T[number] extends never ? []
-      : { [K in keyof T]: [T[K]] extends [STM<any, any, infer A>] ? A : never }
-  >
-    : never
-  export type ReturnTuple<T extends ReadonlyArray<STM<any, any, any>>> = STM<
-    T[number] extends never ? never
-      : [T[number]] extends [{ [STMTypeId]: { _R: (_: never) => infer R } }] ? R
-      : never,
-    T[number] extends never ? never
-      : [T[number]] extends [{ [STMTypeId]: { _E: (_: never) => infer E } }] ? E
-      : never,
-    T[number] extends never ? []
-      : { [K in keyof T]: [T[K]] extends [STM<any, any, infer A>] ? A : never }
+    Discard extends true ? void
+      : T[number] extends never ? []
+      : { -readonly [K in keyof T]: [T[K]] extends [STM<infer _R, infer _E, infer A>] ? A : never }
   > extends infer X ? X : never
-  export type ReturnIterable<T> = [T] extends [[Iterable<STMAny>]]
-    ? [T] extends [[ReadonlyArray<STMAny>]] ? ReturnTuple<T[0]>
-    : STM<
-      [T[0]] extends [Iterable<{ [STMTypeId]: { _R: (_: never) => infer R } }>] ? R
-        : never,
-      [T[0]] extends [Iterable<{ [STMTypeId]: { _E: (_: never) => infer E } }>] ? E
-        : never,
-      [T[0]] extends [Iterable<{ [STMTypeId]: { _A: (_: never) => infer A } }>] ? Array<A>
-        : never
-    >
-    : never
-  export type ReturnObject<T> = [T] extends [[Readonly<{ [K: string]: STM<any, any, any> }>]] ? STM<
-    keyof T[0] extends never ? never
-      : [T[0][keyof T[0]]] extends [{ [STMTypeId]: { _R: (_: never) => infer R } }] ? R
+
+  export type ReturnIterable<T extends Iterable<STMAny>, Discard extends boolean> = [T] extends
+    [Iterable<STM.Variance<infer R, infer E, infer A>>] ? STM<R, E, Discard extends true ? void : Array<A>> : never
+
+  export type ReturnObject<T extends Record<string, STMAny>, Discard extends boolean> = STM<
+    keyof T extends never ? never
+      : [T[keyof T]] extends [{ [STMTypeId]: { _R: (_: never) => infer R } }] ? R
       : never,
-    keyof T[0] extends never ? never
-      : [T[0][keyof T[0]]] extends [{ [STMTypeId]: { _E: (_: never) => infer E } }] ? E
+    keyof T extends never ? never
+      : [T[keyof T]] extends [{ [STMTypeId]: { _E: (_: never) => infer E } }] ? E
       : never,
-    { [K in keyof T[0]]: [T[0][K]] extends [STM<any, any, infer A>] ? A : never }
+    Discard extends true ? void
+      : { -readonly [K in keyof T]: [T[K]] extends [STM.Variance<infer _R, infer _E, infer A>] ? A : never }
   >
-    : never
-  export type Signature = {
-    <
-      Args extends
-        | ReadonlyArray<STMAny>
-        | [Iterable<STMAny>]
-        | [Readonly<{ [K: string]: STM<any, any, any> }>]
-    >(
-      ...args: [...Args]
-    ): Args["length"] extends 1 ? Args extends [Iterable<STMAny>] ? ReturnIterable<Args>
-    : Args extends [STMAny] ? ReturnArray<Args>
-    : ReturnObject<Args>
-      : ReturnArray<Args>
+
+  export type Options = {
+    readonly discard: boolean
+  }
+  type IsDiscard<A> = [Extract<A, { readonly discard: true }>] extends [never] ? false : true
+
+  type Narrow<A> = (A extends [] ? [] : never) | A
+
+  export interface Signature {
+    <O extends Options>(
+      options?: O
+    ): <Arg extends ReadonlyArray<STMAny> | Iterable<STMAny> | Record<string, STMAny>>(
+      arg: Arg
+    ) => [Arg] extends [ReadonlyArray<STMAny>] ? ReturnTuple<Arg, IsDiscard<O>>
+      : [Arg] extends [Iterable<STMAny>] ? ReturnIterable<Arg, IsDiscard<O>>
+      : [Arg] extends [Record<string, STMAny>] ? ReturnObject<Arg, IsDiscard<O>>
+      : never
+
+    <Arg extends ReadonlyArray<STMAny>, O extends Options>(
+      arg: Narrow<Arg>,
+      options?: O
+    ): ReturnTuple<Arg, IsDiscard<O>>
+
+    <Arg extends Iterable<STMAny>, O extends Options>(
+      arg: Arg,
+      options?: O
+    ): ReturnIterable<Arg, IsDiscard<O>>
+
+    <Arg extends Record<string, STMAny>, O extends Options>(
+      arg: Arg,
+      options?: O
+    ): ReturnObject<Arg, IsDiscard<O>>
   }
 }
 
@@ -351,18 +355,6 @@ export const catchSome: {
  * @category constructors
  */
 export const check: (predicate: LazyArg<boolean>) => STM<never, never, void> = stm.check
-
-/**
- * Collects all the transactional effects, returning a single transactional
- * effect that produces `Unit`.
- *
- * Equivalent to `pipe(icollectAll(iterable), asUnit)`, but without the cost
- * of building the list of results.
- *
- * @since 1.0.0
- * @category constructors
- */
-export const allDiscard: <R, E, A>(iterable: Iterable<STM<R, E, A>>) => STM<R, E, void> = stm.collectAllDiscard
 
 /**
  * Simultaneously filters and maps the value produced by this effect.

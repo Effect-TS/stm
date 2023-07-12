@@ -437,18 +437,18 @@ const makeHub = <A>(
   strategy: tQueue.TQueueStrategy
 ): STM.STM<never, never, THub.THub<A>> =>
   pipe(
-    stm.all(
+    stm.all([
       tRef.make<Node<A> | undefined>(void 0),
       tRef.make(0)
-    ),
+    ]),
     core.flatMap(([empty, hubSize]) =>
       pipe(
-        stm.all(
+        stm.all([
           tRef.make(empty),
           tRef.make(empty),
           tRef.make(0),
           tRef.make(HashSet.empty())
-        ),
+        ]),
         core.map(([publisherHead, publisherTail, subscriberCount, subscribers]) =>
           new THubImpl(
             hubSize,
@@ -476,11 +476,11 @@ const makeSubscription = <A>(
     tRef.get(publisherTail),
     core.flatMap((currentPublisherTail) =>
       pipe(
-        stm.all(
+        stm.all([
           tRef.make(currentPublisherTail),
           tRef.get(subscriberCount),
           tRef.get(subscribers)
-        ),
+        ]),
         stm.tap(([_, currentSubscriberCount]) =>
           pipe(
             subscriberCount,
