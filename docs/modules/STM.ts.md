@@ -2391,13 +2391,13 @@ Added in v1.0.0
 
 ```ts
 export declare const tapBoth: {
-  <E, R2, E2, A2, A, R3, E3, A3>(f: (error: E) => STM<R2, E2, A2>, g: (value: A) => STM<R3, E3, A3>): <R>(
-    self: STM<R, E, A>
-  ) => STM<R2 | R3 | R, E | E2 | E3, A>
+  <E, R2, E2, A2, A, R3, E3, A3>(options: {
+    readonly onFailure: (error: E) => STM<R2, E2, A2>
+    readonly onSuccess: (value: A) => STM<R3, E3, A3>
+  }): <R>(self: STM<R, E, A>) => STM<R2 | R3 | R, E | E2 | E3, A>
   <R, E, R2, E2, A2, A, R3, E3, A3>(
     self: STM<R, E, A>,
-    f: (error: E) => STM<R2, E2, A2>,
-    g: (value: A) => STM<R3, E3, A3>
+    options: { readonly onFailure: (error: E) => STM<R2, E2, A2>; readonly onSuccess: (value: A) => STM<R3, E3, A3> }
   ): STM<R | R2 | R3, E | E2 | E3, A>
 }
 ```

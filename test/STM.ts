@@ -1041,10 +1041,10 @@ describe.concurrent("STM", () => {
         const tapError = yield* $(TDeferred.make<never, string>())
         const result = yield* $(pipe(
           STM.succeed(42),
-          STM.tapBoth(
-            (e: string) => pipe(tapError, TDeferred.succeed(e)),
-            (n) => pipe(tapSuccess, TDeferred.succeed(n))
-          )
+          STM.tapBoth({
+            onFailure: (e: string) => pipe(tapError, TDeferred.succeed(e)),
+            onSuccess: (n) => pipe(tapSuccess, TDeferred.succeed(n))
+          })
         ))
         const success = yield* $(TDeferred.await(tapSuccess))
         return [result, success] as const
@@ -1060,10 +1060,10 @@ describe.concurrent("STM", () => {
         const tapError = yield* $(TDeferred.make<never, string>())
         const result = yield* $(pipe(
           STM.fail("error"),
-          STM.tapBoth(
-            (e) => pipe(tapError, TDeferred.succeed(e)),
-            (n: number) => pipe(tapSuccess, TDeferred.succeed(n))
-          ),
+          STM.tapBoth({
+            onFailure: (e) => pipe(tapError, TDeferred.succeed(e)),
+            onSuccess: (n: number) => pipe(tapSuccess, TDeferred.succeed(n))
+          }),
           STM.either
         ))
         const error = yield* $(TDeferred.await(tapError))

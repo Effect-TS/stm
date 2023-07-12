@@ -1302,20 +1302,24 @@ export const tap = dual<
 /** @internal */
 export const tapBoth = dual<
   <E, R2, E2, A2, A, R3, E3, A3>(
-    f: (error: E) => STM.STM<R2, E2, A2>,
-    g: (value: A) => STM.STM<R3, E3, A3>
+    options: {
+      readonly onFailure: (error: E) => STM.STM<R2, E2, A2>
+      readonly onSuccess: (value: A) => STM.STM<R3, E3, A3>
+    }
   ) => <R>(
     self: STM.STM<R, E, A>
   ) => STM.STM<R2 | R3 | R, E | E2 | E3, A>,
   <R, E, R2, E2, A2, A, R3, E3, A3>(
     self: STM.STM<R, E, A>,
-    f: (error: E) => STM.STM<R2, E2, A2>,
-    g: (value: A) => STM.STM<R3, E3, A3>
+    options: {
+      readonly onFailure: (error: E) => STM.STM<R2, E2, A2>
+      readonly onSuccess: (value: A) => STM.STM<R3, E3, A3>
+    }
   ) => STM.STM<R2 | R3 | R, E | E2 | E3, A>
->(3, (self, f, g) =>
+>(2, (self, { onFailure, onSuccess }) =>
   core.matchSTM(self, {
-    onFailure: (e) => pipe(f(e), core.zipRight(core.fail(e))),
-    onSuccess: (a) => pipe(g(a), as(a))
+    onFailure: (e) => pipe(onFailure(e), core.zipRight(core.fail(e))),
+    onSuccess: (a) => pipe(onSuccess(a), as(a))
   }))
 
 /** @internal */
