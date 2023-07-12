@@ -450,21 +450,27 @@ describe.concurrent("STM", () => {
       assert.deepStrictEqual(Exit.unannotate(result), Exit.fail(Option.some("Ouch")))
     }))
 
-  it.effect("ifSTM - runs `onTrue` if result is `true`", () =>
+  it.effect("if - runs `onTrue` if result is `true`", () =>
     Effect.gen(function*($) {
       const transaction = pipe(
         STM.succeed(true),
-        STM.ifSTM(STM.succeed(1), STM.succeed(-1))
+        STM.if({
+          onFalse: STM.succeed(-1),
+          onTrue: STM.succeed(1)
+        })
       )
       const result = yield* $(STM.commit(transaction))
       assert.strictEqual(result, 1)
     }))
 
-  it.effect("ifSTM - runs `onFalse` if result is `false`", () =>
+  it.effect("if - runs `onFalse` if result is `false`", () =>
     Effect.gen(function*($) {
       const transaction = pipe(
         STM.succeed(false),
-        STM.ifSTM(STM.succeed(1), STM.succeed(-1))
+        STM.if({
+          onFalse: STM.succeed(-1),
+          onTrue: STM.succeed(1)
+        })
       )
       const result = yield* $(STM.commit(transaction))
       assert.strictEqual(result, -1)

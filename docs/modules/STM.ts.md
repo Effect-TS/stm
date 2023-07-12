@@ -123,7 +123,7 @@ Added in v1.0.0
   - [eventually](#eventually)
   - [flip](#flip)
   - [flipWith](#flipwith)
-  - [ifSTM](#ifstm)
+  - [if](#if)
   - [ignore](#ignore)
   - [merge](#merge)
   - [negate](#negate)
@@ -1991,23 +1991,14 @@ export declare const flipWith: {
 
 Added in v1.0.0
 
-## ifSTM
+## if
 
 Runs `onTrue` if the result of `b` is `true` and `onFalse` otherwise.
 
 **Signature**
 
 ```ts
-export declare const ifSTM: {
-  <R1, R2, E1, E2, A, A1>(onTrue: STM<R1, E1, A>, onFalse: STM<R2, E2, A1>): <R, E>(
-    self: STM<R, E, boolean>
-  ) => STM<R1 | R2 | R, E1 | E2 | E, A | A1>
-  <R, E, R1, R2, E1, E2, A, A1>(self: STM<R, E, boolean>, onTrue: STM<R1, E1, A>, onFalse: STM<R2, E2, A1>): STM<
-    R | R1 | R2,
-    E | E1 | E2,
-    A | A1
-  >
-}
+export declare const if: { <R1, R2, E1, E2, A, A1>(options: { readonly onTrue: STM<R1, E1, A>; readonly onFalse: STM<R2, E2, A1>; }): <R = never, E = never>(self: boolean | STM<R, E, boolean>) => STM<R1 | R2 | R, E1 | E2 | E, A | A1>; <R, E, R1, R2, E1, E2, A, A1>(self: boolean, options: { readonly onTrue: STM<R1, E1, A>; readonly onFalse: STM<R2, E2, A1>; }): STM<R | R1 | R2, E | E1 | E2, A | A1>; <R, E, R1, R2, E1, E2, A, A1>(self: STM<R, E, boolean>, options: { readonly onTrue: STM<R1, E1, A>; readonly onFalse: STM<R2, E2, A1>; }): STM<R | R1 | R2, E | E1 | E2, A | A1>; }
 ```
 
 Added in v1.0.0

@@ -1056,25 +1056,38 @@ export const gen: <Eff extends STMGen<any, any, any>, AEff>(
  */
 export const head: <R, E, A>(self: STM<R, E, Iterable<A>>) => STM<R, Option.Option<E>, A> = stm.head
 
-/**
- * Runs `onTrue` if the result of `b` is `true` and `onFalse` otherwise.
- *
- * @since 1.0.0
- * @category mutations
- */
-export const ifSTM: {
+const if_: {
   <R1, R2, E1, E2, A, A1>(
-    onTrue: STM<R1, E1, A>,
-    onFalse: STM<R2, E2, A1>
-  ): <R, E>(
-    self: STM<R, E, boolean>
-  ) => STM<R1 | R2 | R, E1 | E2 | E, A | A1>
+    options: {
+      readonly onTrue: STM<R1, E1, A>
+      readonly onFalse: STM<R2, E2, A1>
+    }
+  ): <R = never, E = never>(self: boolean | STM<R, E, boolean>) => STM<R1 | R2 | R, E1 | E2 | E, A | A1>
+  <R, E, R1, R2, E1, E2, A, A1>(
+    self: boolean,
+    options: {
+      readonly onTrue: STM<R1, E1, A>
+      readonly onFalse: STM<R2, E2, A1>
+    }
+  ): STM<R | R1 | R2, E | E1 | E2, A | A1>
   <R, E, R1, R2, E1, E2, A, A1>(
     self: STM<R, E, boolean>,
-    onTrue: STM<R1, E1, A>,
-    onFalse: STM<R2, E2, A1>
+    options: {
+      readonly onTrue: STM<R1, E1, A>
+      readonly onFalse: STM<R2, E2, A1>
+    }
   ): STM<R | R1 | R2, E | E1 | E2, A | A1>
-} = stm.ifSTM
+} = stm.if_
+
+export {
+  /**
+   * Runs `onTrue` if the result of `b` is `true` and `onFalse` otherwise.
+   *
+   * @since 1.0.0
+   * @category mutations
+   */
+  if_ as if
+}
 
 /**
  * Returns a new effect that ignores the success or failure of this effect.

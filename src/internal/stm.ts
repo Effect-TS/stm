@@ -610,26 +610,46 @@ export const head = <R, E, A>(self: STM.STM<R, E, Iterable<A>>): STM.STM<R, Opti
   )
 
 /** @internal */
-export const ifSTM = dual<
+export const if_ = dual<
   <R1, R2, E1, E2, A, A1>(
-    onTrue: STM.STM<R1, E1, A>,
-    onFalse: STM.STM<R2, E2, A1>
-  ) => <R, E>(
-    self: STM.STM<R, E, boolean>
+    options: {
+      readonly onTrue: STM.STM<R1, E1, A>
+      readonly onFalse: STM.STM<R2, E2, A1>
+    }
+  ) => <R = never, E = never>(
+    self: STM.STM<R, E, boolean> | boolean
   ) => STM.STM<R1 | R2 | R, E1 | E2 | E, A | A1>,
-  <R, E, R1, R2, E1, E2, A, A1>(
-    self: STM.STM<R, E, boolean>,
-    onTrue: STM.STM<R1, E1, A>,
-    onFalse: STM.STM<R2, E2, A1>
-  ) => STM.STM<R1 | R2 | R, E1 | E2 | E, A | A1>
+  {
+    <R, E, R1, R2, E1, E2, A, A1>(
+      self: boolean,
+      options: {
+        readonly onTrue: STM.STM<R1, E1, A>
+        readonly onFalse: STM.STM<R2, E2, A1>
+      }
+    ): STM.STM<R1 | R2 | R, E1 | E2 | E, A | A1>
+    <R, E, R1, R2, E1, E2, A, A1>(
+      self: STM.STM<R, E, boolean>,
+      options: {
+        readonly onTrue: STM.STM<R1, E1, A>
+        readonly onFalse: STM.STM<R2, E2, A1>
+      }
+    ): STM.STM<R1 | R2 | R, E1 | E2 | E, A | A1>
+  }
 >(
-  3,
+  (args) => typeof args[0] === "boolean" || core.isSTM(args[0]),
   <R, E, R1, R2, E1, E2, A, A1>(
-    self: STM.STM<R, E, boolean>,
-    onTrue: STM.STM<R1, E1, A>,
-    onFalse: STM.STM<R2, E2, A1>
-  ): STM.STM<R1 | R2 | R, E1 | E2 | E, A | A1> =>
-    core.flatMap(self, (bool): STM.STM<R1 | R2, E1 | E2, A | A1> => bool ? onTrue : onFalse)
+    self: STM.STM<R, E, boolean> | boolean,
+    { onFalse, onTrue }: {
+      readonly onTrue: STM.STM<R1, E1, A>
+      readonly onFalse: STM.STM<R2, E2, A1>
+    }
+  ) => {
+    if (typeof self === "boolean") {
+      return self ? onTrue : onFalse
+    }
+
+    return core.flatMap(self, (bool): STM.STM<R1 | R2 | R, E1 | E2 | E, A | A1> => bool ? onTrue : onFalse)
+  }
 )
 
 /** @internal */
