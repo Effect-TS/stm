@@ -410,8 +410,8 @@ describe.concurrent("STM", () => {
   it.effect("fold - handles both failure and success", () =>
     Effect.gen(function*($) {
       const transaction = STM.all({
-        success: pipe(STM.succeed("yes"), STM.match(() => -1, () => 1)),
-        failure: pipe(STM.fail("no"), STM.match(() => -1, () => 1))
+        success: pipe(STM.succeed("yes"), STM.match({ onFailure: () => -1, onSuccess: () => 1 })),
+        failure: pipe(STM.fail("no"), STM.match({ onFailure: () => -1, onSuccess: () => 1 }))
       })
       const { failure, success } = yield* $(STM.commit(transaction))
       assert.strictEqual(success, 1)
@@ -421,8 +421,8 @@ describe.concurrent("STM", () => {
   it.effect("foldSTM - folds over the `STM` effect, and handle failure and success", () =>
     Effect.gen(function*($) {
       const transaction = STM.all({
-        success: pipe(STM.succeed("yes"), STM.matchSTM(() => STM.succeed("no"), STM.succeed)),
-        failure: pipe(STM.fail("no"), STM.matchSTM(STM.succeed, () => STM.succeed("yes")))
+        success: pipe(STM.succeed("yes"), STM.matchSTM({ onFailure: () => STM.succeed("no"), onSuccess: STM.succeed })),
+        failure: pipe(STM.fail("no"), STM.matchSTM({ onFailure: STM.succeed, onSuccess: () => STM.succeed("yes") }))
       })
       const { failure, success } = yield* $(STM.commit(transaction))
       assert.strictEqual(failure, "no")
@@ -478,14 +478,14 @@ describe.concurrent("STM", () => {
 
   it.effect("mapBoth - success value", () =>
     Effect.gen(function*($) {
-      const transaction = pipe(STM.succeed(1), STM.mapBoth(() => -1, (n) => `${n} as string`))
+      const transaction = pipe(STM.succeed(1), STM.mapBoth({ onFailure: () => -1, onSuccess: (n) => `${n} as string` }))
       const result = yield* $(STM.commit(transaction))
       assert.strictEqual(result, "1 as string")
     }))
 
   it.effect("mapBoth - success value", () =>
     Effect.gen(function*($) {
-      const transaction = pipe(STM.fail(-1), STM.mapBoth((n) => `${n} as string`, () => 0))
+      const transaction = pipe(STM.fail(-1), STM.mapBoth({ onFailure: (n) => `${n} as string`, onSuccess: () => 0 }))
       const result = yield* $(Effect.exit(STM.commit(transaction)))
       assert.deepStrictEqual(Exit.unannotate(result), Exit.fail("-1 as string"))
     }))
@@ -1281,13 +1281,15 @@ describe.concurrent("STM", () => {
 
   it.effect("stack-safety - long fold chains", () =>
     Effect.gen(function*($) {
-      const result = yield* $(chain(10_000)(STM.match(() => 0, (n) => n + 1)))
+      const result = yield* $(chain(10_000)(STM.match({ onFailure: () => 0, onSuccess: (n) => n + 1 })))
       assert.strictEqual(result, 10_000)
     }))
 
   it.effect("stack-safety - long foldSTM chains", () =>
     Effect.gen(function*($) {
-      const result = yield* $(chain(10_000)(STM.matchSTM(() => STM.succeed(0), (n) => STM.succeed(n + 1))))
+      const result = yield* $(
+        chain(10_000)(STM.matchSTM({ onFailure: () => STM.succeed(0), onSuccess: (n) => STM.succeed(n + 1) }))
+      )
       assert.strictEqual(result, 10_000)
     }))
 

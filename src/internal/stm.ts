@@ -265,9 +265,12 @@ export const collectSTM = dual<
     pf: (a: A) => Option.Option<STM.STM<R2, E2, A2>>
   ) => STM.STM<R2 | R, E2 | E, A2>
 >(2, (self, pf) =>
-  core.matchSTM(self, core.fail, (a) => {
-    const option = pf(a)
-    return Option.isSome(option) ? option.value : core.retry()
+  core.matchSTM(self, {
+    onFailure: core.fail,
+    onSuccess: (a) => {
+      const option = pf(a)
+      return Option.isSome(option) ? option.value : core.retry()
+    }
   }))
 
 /** @internal */
@@ -287,11 +290,11 @@ export const cond = <E, A>(
 
 /** @internal */
 export const either = <R, E, A>(self: STM.STM<R, E, A>): STM.STM<R, never, Either.Either<E, A>> =>
-  match(self, Either.left, Either.right)
+  match(self, { onFailure: Either.left, onSuccess: Either.right })
 
 /** @internal */
 export const eventually = <R, E, A>(self: STM.STM<R, E, A>): STM.STM<R, E, A> =>
-  core.matchSTM(self, () => eventually(self), core.succeed)
+  core.matchSTM(self, { onFailure: () => eventually(self), onSuccess: core.succeed })
 
 /** @internal */
 export const every = dual<
@@ -458,7 +461,8 @@ export const flatten = <R, E, R2, E2, A>(self: STM.STM<R, E, STM.STM<R2, E2, A>>
   core.flatMap(self, identity)
 
 /** @internal */
-export const flip = <R, E, A>(self: STM.STM<R, E, A>): STM.STM<R, A, E> => core.matchSTM(self, core.succeed, core.fail)
+export const flip = <R, E, A>(self: STM.STM<R, E, A>): STM.STM<R, A, E> =>
+  core.matchSTM(self, { onFailure: core.succeed, onSuccess: core.fail })
 
 /** @internal */
 export const flipWith = dual<
@@ -475,14 +479,19 @@ export const flipWith = dual<
 
 /** @internal */
 export const match = dual<
-  <E, A2, A, A3>(f: (error: E) => A2, g: (value: A) => A3) => <R>(self: STM.STM<R, E, A>) => STM.STM<R, never, A2 | A3>,
-  <R, E, A2, A, A3>(self: STM.STM<R, E, A>, f: (error: E) => A2, g: (value: A) => A3) => STM.STM<R, never, A2 | A3>
->(3, (self, f, g) =>
-  core.matchSTM(
-    self,
-    (e) => core.succeed(f(e)),
-    (a) => core.succeed(g(a))
-  ))
+  <E, A2, A, A3>(options: {
+    readonly onFailure: (error: E) => A2
+    readonly onSuccess: (value: A) => A3
+  }) => <R>(self: STM.STM<R, E, A>) => STM.STM<R, never, A2 | A3>,
+  <R, E, A2, A, A3>(self: STM.STM<R, E, A>, options: {
+    readonly onFailure: (error: E) => A2
+    readonly onSuccess: (value: A) => A3
+  }) => STM.STM<R, never, A2 | A3>
+>(2, (self, { onFailure, onSuccess }) =>
+  core.matchSTM(self, {
+    onFailure: (e) => core.succeed(onFailure(e)),
+    onSuccess: (a) => core.succeed(onSuccess(a))
+  }))
 
 /** @internal */
 export const forEach = dual<
@@ -595,9 +604,9 @@ export const gen: typeof STM.gen = (f) =>
 export const head = <R, E, A>(self: STM.STM<R, E, Iterable<A>>): STM.STM<R, Option.Option<E>, A> =>
   pipe(
     self,
-    core.matchSTM(
-      (e) => core.fail(Option.some(e)),
-      (a) => {
+    core.matchSTM({
+      onFailure: (e) => core.fail(Option.some(e)),
+      onSuccess: (a) => {
         const i = a[Symbol.iterator]()
         const res = i.next()
         if (res.done) {
@@ -606,7 +615,7 @@ export const head = <R, E, A>(self: STM.STM<R, E, Iterable<A>>): STM.STM<R, Opti
           return core.succeed(res.value)
         }
       }
-    )
+    })
   )
 
 /** @internal */
@@ -653,15 +662,16 @@ export const if_ = dual<
 )
 
 /** @internal */
-export const ignore = <R, E, A>(self: STM.STM<R, E, A>): STM.STM<R, never, void> => match(self, unit, unit)
+export const ignore = <R, E, A>(self: STM.STM<R, E, A>): STM.STM<R, never, void> =>
+  match(self, { onFailure: unit, onSuccess: unit })
 
 /** @internal */
 export const isFailure = <R, E, A>(self: STM.STM<R, E, A>): STM.STM<R, never, boolean> =>
-  match(self, constTrue, constFalse)
+  match(self, { onFailure: constTrue, onSuccess: constFalse })
 
 /** @internal */
 export const isSuccess = <R, E, A>(self: STM.STM<R, E, A>): STM.STM<R, never, boolean> =>
-  match(self, constFalse, constTrue)
+  match(self, { onFailure: constFalse, onSuccess: constTrue })
 
 /** @internal */
 export const iterate = <R, E, Z>(
@@ -754,37 +764,40 @@ export const mapAttempt = dual<
   <A, B>(f: (a: A) => B) => <R, E>(self: STM.STM<R, E, A>) => STM.STM<R, unknown, B>,
   <R, E, A, B>(self: STM.STM<R, E, A>, f: (a: A) => B) => STM.STM<R, unknown, B>
 >(2, <R, E, A, B>(self: STM.STM<R, E, A>, f: (a: A) => B): STM.STM<R, unknown, B> =>
-  core.matchSTM(
-    self,
-    (e) => core.fail(e),
-    (a) => attempt(() => f(a))
-  ))
+  core.matchSTM(self, {
+    onFailure: (e) => core.fail(e),
+    onSuccess: (a) => attempt(() => f(a))
+  }))
 
 /** @internal */
 export const mapBoth = dual<
-  <E, E2, A, A2>(f: (error: E) => E2, g: (value: A) => A2) => <R>(self: STM.STM<R, E, A>) => STM.STM<R, E2, A2>,
-  <R, E, E2, A, A2>(self: STM.STM<R, E, A>, f: (error: E) => E2, g: (value: A) => A2) => STM.STM<R, E2, A2>
->(3, (self, f, g) =>
-  core.matchSTM(
-    self,
-    (e) => core.fail(f(e)),
-    (a) => core.succeed(g(a))
-  ))
+  <E, E2, A, A2>(options: {
+    readonly onFailure: (error: E) => E2
+    readonly onSuccess: (value: A) => A2
+  }) => <R>(self: STM.STM<R, E, A>) => STM.STM<R, E2, A2>,
+  <R, E, E2, A, A2>(self: STM.STM<R, E, A>, options: {
+    readonly onFailure: (error: E) => E2
+    readonly onSuccess: (value: A) => A2
+  }) => STM.STM<R, E2, A2>
+>(2, (self, { onFailure, onSuccess }) =>
+  core.matchSTM(self, {
+    onFailure: (e) => core.fail(onFailure(e)),
+    onSuccess: (a) => core.succeed(onSuccess(a))
+  }))
 
 /** @internal */
 export const mapError = dual<
   <E, E2>(f: (error: E) => E2) => <R, A>(self: STM.STM<R, E, A>) => STM.STM<R, E2, A>,
   <R, A, E, E2>(self: STM.STM<R, E, A>, f: (error: E) => E2) => STM.STM<R, E2, A>
 >(2, (self, f) =>
-  core.matchSTM(
-    self,
-    (e) => core.fail(f(e)),
-    core.succeed
-  ))
+  core.matchSTM(self, {
+    onFailure: (e) => core.fail(f(e)),
+    onSuccess: core.succeed
+  }))
 
 /** @internal */
 export const merge = <R, E, A>(self: STM.STM<R, E, A>): STM.STM<R, never, E | A> =>
-  core.matchSTM(self, (e) => core.succeed(e), core.succeed)
+  core.matchSTM(self, { onFailure: (e) => core.succeed(e), onSuccess: core.succeed })
 
 /** @internal */
 export const mergeAll = dual<
@@ -806,18 +819,17 @@ export const negate = <R, E>(self: STM.STM<R, E, boolean>): STM.STM<R, E, boolea
 
 /** @internal */
 export const none = <R, E, A>(self: STM.STM<R, E, Option.Option<A>>): STM.STM<R, Option.Option<E>, void> =>
-  core.matchSTM(
-    self,
-    (e) => core.fail(Option.some(e)),
-    Option.match({
+  core.matchSTM(self, {
+    onFailure: (e) => core.fail(Option.some(e)),
+    onSuccess: Option.match({
       onNone: unit,
       onSome: () => core.fail(Option.none())
     })
-  )
+  })
 
 /** @internal */
 export const option = <R, E, A>(self: STM.STM<R, E, A>): STM.STM<R, never, Option.Option<A>> =>
-  match(self, () => Option.none(), Option.some)
+  match(self, { onFailure: () => Option.none(), onSuccess: Option.some })
 
 /** @internal */
 export const orDie = <R, E, A>(self: STM.STM<R, E, A>): STM.STM<R, never, A> => pipe(self, orDieWith(identity))
@@ -1140,7 +1152,7 @@ export const retryUntil = dual<
 >(
   2,
   <R, E, A>(self: STM.STM<R, E, A>, predicate: Predicate<A>) =>
-    core.matchSTM(self, core.fail, (a) => predicate(a) ? core.succeed(a) : core.retry())
+    core.matchSTM(self, { onFailure: core.fail, onSuccess: (a) => predicate(a) ? core.succeed(a) : core.retry() })
 )
 
 /** @internal */
@@ -1149,7 +1161,8 @@ export const retryWhile = dual<
   <R, E, A>(self: STM.STM<R, E, A>, predicate: Predicate<A>) => STM.STM<R, E, A>
 >(
   2,
-  (self, predicate) => core.matchSTM(self, core.fail, (a) => !predicate(a) ? core.succeed(a) : core.retry())
+  (self, predicate) =>
+    core.matchSTM(self, { onFailure: core.fail, onSuccess: (a) => !predicate(a) ? core.succeed(a) : core.retry() })
 )
 
 /** @internal */
@@ -1171,14 +1184,13 @@ export const partition = dual<
 
 /** @internal */
 export const some = <R, E, A>(self: STM.STM<R, E, Option.Option<A>>): STM.STM<R, Option.Option<E>, A> =>
-  core.matchSTM(
-    self,
-    (e) => core.fail(Option.some(e)),
-    Option.match({
+  core.matchSTM(self, {
+    onFailure: (e) => core.fail(Option.some(e)),
+    onSuccess: Option.match({
       onNone: () => core.fail(Option.none()),
       onSome: core.succeed
     })
-  )
+  })
 
 /** @internal */
 export const someOrElse = dual<
@@ -1301,22 +1313,20 @@ export const tapBoth = dual<
     g: (value: A) => STM.STM<R3, E3, A3>
   ) => STM.STM<R2 | R3 | R, E | E2 | E3, A>
 >(3, (self, f, g) =>
-  core.matchSTM(
-    self,
-    (e) => pipe(f(e), core.zipRight(core.fail(e))),
-    (a) => pipe(g(a), as(a))
-  ))
+  core.matchSTM(self, {
+    onFailure: (e) => pipe(f(e), core.zipRight(core.fail(e))),
+    onSuccess: (a) => pipe(g(a), as(a))
+  }))
 
 /** @internal */
 export const tapError = dual<
   <E, R2, E2, _>(f: (error: E) => STM.STM<R2, E2, _>) => <R, A>(self: STM.STM<R, E, A>) => STM.STM<R2 | R, E | E2, A>,
   <R, A, E, R2, E2, _>(self: STM.STM<R, E, A>, f: (error: E) => STM.STM<R2, E2, _>) => STM.STM<R2 | R, E | E2, A>
 >(2, (self, f) =>
-  core.matchSTM(
-    self,
-    (e) => core.zipRight(f(e), core.fail(e)),
-    core.succeed
-  ))
+  core.matchSTM(self, {
+    onFailure: (e) => core.zipRight(f(e), core.fail(e)),
+    onSuccess: core.succeed
+  }))
 
 /** @internal */
 export const tryCatch = <E, A>(
@@ -1362,14 +1372,13 @@ export const unlessSTM = dual<
 
 /** @internal */
 export const unsome = <R, E, A>(self: STM.STM<R, Option.Option<E>, A>): STM.STM<R, E, Option.Option<A>> =>
-  core.matchSTM(
-    self,
-    Option.match({
+  core.matchSTM(self, {
+    onFailure: Option.match({
       onNone: () => core.succeed(Option.none()),
       onSome: core.fail
     }),
-    (a) => core.succeed(Option.some(a))
-  )
+    onSuccess: (a) => core.succeed(Option.some(a))
+  })
 
 /** @internal */
 export const validateAll = dual<

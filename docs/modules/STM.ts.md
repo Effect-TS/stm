@@ -1285,8 +1285,13 @@ retry.
 
 ```ts
 export declare const match: {
-  <E, A2, A, A3>(f: (error: E) => A2, g: (value: A) => A3): <R>(self: STM<R, E, A>) => STM<R, never, A2 | A3>
-  <R, E, A2, A, A3>(self: STM<R, E, A>, f: (error: E) => A2, g: (value: A) => A3): STM<R, never, A2 | A3>
+  <E, A2, A, A3>(options: { readonly onFailure: (error: E) => A2; readonly onSuccess: (value: A) => A3 }): <R>(
+    self: STM<R, E, A>
+  ) => STM<R, never, A2 | A3>
+  <R, E, A2, A, A3>(
+    self: STM<R, E, A>,
+    options: { readonly onFailure: (error: E) => A2; readonly onSuccess: (value: A) => A3 }
+  ): STM<R, never, A2 | A3>
 }
 ```
 
@@ -1300,13 +1305,13 @@ Effectfully folds over the `STM` effect, handling both failure and success.
 
 ```ts
 export declare const matchSTM: {
-  <E, R1, E1, A1, A, R2, E2, A2>(onFailure: (e: E) => STM<R1, E1, A1>, onSuccess: (a: A) => STM<R2, E2, A2>): <R>(
-    self: STM<R, E, A>
-  ) => STM<R1 | R2 | R, E1 | E2, A1 | A2>
+  <E, R1, E1, A1, A, R2, E2, A2>(options: {
+    readonly onFailure: (e: E) => STM<R1, E1, A1>
+    readonly onSuccess: (a: A) => STM<R2, E2, A2>
+  }): <R>(self: STM<R, E, A>) => STM<R1 | R2 | R, E1 | E2, A1 | A2>
   <R, E, R1, E1, A1, A, R2, E2, A2>(
     self: STM<R, E, A>,
-    onFailure: (e: E) => STM<R1, E1, A1>,
-    onSuccess: (a: A) => STM<R2, E2, A2>
+    options: { readonly onFailure: (e: E) => STM<R1, E1, A1>; readonly onSuccess: (a: A) => STM<R2, E2, A2> }
   ): STM<R | R1 | R2, E1 | E2, A1 | A2>
 }
 ```
@@ -1508,8 +1513,13 @@ by the specified pair of functions, `f` and `g`.
 
 ```ts
 export declare const mapBoth: {
-  <E, E2, A, A2>(f: (error: E) => E2, g: (value: A) => A2): <R>(self: STM<R, E, A>) => STM<R, E2, A2>
-  <R, E, E2, A, A2>(self: STM<R, E, A>, f: (error: E) => E2, g: (value: A) => A2): STM<R, E2, A2>
+  <E, E2, A, A2>(options: { readonly onFailure: (error: E) => E2; readonly onSuccess: (value: A) => A2 }): <R>(
+    self: STM<R, E, A>
+  ) => STM<R, E2, A2>
+  <R, E, E2, A, A2>(
+    self: STM<R, E, A>,
+    options: { readonly onFailure: (error: E) => E2; readonly onSuccess: (value: A) => A2 }
+  ): STM<R, E2, A2>
 }
 ```
 
