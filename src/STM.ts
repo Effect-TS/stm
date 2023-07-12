@@ -1146,8 +1146,13 @@ export const isSuccess: <R, E, A>(self: STM<R, E, A>) => STM<R, never, boolean> 
  * @since 1.0.0
  * @category constructors
  */
-export const iterate: <R, E, Z>(initial: Z, cont: (z: Z) => boolean, body: (z: Z) => STM<R, E, Z>) => STM<R, E, Z> =
-  stm.iterate
+export const iterate: <R, E, Z>(
+  initial: Z,
+  options: {
+    readonly while: (z: Z) => boolean
+    readonly body: (z: Z) => STM<R, E, Z>
+  }
+) => STM<R, E, Z> = stm.iterate
 
 /**
  * Loops with the specified transactional function, collecting the results
@@ -1170,9 +1175,11 @@ export const iterate: <R, E, Z>(initial: Z, cont: (z: Z) => boolean, body: (z: Z
  */
 export const loop: <Z, R, E, A>(
   initial: Z,
-  cont: (z: Z) => boolean,
-  inc: (z: Z) => Z,
-  body: (z: Z) => STM<R, E, A>
+  options: {
+    readonly while: (z: Z) => boolean
+    readonly step: (z: Z) => Z
+    readonly body: (z: Z) => STM<R, E, A>
+  }
 ) => STM<R, E, Array<A>> = stm.loop
 
 /**

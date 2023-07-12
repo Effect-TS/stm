@@ -525,8 +525,7 @@ return s
 ```ts
 export declare const iterate: <R, E, Z>(
   initial: Z,
-  cont: (z: Z) => boolean,
-  body: (z: Z) => STM<R, E, Z>
+  options: { readonly while: (z: Z) => boolean; readonly body: (z: Z) => STM<R, E, Z> }
 ) => STM<R, E, Z>
 ```
 
@@ -554,9 +553,7 @@ return as
 ```ts
 export declare const loop: <Z, R, E, A>(
   initial: Z,
-  cont: (z: Z) => boolean,
-  inc: (z: Z) => Z,
-  body: (z: Z) => STM<R, E, A>
+  options: { readonly while: (z: Z) => boolean; readonly step: (z: Z) => Z; readonly body: (z: Z) => STM<R, E, A> }
 ) => STM<R, E, A[]>
 ```
 

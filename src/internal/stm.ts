@@ -666,11 +666,11 @@ export const isSuccess = <R, E, A>(self: STM.STM<R, E, A>): STM.STM<R, never, bo
 /** @internal */
 export const iterate = <R, E, Z>(
   initial: Z,
-  cont: (z: Z) => boolean,
-  body: (z: Z) => STM.STM<R, E, Z>
-): STM.STM<R, E, Z> => {
-  return iterateLoop(initial, cont, body)
-}
+  options: {
+    readonly while: (z: Z) => boolean
+    readonly body: (z: Z) => STM.STM<R, E, Z>
+  }
+): STM.STM<R, E, Z> => iterateLoop(initial, options.while, options.body)
 
 const iterateLoop = <R, E, Z>(
   initial: Z,
@@ -689,12 +689,13 @@ const iterateLoop = <R, E, Z>(
 /** @internal */
 export const loop = <Z, R, E, A>(
   initial: Z,
-  cont: (z: Z) => boolean,
-  inc: (z: Z) => Z,
-  body: (z: Z) => STM.STM<R, E, A>
-): STM.STM<R, E, Array<A>> => {
-  return core.map(loopLoop(initial, cont, inc, body), (a) => Array.from(a))
-}
+  options: {
+    readonly while: (z: Z) => boolean
+    readonly step: (z: Z) => Z
+    readonly body: (z: Z) => STM.STM<R, E, A>
+  }
+): STM.STM<R, E, Array<A>> =>
+  core.map(loopLoop(initial, options.while, options.step, options.body), (a) => Array.from(a))
 
 const loopLoop = <Z, R, E, A>(
   initial: Z,

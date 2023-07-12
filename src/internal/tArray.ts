@@ -238,17 +238,20 @@ export const findFirstSTM = dual<
   const cont = (state: readonly [Option.Option<A>, number]) =>
     Option.isNone(state[0]) && state[1] < self.chunk.length - 1
   return core.map(
-    stm.iterate(init, cont, (state) => {
-      const index = state[1]
-      return pipe(
-        tRef.get(self.chunk[index]),
-        core.flatMap((value) =>
-          core.map(
-            predicate(value),
-            (bool) => [bool ? Option.some(value) : Option.none(), index + 1] as const
+    stm.iterate(init, {
+      while: cont,
+      body: (state) => {
+        const index = state[1]
+        return pipe(
+          tRef.get(self.chunk[index]),
+          core.flatMap((value) =>
+            core.map(
+              predicate(value),
+              (bool) => [bool ? Option.some(value) : Option.none(), index + 1] as const
+            )
           )
         )
-      )
+      }
     }),
     (state) => state[0]
   )
@@ -314,17 +317,20 @@ export const findLastSTM = dual<
   const init = [Option.none() as Option.Option<A>, self.chunk.length - 1] as const
   const cont = (state: readonly [Option.Option<A>, number]) => Option.isNone(state[0]) && state[1] >= 0
   return core.map(
-    stm.iterate(init, cont, (state) => {
-      const index = state[1]
-      return pipe(
-        tRef.get(self.chunk[index]),
-        core.flatMap((value) =>
-          core.map(
-            predicate(value),
-            (bool) => [bool ? Option.some(value) : Option.none(), index - 1] as const
+    stm.iterate(init, {
+      while: cont,
+      body: (state) => {
+        const index = state[1]
+        return pipe(
+          tRef.get(self.chunk[index]),
+          core.flatMap((value) =>
+            core.map(
+              predicate(value),
+              (bool) => [bool ? Option.some(value) : Option.none(), index - 1] as const
+            )
           )
         )
-      )
+      }
     }),
     (state) => state[0]
   )
