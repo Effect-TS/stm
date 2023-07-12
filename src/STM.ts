@@ -737,24 +737,21 @@ export const matchSTM: {
  * @category traversing
  */
 export const forEach: {
-  <A, R, E, A2>(f: (a: A) => STM<R, E, A2>): (elements: Iterable<A>) => STM<R, E, Array<A2>>
-  <A, R, E, A2>(elements: Iterable<A>, f: (a: A) => STM<R, E, A2>): STM<R, E, Array<A2>>
+  <A, R, E, A2>(
+    f: (a: A) => STM<R, E, A2>,
+    options?: { readonly discard?: false }
+  ): (elements: Iterable<A>) => STM<R, E, Array<A2>>
+  <A, R, E, A2>(
+    f: (a: A) => STM<R, E, A2>,
+    options: { readonly discard: true }
+  ): (elements: Iterable<A>) => STM<R, E, void>
+  <A, R, E, A2>(
+    elements: Iterable<A>,
+    f: (a: A) => STM<R, E, A2>,
+    options?: { readonly discard?: false }
+  ): STM<R, E, Array<A2>>
+  <A, R, E, A2>(elements: Iterable<A>, f: (a: A) => STM<R, E, A2>, options: { readonly discard: true }): STM<R, E, void>
 } = stm.forEach
-
-/**
- * Applies the function `f` to each element of the `Iterable<A>` and returns a
- * transactional effect that produces the unit result.
- *
- * Equivalent to `pipe(as, forEach(f), asUnit)`, but without the cost of
- * building the list of results.
- *
- * @since 1.0.0
- * @category traversing
- */
-export const forEachDiscard: {
-  <A, R, E, _>(f: (a: A) => STM<R, E, _>): (iterable: Iterable<A>) => STM<R, E, void>
-  <A, R, E, _>(iterable: Iterable<A>, f: (a: A) => STM<R, E, _>): STM<R, E, void>
-} = stm.forEachDiscard
 
 /**
  * Lifts an `Either` into a `STM`.

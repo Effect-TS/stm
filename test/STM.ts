@@ -401,7 +401,7 @@ describe.concurrent("STM", () => {
     Effect.gen(function*($) {
       const ref = yield* $(TRef.make(0))
       const chunk = Chunk.range(1, 5)
-      yield* $(pipe(chunk, STM.forEachDiscard((n) => pipe(ref, TRef.update((i) => i + n)))))
+      yield* $(STM.forEach(chunk, (n) => pipe(ref, TRef.update((i) => i + n)), { discard: true }))
       const expected = pipe(chunk, Chunk.reduceRight(0, (acc, curr) => acc + curr))
       const result = yield* $(TRef.get(ref))
       assert.strictEqual(result, expected)

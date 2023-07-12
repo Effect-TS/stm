@@ -4,6 +4,7 @@ import * as Either from "@effect/data/Either"
 import type { LazyArg } from "@effect/data/Function"
 import { constFalse, constTrue, constVoid, dual, identity, pipe } from "@effect/data/Function"
 import * as Option from "@effect/data/Option"
+import * as predicate from "@effect/data/Predicate"
 import type { Predicate, Refinement } from "@effect/data/Predicate"
 import * as RA from "@effect/data/ReadonlyArray"
 import * as Cause from "@effect/io/Cause"
@@ -485,46 +486,54 @@ export const match = dual<
 
 /** @internal */
 export const forEach = dual<
-  <A, R, E, A2>(f: (a: A) => STM.STM<R, E, A2>) => (elements: Iterable<A>) => STM.STM<R, E, Array<A2>>,
-  <A, R, E, A2>(elements: Iterable<A>, f: (a: A) => STM.STM<R, E, A2>) => STM.STM<R, E, Array<A2>>
+  {
+    <A, R, E, A2>(f: (a: A) => STM.STM<R, E, A2>, options?: {
+      readonly discard?: false
+    }): (elements: Iterable<A>) => STM.STM<R, E, Array<A2>>
+    <A, R, E, A2>(f: (a: A) => STM.STM<R, E, A2>, options: {
+      readonly discard: true
+    }): (elements: Iterable<A>) => STM.STM<R, E, void>
+  },
+  {
+    <A, R, E, A2>(elements: Iterable<A>, f: (a: A) => STM.STM<R, E, A2>, options?: {
+      readonly discard?: false
+    }): STM.STM<R, E, Array<A2>>
+    <A, R, E, A2>(elements: Iterable<A>, f: (a: A) => STM.STM<R, E, A2>, options: {
+      readonly discard: true
+    }): STM.STM<R, E, void>
+  }
 >(
-  2,
-  <A, R, E, A2>(elements: Iterable<A>, f: (a: A) => STM.STM<R, E, A2>): STM.STM<R, E, Array<A2>> =>
-    suspend(() =>
-      Array.from(elements).reduce(
+  (args) => predicate.isIterable(args[0]),
+  <A, R, E, A2>(iterable: Iterable<A>, f: (a: A) => STM.STM<R, E, A2>, options?: {
+    readonly discard?: boolean
+  }): STM.STM<R, E, any> => {
+    if (options?.discard) {
+      return pipe(
+        core.sync(() => iterable[Symbol.iterator]()),
+        core.flatMap((iterator) => {
+          const loop: STM.STM<R, E, void> = suspend(() => {
+            const next = iterator.next()
+            if (next.done) {
+              return unit()
+            }
+            return pipe(f(next.value), core.flatMap(() => loop))
+          })
+          return loop
+        })
+      )
+    }
+
+    return suspend(() =>
+      RA.fromIterable(iterable).reduce(
         (acc, curr) =>
-          pipe(
-            acc,
-            core.zipWith(f(curr), (array, elem) => {
-              array.push(elem)
-              return array
-            })
-          ),
+          core.zipWith(acc, f(curr), (array, elem) => {
+            array.push(elem)
+            return array
+          }),
         core.succeed([]) as STM.STM<R, E, Array<A2>>
       )
     )
-)
-
-/** @internal */
-export const forEachDiscard = dual<
-  <A, R, E, _>(f: (a: A) => STM.STM<R, E, _>) => (iterable: Iterable<A>) => STM.STM<R, E, void>,
-  <A, R, E, _>(iterable: Iterable<A>, f: (a: A) => STM.STM<R, E, _>) => STM.STM<R, E, void>
->(
-  2,
-  <A, R, E, _>(iterable: Iterable<A>, f: (a: A) => STM.STM<R, E, _>): STM.STM<R, E, void> =>
-    pipe(
-      core.sync(() => iterable[Symbol.iterator]()),
-      core.flatMap((iterator) => {
-        const loop: STM.STM<R, E, void> = suspend(() => {
-          const next = iterator.next()
-          if (next.done) {
-            return unit()
-          }
-          return pipe(f(next.value), core.flatMap(() => loop))
-        })
-        return loop
-      })
-    )
+  }
 )
 
 /** @internal */
@@ -1189,9 +1198,9 @@ export const all = dual<
   (arg: Iterable<STM.All.STMAny> | Record<string, STM.All.STMAny>, options?: STM.All.Options) => STM.All.STMAny
 >(allIsDataFirst, (input, options) => {
   if (Symbol.iterator in input) {
-    return options?.discard ? forEachDiscard(input, identity) : forEach(input, identity)
+    return forEach(input, identity, options as any)
   } else if (options?.discard) {
-    return forEachDiscard(Object.values(input), identity)
+    return forEach(Object.values(input), identity, options as any)
   }
 
   return pipe(

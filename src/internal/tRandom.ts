@@ -75,7 +75,7 @@ const shuffleWith = <A>(
       }
       return pipe(
         array,
-        stm.forEachDiscard((n) => pipe(nextIntBounded(n), core.flatMap((k) => swap(buffer, n - 1, k)))),
+        stm.forEach((n) => pipe(nextIntBounded(n), core.flatMap((k) => swap(buffer, n - 1, k))), { discard: true }),
         core.zipRight(tArray.toArray(buffer))
       )
     })

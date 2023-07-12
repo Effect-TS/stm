@@ -15,7 +15,6 @@ Added in v1.0.0
 - [constructors](#constructors)
   - [acquireUseRelease](#acquireuserelease)
   - [all](#all)
-  - [allDiscard](#alldiscard)
   - [attempt](#attempt)
   - [check](#check)
   - [collectFirst](#collectfirst)
@@ -158,7 +157,6 @@ Added in v1.0.0
   - [STMTypeId (type alias)](#stmtypeid-type-alias)
 - [traversing](#traversing)
   - [forEach](#foreach)
-  - [forEachDiscard](#foreachdiscard)
   - [partition](#partition)
 - [type lambdas](#type-lambdas)
   - [STMTypeLambda (interface)](#stmtypelambda-interface)
@@ -208,22 +206,6 @@ struct.
 
 ```ts
 export declare const all: All.Signature
-```
-
-Added in v1.0.0
-
-## allDiscard
-
-Collects all the transactional effects, returning a single transactional
-effect that produces `Unit`.
-
-Equivalent to `pipe(icollectAll(iterable), asUnit)`, but without the cost
-of building the list of results.
-
-**Signature**
-
-```ts
-export declare const allDiscard: <R, E, A>(iterable: Iterable<STM<R, E, A>>) => STM<R, E, void>
 ```
 
 Added in v1.0.0
@@ -2484,27 +2466,18 @@ a transactional effect that produces a new `Chunk<A2>`.
 
 ```ts
 export declare const forEach: {
-  <A, R, E, A2>(f: (a: A) => STM<R, E, A2>): (elements: Iterable<A>) => STM<R, E, A2[]>
-  <A, R, E, A2>(elements: Iterable<A>, f: (a: A) => STM<R, E, A2>): STM<R, E, A2[]>
-}
-```
-
-Added in v1.0.0
-
-## forEachDiscard
-
-Applies the function `f` to each element of the `Iterable<A>` and returns a
-transactional effect that produces the unit result.
-
-Equivalent to `pipe(as, forEach(f), asUnit)`, but without the cost of
-building the list of results.
-
-**Signature**
-
-```ts
-export declare const forEachDiscard: {
-  <A, R, E, _>(f: (a: A) => STM<R, E, _>): (iterable: Iterable<A>) => STM<R, E, void>
-  <A, R, E, _>(iterable: Iterable<A>, f: (a: A) => STM<R, E, _>): STM<R, E, void>
+  <A, R, E, A2>(f: (a: A) => STM<R, E, A2>, options?: { readonly discard?: false }): (
+    elements: Iterable<A>
+  ) => STM<R, E, A2[]>
+  <A, R, E, A2>(f: (a: A) => STM<R, E, A2>, options: { readonly discard: true }): (
+    elements: Iterable<A>
+  ) => STM<R, E, void>
+  <A, R, E, A2>(elements: Iterable<A>, f: (a: A) => STM<R, E, A2>, options?: { readonly discard?: false }): STM<
+    R,
+    E,
+    A2[]
+  >
+  <A, R, E, A2>(elements: Iterable<A>, f: (a: A) => STM<R, E, A2>, options: { readonly discard: true }): STM<R, E, void>
 }
 ```
 
