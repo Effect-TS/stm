@@ -1173,37 +1173,26 @@ export const iterate: <R, E, Z>(
  * @since 1.0.0
  * @category constructors
  */
-export const loop: <Z, R, E, A>(
-  initial: Z,
-  options: {
-    readonly while: (z: Z) => boolean
-    readonly step: (z: Z) => Z
-    readonly body: (z: Z) => STM<R, E, A>
-  }
-) => STM<R, E, Array<A>> = stm.loop
-
-/**
- * Loops with the specified transactional function purely for its
- * transactional effects. The moral equivalent of:
- *
- * ```ts
- * let s = initial
- *
- * while (cont(s)) {
- *   body(s)
- *   s = inc(s)
- * }
- * ```
- *
- * @since 1.0.0
- * @category constructors
- */
-export const loopDiscard: <Z, R, E, X>(
-  initial: Z,
-  cont: (z: Z) => boolean,
-  inc: (z: Z) => Z,
-  body: (z: Z) => STM<R, E, X>
-) => STM<R, E, void> = stm.loopDiscard
+export const loop: {
+  <Z, R, E, A>(
+    initial: Z,
+    options: {
+      readonly while: (z: Z) => boolean
+      readonly step: (z: Z) => Z
+      readonly body: (z: Z) => STM<R, E, A>
+      readonly discard?: false
+    }
+  ): STM<R, E, Array<A>>
+  <Z, R, E, A>(
+    initial: Z,
+    options: {
+      readonly while: (z: Z) => boolean
+      readonly step: (z: Z) => Z
+      readonly body: (z: Z) => STM<R, E, A>
+      readonly discard: true
+    }
+  ): STM<R, E, void>
+} = stm.loop
 
 /**
  * Maps the value produced by the effect.

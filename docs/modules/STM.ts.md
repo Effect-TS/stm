@@ -39,7 +39,6 @@ Added in v1.0.0
   - [interruptAs](#interruptas)
   - [iterate](#iterate)
   - [loop](#loop)
-  - [loopDiscard](#loopdiscard)
   - [mergeAll](#mergeall)
   - [reduce](#reduce)
   - [reduceAll](#reduceall)
@@ -551,37 +550,26 @@ return as
 **Signature**
 
 ```ts
-export declare const loop: <Z, R, E, A>(
-  initial: Z,
-  options: { readonly while: (z: Z) => boolean; readonly step: (z: Z) => Z; readonly body: (z: Z) => STM<R, E, A> }
-) => STM<R, E, A[]>
-```
-
-Added in v1.0.0
-
-## loopDiscard
-
-Loops with the specified transactional function purely for its
-transactional effects. The moral equivalent of:
-
-```ts
-let s = initial
-
-while (cont(s)) {
-  body(s)
-  s = inc(s)
+export declare const loop: {
+  <Z, R, E, A>(
+    initial: Z,
+    options: {
+      readonly while: (z: Z) => boolean
+      readonly step: (z: Z) => Z
+      readonly body: (z: Z) => STM<R, E, A>
+      readonly discard?: false | undefined
+    }
+  ): STM<R, E, A[]>
+  <Z, R, E, A>(
+    initial: Z,
+    options: {
+      readonly while: (z: Z) => boolean
+      readonly step: (z: Z) => Z
+      readonly body: (z: Z) => STM<R, E, A>
+      readonly discard: true
+    }
+  ): STM<R, E, void>
 }
-```
-
-**Signature**
-
-```ts
-export declare const loopDiscard: <Z, R, E, X>(
-  initial: Z,
-  cont: (z: Z) => boolean,
-  inc: (z: Z) => Z,
-  body: (z: Z) => STM<R, E, X>
-) => STM<R, E, void>
 ```
 
 Added in v1.0.0

@@ -687,15 +687,37 @@ const iterateLoop = <R, E, Z>(
 }
 
 /** @internal */
-export const loop = <Z, R, E, A>(
+export const loop: {
+  <Z, R, E, A>(
+    initial: Z,
+    options: {
+      readonly while: (z: Z) => boolean
+      readonly step: (z: Z) => Z
+      readonly body: (z: Z) => STM.STM<R, E, A>
+      readonly discard?: false
+    }
+  ): STM.STM<R, E, Array<A>>
+  <Z, R, E, A>(
+    initial: Z,
+    options: {
+      readonly while: (z: Z) => boolean
+      readonly step: (z: Z) => Z
+      readonly body: (z: Z) => STM.STM<R, E, A>
+      readonly discard: true
+    }
+  ): STM.STM<R, E, void>
+} = <Z, R, E, A>(
   initial: Z,
   options: {
     readonly while: (z: Z) => boolean
     readonly step: (z: Z) => Z
     readonly body: (z: Z) => STM.STM<R, E, A>
+    readonly discard?: boolean
   }
-): STM.STM<R, E, Array<A>> =>
-  core.map(loopLoop(initial, options.while, options.step, options.body), (a) => Array.from(a))
+): STM.STM<R, E, any> =>
+  options.discard ?
+    loopDiscardLoop(initial, options.while, options.step, options.body) :
+    core.map(loopLoop(initial, options.while, options.step, options.body), (a) => Array.from(a))
 
 const loopLoop = <Z, R, E, A>(
   initial: Z,
@@ -710,16 +732,6 @@ const loopLoop = <Z, R, E, A>(
     )
   }
   return core.succeed(Chunk.empty<A>())
-}
-
-/** @internal */
-export const loopDiscard = <Z, R, E, X>(
-  initial: Z,
-  cont: (z: Z) => boolean,
-  inc: (z: Z) => Z,
-  body: (z: Z) => STM.STM<R, E, X>
-): STM.STM<R, E, void> => {
-  return loopDiscardLoop(initial, cont, inc, body)
 }
 
 const loopDiscardLoop = <Z, R, E, X>(

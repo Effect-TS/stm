@@ -1238,16 +1238,17 @@ describe.concurrent("STM", () => {
     Effect.gen(function*($) {
       const transaction = STM.gen(function*($) {
         const ref = yield* $(TRef.make(0))
-        yield* $(STM.loopDiscard(
-          10_000,
-          (n) => n > 0,
-          (n) => n - 1,
-          () =>
+        const value = yield* $(STM.loop(10_000, {
+          while: (n) => n > 0,
+          step: (n) => n - 1,
+          body: () =>
             pipe(
               STM.retry(),
               STM.orTry(() => pipe(ref, TRef.getAndUpdate((n) => n + 1)))
-            )
-        ))
+            ),
+          discard: true
+        }))
+        assert.strictEqual(value, void 0)
         return yield* $(TRef.get(ref))
       })
       const result = yield* $(STM.commit(transaction))
@@ -1301,12 +1302,12 @@ describe.concurrent("STM", () => {
       const transaction = pipe(
         TRef.make(0),
         STM.tap((ref) =>
-          STM.loopDiscard(
-            10_000,
-            (n) => n > 0,
-            (n) => n - 1,
-            () => pipe(STM.retry(), STM.orElse(() => pipe(ref, TRef.getAndUpdate((n) => n + 1))))
-          )
+          STM.loop(10_000, {
+            while: (n) => n > 0,
+            step: (n) => n - 1,
+            body: () => pipe(STM.retry(), STM.orElse(() => pipe(ref, TRef.getAndUpdate((n) => n + 1)))),
+            discard: true
+          })
         ),
         STM.flatMap(TRef.get)
       )
