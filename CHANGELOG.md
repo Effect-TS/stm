@@ -1,5 +1,11 @@
 # @effect/stm
 
+## 0.16.0
+
+### Minor Changes
+
+- [#98](https://github.com/Effect-TS/stm/pull/98) [`3c5dac2`](https://github.com/Effect-TS/stm/commit/3c5dac20436f31dc280e5fa508458757b9eecf42) Thanks [@tim-smart](https://github.com/tim-smart)! - remove .all data-last variant
+
 ## 0.15.0
 
 ### Minor Changes
