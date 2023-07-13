@@ -177,7 +177,7 @@ const adjustRead = (self: TReentrantLock.TReentrantLock, delta: number): STM.STM
       )
       return core.succeed(newTotal)
     }
-    return core.retry()
+    return core.retry
   })
 
 /** @internal */
@@ -203,7 +203,7 @@ export const acquireWrite = (self: TReentrantLock.TReentrantLock): STM.STM<never
       )
       return core.succeed(lock.writeLocks + 1)
     }
-    return core.retry()
+    return core.retry
   })
 
 /** @internal */
@@ -236,11 +236,10 @@ export const locked = (self: TReentrantLock.TReentrantLock): STM.STM<never, neve
   )
 
 /** @internal */
-export const make = (): STM.STM<never, never, TReentrantLock.TReentrantLock> =>
-  core.map(
-    tRef.make(emptyReadLock),
-    (readLock) => new TReentranLockImpl(readLock)
-  )
+export const make: STM.STM<never, never, TReentrantLock.TReentrantLock> = core.map(
+  tRef.make(emptyReadLock),
+  (readLock) => new TReentranLockImpl(readLock)
+)
 
 /** @internal */
 export const readLock = (self: TReentrantLock.TReentrantLock): Effect.Effect<Scope.Scope, never, number> =>

@@ -40,7 +40,7 @@ export const acquireN = dual<
     }
     const value = tRef.unsafeGet(self.permits, driver.journal)
     if (value < n) {
-      return STM.retry()
+      return STM.retry
     } else {
       return STM.succeed(tRef.unsafeSet(self.permits, value - n, driver.journal))
     }

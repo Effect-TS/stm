@@ -65,7 +65,7 @@ export const collectFirstSTM = dual<
       return pipe(
         result,
         Option.match({
-          onNone: () => stm.succeedNone(),
+          onNone: () => stm.succeedNone,
           onSome: core.map(Option.some)
         })
       )
@@ -161,7 +161,7 @@ export const findFirstIndexWhereFrom = dual<
   <A>(self: TArray.TArray<A>, predicate: Predicate<A>, from: number) => STM.STM<never, never, Option.Option<number>>
 >(3, (self, predicate, from) => {
   if (from < 0) {
-    return stm.succeedNone()
+    return stm.succeedNone
   }
   return core.effect<never, Option.Option<number>>((journal) => {
     let index: number = from
@@ -216,9 +216,9 @@ export const findFirstIndexWhereFromSTM = dual<
             forIndex(index + 1)
         )
       )
-      : stm.succeedNone()
+      : stm.succeedNone
   return from < 0
-    ? stm.succeedNone()
+    ? stm.succeedNone
     : forIndex(from)
 })
 
@@ -287,7 +287,7 @@ export const findLastIndexFrom = dual<
   <A>(self: TArray.TArray<A>, value: A, end: number) => STM.STM<never, never, Option.Option<number>>
 >(3, (self, value, end) => {
   if (end >= self.chunk.length) {
-    return stm.succeedNone()
+    return stm.succeedNone
   }
   return core.effect<never, Option.Option<number>>((journal) => {
     let index: number = end
@@ -369,7 +369,7 @@ export const headOption = <A>(self: TArray.TArray<A>): STM.STM<never, never, Opt
 /** @internal */
 export const lastOption = <A>(self: TArray.TArray<A>): STM.STM<never, never, Option.Option<A>> =>
   self.chunk.length === 0 ?
-    stm.succeedNone() :
+    stm.succeedNone :
     core.map(tRef.get(self.chunk[self.chunk.length - 1]), Option.some)
 
 /** @internal */

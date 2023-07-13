@@ -280,7 +280,7 @@ export const catchTags: {
 
 /** @internal */
 export const check = (predicate: LazyArg<boolean>): STM.STM<never, never, void> =>
-  suspend(() => predicate() ? unit() : core.retry())
+  suspend(() => predicate() ? unit : core.retry)
 
 /** @internal */
 export const collect = dual<
@@ -308,7 +308,7 @@ export const collectSTM = dual<
     onFailure: core.fail,
     onSuccess: (a) => {
       const option = pf(a)
-      return Option.isSome(option) ? option.value : core.retry()
+      return Option.isSome(option) ? option.value : core.retry
     }
   }))
 
@@ -385,8 +385,9 @@ export const exists = dual<
 )
 
 /** @internal */
-export const fiberId = (): STM.STM<never, never, FiberId.FiberId> =>
-  core.effect<never, FiberId.FiberId>((_, fiberId) => fiberId)
+export const fiberId: STM.STM<never, never, FiberId.FiberId> = core.effect<never, FiberId.FiberId>((_, fiberId) =>
+  fiberId
+)
 
 /** @internal */
 export const filter = dual<
@@ -544,7 +545,7 @@ export const forEach = dual<
           const loop: STM.STM<R, E, void> = suspend(() => {
             const next = iterator.next()
             if (next.done) {
-              return unit()
+              return unit
             }
             return pipe(f(next.value), core.flatMap(() => loop))
           })
@@ -684,7 +685,7 @@ export const if_ = dual<
 
 /** @internal */
 export const ignore = <R, E, A>(self: STM.STM<R, E, A>): STM.STM<R, never, void> =>
-  match(self, { onFailure: unit, onSuccess: unit })
+  match(self, { onFailure: () => unit, onSuccess: () => unit })
 
 /** @internal */
 export const isFailure = <R, E, A>(self: STM.STM<R, E, A>): STM.STM<R, never, boolean> =>
@@ -777,7 +778,7 @@ const loopDiscardLoop = <Z, R, E, X>(
       core.flatMap(() => loopDiscardLoop(inc(initial), cont, inc, body))
     )
   }
-  return unit()
+  return unit
 }
 
 /** @internal */
@@ -843,7 +844,7 @@ export const none = <R, E, A>(self: STM.STM<R, E, Option.Option<A>>): STM.STM<R,
   core.matchSTM(self, {
     onFailure: (e) => core.fail(Option.some(e)),
     onSuccess: Option.match({
-      onNone: unit,
+      onNone: () => unit,
       onSome: () => core.fail(Option.none())
     })
   })
@@ -1173,7 +1174,7 @@ export const retryUntil = dual<
 >(
   2,
   <R, E, A>(self: STM.STM<R, E, A>, predicate: Predicate<A>) =>
-    core.matchSTM(self, { onFailure: core.fail, onSuccess: (a) => predicate(a) ? core.succeed(a) : core.retry() })
+    core.matchSTM(self, { onFailure: core.fail, onSuccess: (a) => predicate(a) ? core.succeed(a) : core.retry })
 )
 
 /** @internal */
@@ -1183,7 +1184,7 @@ export const retryWhile = dual<
 >(
   2,
   (self, predicate) =>
-    core.matchSTM(self, { onFailure: core.fail, onSuccess: (a) => !predicate(a) ? core.succeed(a) : core.retry() })
+    core.matchSTM(self, { onFailure: core.fail, onSuccess: (a) => !predicate(a) ? core.succeed(a) : core.retry })
 )
 
 /** @internal */
@@ -1212,35 +1213,6 @@ export const some = <R, E, A>(self: STM.STM<R, E, Option.Option<A>>): STM.STM<R,
       onSome: core.succeed
     })
   })
-
-/** @internal */
-export const someOrElse = dual<
-  <A2>(orElse: LazyArg<A2>) => <R, E, A>(self: STM.STM<R, E, Option.Option<A>>) => STM.STM<R, E, A2 | A>,
-  <R, E, A, A2>(self: STM.STM<R, E, Option.Option<A>>, orElse: LazyArg<A2>) => STM.STM<R, E, A2 | A>
->(2, (self, orElse) => pipe(self, core.map(Option.getOrElse(orElse))))
-
-/** @internal */
-export const someOrElseSTM = dual<
-  <R2, E2, A2>(
-    orElse: LazyArg<STM.STM<R2, E2, A2>>
-  ) => <R, E, A>(
-    self: STM.STM<R, E, Option.Option<A>>
-  ) => STM.STM<R2 | R, E2 | E, A2 | A>,
-  <R, E, A, R2, E2, A2>(
-    self: STM.STM<R, E, Option.Option<A>>,
-    orElse: LazyArg<STM.STM<R2, E2, A2>>
-  ) => STM.STM<R2 | R, E2 | E, A2 | A>
->(2, <R, E, A, R2, E2, A2>(
-  self: STM.STM<R, E, Option.Option<A>>,
-  orElse: LazyArg<STM.STM<R2, E2, A2>>
-): STM.STM<R2 | R, E2 | E, A2 | A> =>
-  core.flatMap(
-    self,
-    Option.match({
-      onNone: (): STM.STM<R | R2, E | E2, A | A2> => orElse(),
-      onSome: core.succeed
-    })
-  ))
 
 const allIsDataFirst = (args: IArguments) => {
   if (args.length === 0) {
@@ -1285,7 +1257,7 @@ export const all = dual<
 }) as STM.All.Signature
 
 /** @internal */
-export const succeedNone = (): STM.STM<never, never, Option.Option<never>> => core.succeed(Option.none())
+export const succeedNone: STM.STM<never, never, Option.Option<never>> = core.succeed(Option.none())
 
 /** @internal */
 export const succeedSome = <A>(value: A): STM.STM<never, never, Option.Option<A>> => core.succeed(Option.some(value))
@@ -1377,7 +1349,7 @@ export const try_: {
 }
 
 /** @internal */
-export const unit = (): STM.STM<never, never, void> => core.succeed(void 0)
+export const unit: STM.STM<never, never, void> = core.succeed(void 0)
 
 /** @internal */
 export const unless = dual<
@@ -1385,7 +1357,7 @@ export const unless = dual<
   <R, E, A>(self: STM.STM<R, E, A>, predicate: LazyArg<boolean>) => STM.STM<R, E, Option.Option<A>>
 >(2, (self, predicate) =>
   suspend(
-    () => predicate() ? succeedNone() : asSome(self)
+    () => predicate() ? succeedNone : asSome(self)
   ))
 
 /** @internal */
@@ -1402,7 +1374,7 @@ export const unlessSTM = dual<
 >(2, (self, predicate) =>
   core.flatMap(
     predicate,
-    (bool) => bool ? succeedNone() : asSome(self)
+    (bool) => bool ? succeedNone : asSome(self)
   ))
 
 /** @internal */
@@ -1447,7 +1419,7 @@ export const when = dual<
   <R, E, A>(self: STM.STM<R, E, A>, predicate: LazyArg<boolean>) => STM.STM<R, E, Option.Option<A>>
 >(2, (self, predicate) =>
   suspend(
-    () => predicate() ? asSome(self) : succeedNone()
+    () => predicate() ? asSome(self) : succeedNone
   ))
 
 /** @internal */
@@ -1464,5 +1436,5 @@ export const whenSTM = dual<
 >(2, (self, predicate) =>
   core.flatMap(
     predicate,
-    (bool) => bool ? asSome(self) : succeedNone()
+    (bool) => bool ? asSome(self) : succeedNone
   ))

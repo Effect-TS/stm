@@ -685,12 +685,20 @@ export const matchSTM = dual<
   ))
 
 /** @internal */
-export const interrupt = (): STM.STM<never, never, never> =>
-  withSTMRuntime((_) => {
-    const stm = new STMPrimitive(OpCodes.OP_INTERRUPT)
-    stm.i1 = _.fiberId
-    return stm as any
-  })
+export const withSTMRuntime = <R, E, A>(
+  f: (runtime: STMDriver<unknown, unknown, unknown>) => STM.STM<R, E, A>
+): STM.STM<R, E, A> => {
+  const stm = new STMPrimitive(OpCodes.OP_WITH_STM_RUNTIME)
+  stm.i1 = f
+  return stm
+}
+
+/** @internal */
+export const interrupt: STM.STM<never, never, never> = withSTMRuntime((_) => {
+  const stm = new STMPrimitive(OpCodes.OP_INTERRUPT)
+  stm.i1 = _.fiberId
+  return stm as any
+})
 
 /** @internal */
 export const interruptAs = (fiberId: FiberId.FiberId): STM.STM<never, never, never> => {
@@ -724,10 +732,7 @@ export const orTry = dual<
 })
 
 /** @internal */
-export const retry = (): STM.STM<never, never, never> => {
-  const stm = new STMPrimitive(OpCodes.OP_RETRY)
-  return stm as any
-}
+export const retry: STM.STM<never, never, never> = new STMPrimitive(OpCodes.OP_RETRY)
 
 /** @internal */
 export const succeed = <A>(value: A): STM.STM<never, never, A> => {
@@ -741,15 +746,6 @@ export const sync = <A>(evaluate: () => A): STM.STM<never, never, A> => {
   const stm = new STMPrimitive(OpCodes.OP_SYNC)
   stm.i1 = evaluate
   return stm as any
-}
-
-/** @internal */
-export const withSTMRuntime = <R, E, A>(
-  f: (runtime: STMDriver<unknown, unknown, unknown>) => STM.STM<R, E, A>
-): STM.STM<R, E, A> => {
-  const stm = new STMPrimitive(OpCodes.OP_WITH_STM_RUNTIME)
-  stm.i1 = f
-  return stm
 }
 
 /** @internal */

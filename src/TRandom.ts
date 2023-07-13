@@ -29,15 +29,15 @@ export interface TRandom {
   /**
    * Returns the next numeric value from the pseudo-random number generator.
    */
-  next(): STM.STM<never, never, number>
+  readonly next: STM.STM<never, never, number>
   /**
    * Returns the next boolean value from the pseudo-random number generator.
    */
-  nextBoolean(): STM.STM<never, never, boolean>
+  readonly nextBoolean: STM.STM<never, never, boolean>
   /**
    * Returns the next integer value from the pseudo-random number generator.
    */
-  nextInt(): STM.STM<never, never, number>
+  readonly nextInt: STM.STM<never, never, number>
   /**
    * Returns the next numeric value in the specified range from the
    * pseudo-random number generator.
@@ -76,7 +76,7 @@ export const Tag: Context.Tag<TRandom, TRandom> = internal.Tag
  * @since 1.0.0
  * @category context
  */
-export const live: () => Layer.Layer<never, never, TRandom> = internal.live
+export const live: Layer.Layer<never, never, TRandom> = internal.live
 
 /**
  * Returns the next number from the pseudo-random number generator.
@@ -84,7 +84,7 @@ export const live: () => Layer.Layer<never, never, TRandom> = internal.live
  * @since 1.0.0
  * @category random
  */
-export const next: () => STM.STM<TRandom, never, number> = internal.next
+export const next: STM.STM<TRandom, never, number> = internal.next
 
 /**
  * Returns the next boolean value from the pseudo-random number generator.
@@ -92,7 +92,7 @@ export const next: () => STM.STM<TRandom, never, number> = internal.next
  * @since 1.0.0
  * @category random
  */
-export const nextBoolean: () => STM.STM<TRandom, never, boolean> = internal.nextBoolean
+export const nextBoolean: STM.STM<TRandom, never, boolean> = internal.nextBoolean
 
 /**
  * Returns the next integer from the pseudo-random number generator.
@@ -100,7 +100,7 @@ export const nextBoolean: () => STM.STM<TRandom, never, boolean> = internal.next
  * @since 1.0.0
  * @category random
  */
-export const nextInt: () => STM.STM<TRandom, never, number> = internal.nextInt
+export const nextInt: STM.STM<TRandom, never, number> = internal.nextInt
 
 /**
  * Returns the next integer in the specified range from the pseudo-random number

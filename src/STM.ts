@@ -602,7 +602,7 @@ export const failSync: <E>(evaluate: LazyArg<E>) => STM<never, E, never> = core.
  * @since 1.0.0
  * @category constructors
  */
-export const fiberId: () => STM<never, never, FiberId.FiberId> = stm.fiberId
+export const fiberId: STM<never, never, FiberId.FiberId> = stm.fiberId
 
 /**
  * Filters the collection using the specified effectual predicate.
@@ -1140,7 +1140,7 @@ export const ignore: <R, E, A>(self: STM<R, E, A>) => STM<R, never, void> = stm.
  * @since 1.0.0
  * @category constructors
  */
-export const interrupt: () => STM<never, never, never> = core.interrupt
+export const interrupt: STM<never, never, never> = core.interrupt
 
 /**
  * Interrupts the fiber running the effect with the specified `FiberId`.
@@ -1685,7 +1685,7 @@ export const replicateSTMDiscard: {
  * @since 1.0.0
  * @category error handling
  */
-export const retry: () => STM<never, never, never> = core.retry
+export const retry: STM<never, never, never> = core.retry
 
 /**
  * Filters the value produced by this effect, retrying the transaction until
@@ -1720,35 +1720,6 @@ export const retryWhile: {
 export const some: <R, E, A>(self: STM<R, E, Option.Option<A>>) => STM<R, Option.Option<E>, A> = stm.some
 
 /**
- * Extracts the optional value, or returns the given 'default'.
- *
- * @since 1.0.0
- * @category getters
- */
-export const someOrElse: {
-  <A2>(orElse: LazyArg<A2>): <R, E, A>(self: STM<R, E, Option.Option<A>>) => STM<R, E, A2 | A>
-  <R, E, A, A2>(self: STM<R, E, Option.Option<A>>, orElse: LazyArg<A2>): STM<R, E, A | A2>
-} = stm.someOrElse
-
-/**
- * Extracts the optional value, or executes the effect 'default'.
- *
- * @since 1.0.0
- * @category getters
- */
-export const someOrElseSTM: {
-  <R2, E2, A2>(
-    orElse: LazyArg<STM<R2, E2, A2>>
-  ): <R, E, A>(
-    self: STM<R, E, Option.Option<A>>
-  ) => STM<R2 | R, E2 | E, A2 | A>
-  <R, E, A, R2, E2, A2>(
-    self: STM<R, E, Option.Option<A>>,
-    orElse: LazyArg<STM<R2, E2, A2>>
-  ): STM<R | R2, E | E2, A | A2>
-} = stm.someOrElseSTM
-
-/**
  * Returns an `STM` effect that succeeds with the specified value.
  *
  * @since 1.0.0
@@ -1762,7 +1733,7 @@ export const succeed: <A>(value: A) => STM<never, never, A> = core.succeed
  * @since 1.0.0
  * @category constructors
  */
-export const succeedNone: () => STM<never, never, Option.Option<never>> = stm.succeedNone
+export const succeedNone: STM<never, never, Option.Option<never>> = stm.succeedNone
 
 /**
  * Returns an effect with the optional value.
@@ -1909,7 +1880,7 @@ export const unsome: <R, E, A>(self: STM<R, Option.Option<E>, A>) => STM<R, E, O
  * @since 1.0.0
  * @category constructors
  */
-export const unit: () => STM<never, never, void> = stm.unit
+export const unit: STM<never, never, void> = stm.unit
 
 /**
  * Feeds elements of type `A` to `f` and accumulates all errors in error

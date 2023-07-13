@@ -125,7 +125,7 @@ export const findSTM = dual<
     Option.isNone(acc) ?
       core.matchSTM(f(key, value), {
         onFailure: Option.match({
-          onNone: stm.succeedNone,
+          onNone: () => stm.succeedNone,
           onSome: core.fail
         }),
         onSuccess: stm.succeedSome
@@ -513,7 +513,7 @@ export const setIfAbsent = dual<
     get(self, key),
     Option.match({
       onNone: () => set(self, key, value),
-      onSome: stm.unit
+      onSome: () => stm.unit
     })
   ))
 

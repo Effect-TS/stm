@@ -115,7 +115,7 @@ class TQueueImpl<A> implements TQueue.TQueue<A> {
   shutdown(): STM.STM<never, never, void> {
     return core.withSTMRuntime<never, never, void>((runtime) => {
       tRef.unsafeSet(this.ref, void 0, runtime.journal)
-      return stm.unit()
+      return stm.unit
     })
   }
 
@@ -129,7 +129,7 @@ class TQueueImpl<A> implements TQueue.TQueue<A> {
   awaitShutdown(): STM.STM<never, never, void> {
     return core.flatMap(
       this.isShutdown(),
-      (isShutdown) => isShutdown ? stm.unit() : core.retry()
+      (isShutdown) => isShutdown ? stm.unit : core.retry
     )
   }
 
@@ -146,7 +146,7 @@ class TQueueImpl<A> implements TQueue.TQueue<A> {
       }
       switch (this.strategy._tag) {
         case OpCodes.OP_BACKPRESSURE_STRATEGY: {
-          return core.retry()
+          return core.retry
         }
         case OpCodes.OP_DROPPING_STRATEGY: {
           return core.succeed(false)
@@ -177,7 +177,7 @@ class TQueueImpl<A> implements TQueue.TQueue<A> {
       }
       switch (this.strategy._tag) {
         case OpCodes.OP_BACKPRESSURE_STRATEGY: {
-          return core.retry()
+          return core.retry
         }
         case OpCodes.OP_DROPPING_STRATEGY: {
           const forQueue = as.slice(0, this.requestedCapacity - queue.length)
@@ -203,7 +203,7 @@ class TQueueImpl<A> implements TQueue.TQueue<A> {
       }
       const head = queue[0]
       if (head === undefined) {
-        return core.retry()
+        return core.retry
       }
       return core.succeed(head)
     })
@@ -227,7 +227,7 @@ class TQueueImpl<A> implements TQueue.TQueue<A> {
       }
       const dequeued = queue.shift()
       if (dequeued === undefined) {
-        return core.retry()
+        return core.retry
       }
       tRef.unsafeSet(this.ref, queue, runtime.journal)
       return core.succeed(dequeued)

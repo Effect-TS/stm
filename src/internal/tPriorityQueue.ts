@@ -116,7 +116,7 @@ export const peek = <A>(self: TPriorityQueue.TPriorityQueue<A>): STM.STM<never, 
     return Option.match(
       SortedMap.headOption(map),
       {
-        onNone: core.retry,
+        onNone: () => core.retry,
         onSome: (elements) => core.succeed(elements[0])
       }
     )
@@ -166,7 +166,7 @@ export const take = <A>(self: TPriorityQueue.TPriorityQueue<A>): STM.STM<never, 
   core.withSTMRuntime((runtime) => {
     const map = tRef.unsafeGet(self.ref, runtime.journal)
     return Option.match(SortedMap.headOption(map), {
-      onNone: core.retry,
+      onNone: () => core.retry,
       onSome: (values) => {
         const head = values[1][0]
         const tail = values[1].slice(1)

@@ -88,17 +88,11 @@ export const Tag = Context.Tag<TRandom.TRandom>()
 class TRandomImpl implements TRandom.TRandom {
   readonly [TRandomTypeId]: TRandom.TRandomTypeId = TRandomTypeId
   constructor(readonly state: TRef.TRef<Random.PCGRandomState>) {}
-  next(): STM.STM<never, never, number> {
-    return withState(this.state, randomNumber)
-  }
-  nextBoolean(): STM.STM<never, never, boolean> {
-    return core.flatMap(this.next(), (n) => core.succeed(n > 0.5))
-  }
-  nextInt(): STM.STM<never, never, number> {
-    return withState(this.state, randomInteger)
-  }
+  next = withState(this.state, randomNumber)
+  nextBoolean = core.flatMap(this.next, (n) => core.succeed(n > 0.5))
+  nextInt = withState(this.state, randomInteger)
   nextRange(min: number, max: number): STM.STM<never, never, number> {
-    return core.flatMap(this.next(), (n) => core.succeed((max - min) * n + min))
+    return core.flatMap(this.next, (n) => core.succeed((max - min) * n + min))
   }
   nextIntBetween(low: number, high: number): STM.STM<never, never, number> {
     return withState(this.state, randomIntegerBetween(low, high))
@@ -109,25 +103,23 @@ class TRandomImpl implements TRandom.TRandom {
 }
 
 /** @internal */
-export const live = (): Layer.Layer<never, never, TRandom.TRandom> =>
-  Layer.effect(
-    Tag,
-    pipe(
-      tRef.make(new Random.PCGRandom((Math.random() * 4294967296) >>> 0).getState()),
-      core.map((seed) => new TRandomImpl(seed)),
-      core.commit
-    )
+export const live: Layer.Layer<never, never, TRandom.TRandom> = Layer.effect(
+  Tag,
+  pipe(
+    tRef.make(new Random.PCGRandom((Math.random() * 4294967296) >>> 0).getState()),
+    core.map((seed) => new TRandomImpl(seed)),
+    core.commit
   )
+)
 
 /** @internal */
-export const next = (): STM.STM<TRandom.TRandom, never, number> => core.flatMap(Tag, (random) => random.next())
+export const next: STM.STM<TRandom.TRandom, never, number> = core.flatMap(Tag, (random) => random.next)
 
 /** @internal */
-export const nextBoolean = (): STM.STM<TRandom.TRandom, never, boolean> =>
-  core.flatMap(Tag, (random) => random.nextBoolean())
+export const nextBoolean: STM.STM<TRandom.TRandom, never, boolean> = core.flatMap(Tag, (random) => random.nextBoolean)
 
 /** @internal */
-export const nextInt = (): STM.STM<TRandom.TRandom, never, number> => core.flatMap(Tag, (random) => random.nextInt())
+export const nextInt: STM.STM<TRandom.TRandom, never, number> = core.flatMap(Tag, (random) => random.nextInt)
 
 /** @internal */
 export const nextIntBetween = (low: number, high: number): STM.STM<TRandom.TRandom, never, number> =>

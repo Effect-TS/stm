@@ -97,8 +97,6 @@ Added in v1.0.0
   - [isFailure](#isfailure)
   - [isSuccess](#issuccess)
   - [some](#some)
-  - [someOrElse](#someorelse)
-  - [someOrElseSTM](#someorelsestm)
   - [unsome](#unsome)
 - [mapping](#mapping)
   - [as](#as)
@@ -388,7 +386,7 @@ Returns the fiber id of the fiber committing the transaction.
 **Signature**
 
 ```ts
-export declare const fiberId: () => STM<never, never, FiberId.FiberId>
+export declare const fiberId: STM<never, never, FiberId.FiberId>
 ```
 
 Added in v1.0.0
@@ -471,7 +469,7 @@ Interrupts the fiber running the effect.
 **Signature**
 
 ```ts
-export declare const interrupt: () => STM<never, never, never>
+export declare const interrupt: STM<never, never, never>
 ```
 
 Added in v1.0.0
@@ -693,7 +691,7 @@ Returns an effect with the empty value.
 **Signature**
 
 ```ts
-export declare const succeedNone: () => STM<never, never, Option.Option<never>>
+export declare const succeedNone: STM<never, never, Option.Option<never>>
 ```
 
 Added in v1.0.0
@@ -755,7 +753,7 @@ Returns an `STM` effect that succeeds with `Unit`.
 **Signature**
 
 ```ts
-export declare const unit: () => STM<never, never, void>
+export declare const unit: STM<never, never, void>
 ```
 
 Added in v1.0.0
@@ -1210,7 +1208,7 @@ transactional variables have changed.
 **Signature**
 
 ```ts
-export declare const retry: () => STM<never, never, never>
+export declare const retry: STM<never, never, never>
 ```
 
 Added in v1.0.0
@@ -1394,42 +1392,6 @@ Converts an option on values into an option on errors.
 
 ```ts
 export declare const some: <R, E, A>(self: STM<R, E, Option.Option<A>>) => STM<R, Option.Option<E>, A>
-```
-
-Added in v1.0.0
-
-## someOrElse
-
-Extracts the optional value, or returns the given 'default'.
-
-**Signature**
-
-```ts
-export declare const someOrElse: {
-  <A2>(orElse: LazyArg<A2>): <R, E, A>(self: STM<R, E, Option.Option<A>>) => STM<R, E, A2 | A>
-  <R, E, A, A2>(self: STM<R, E, Option.Option<A>>, orElse: LazyArg<A2>): STM<R, E, A | A2>
-}
-```
-
-Added in v1.0.0
-
-## someOrElseSTM
-
-Extracts the optional value, or executes the effect 'default'.
-
-**Signature**
-
-```ts
-export declare const someOrElseSTM: {
-  <R2, E2, A2>(orElse: LazyArg<STM<R2, E2, A2>>): <R, E, A>(
-    self: STM<R, E, Option.Option<A>>
-  ) => STM<R2 | R, E2 | E, A2 | A>
-  <R, E, A, R2, E2, A2>(self: STM<R, E, Option.Option<A>>, orElse: LazyArg<STM<R2, E2, A2>>): STM<
-    R | R2,
-    E | E2,
-    A | A2
-  >
-}
 ```
 
 Added in v1.0.0

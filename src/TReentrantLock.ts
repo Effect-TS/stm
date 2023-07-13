@@ -122,7 +122,7 @@ export const locked: (self: TReentrantLock) => STM.STM<never, never, boolean> = 
  * @since 1.0.0
  * @category constructors
  */
-export const make: () => STM.STM<never, never, TReentrantLock> = internal.make
+export const make: STM.STM<never, never, TReentrantLock> = internal.make
 
 /**
  * Obtains a read lock in a scoped context.

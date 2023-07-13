@@ -55,7 +55,7 @@ class THubImpl<A> implements THub.THub<A> {
   awaitShutdown(): STM.STM<never, never, void> {
     return core.flatMap(
       this.isShutdown(),
-      (isShutdown) => isShutdown ? stm.unit() : core.retry()
+      (isShutdown) => isShutdown ? stm.unit : core.retry
     )
   }
 
@@ -103,7 +103,7 @@ class THubImpl<A> implements THub.THub<A> {
       }
       switch (this.strategy._tag) {
         case OpCodes.OP_BACKPRESSURE_STRATEGY: {
-          return core.retry()
+          return core.retry
         }
         case OpCodes.OP_DROPPING_STRATEGY: {
           return core.succeed(false)
@@ -118,7 +118,7 @@ class THubImpl<A> implements THub.THub<A> {
             while (loop) {
               const node = tRef.unsafeGet(currentPublisherHead, runtime.journal)
               if (node === undefined) {
-                return core.retry()
+                return core.retry
               }
               const head = node.head
               const tail = node.tail
@@ -194,7 +194,7 @@ class THubSubscriptionImpl<A> implements TQueue.TDequeue<A> {
   awaitShutdown(): STM.STM<never, never, void> {
     return core.flatMap(
       this.isShutdown(),
-      (isShutdown) => isShutdown ? stm.unit() : core.retry()
+      (isShutdown) => isShutdown ? stm.unit : core.retry
     )
   }
 
@@ -228,7 +228,7 @@ class THubSubscriptionImpl<A> implements TQueue.TDequeue<A> {
       while (loop) {
         const node = tRef.unsafeGet(currentSubscriberHead, runtime.journal)
         if (node === undefined) {
-          return core.retry()
+          return core.retry
         }
         const head = node.head
         const tail: TRef.TRef<Node<A | undefined> | undefined> = node.tail
@@ -353,7 +353,7 @@ class THubSubscriptionImpl<A> implements TQueue.TDequeue<A> {
       while (loop) {
         const node = tRef.unsafeGet(currentSubscriberHead, runtime.journal)
         if (node === undefined) {
-          return core.retry()
+          return core.retry
         }
         const head = node.head
         const tail: TRef.TRef<Node<A | undefined> | undefined> = node.tail
