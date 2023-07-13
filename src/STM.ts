@@ -349,6 +349,64 @@ export const catchSome: {
 } = stm.catchSome
 
 /**
+ * Recovers from the specified tagged error.
+ *
+ * @since 1.0.0
+ * @category error handling
+ */
+export const catchTag: {
+  <K extends E["_tag"] & string, E extends { _tag: string }, R1, E1, A1>(
+    k: K,
+    f: (e: Extract<E, { _tag: K }>) => STM<R1, E1, A1>
+  ): <R, A>(self: STM<R, E, A>) => STM<R1 | R, E1 | Exclude<E, { _tag: K }>, A1 | A>
+  <R, E extends { _tag: string }, A, K extends E["_tag"] & string, R1, E1, A1>(
+    self: STM<R, E, A>,
+    k: K,
+    f: (e: Extract<E, { _tag: K }>) => STM<R1, E1, A1>
+  ): STM<R | R1, E1 | Exclude<E, { _tag: K }>, A | A1>
+} = stm.catchTag
+
+/**
+ * Recovers from multiple tagged errors.
+ *
+ * @since 1.0.0
+ * @category error handling
+ */
+export const catchTags: {
+  <
+    E extends { _tag: string },
+    Cases extends { [K in E["_tag"]]+?: ((error: Extract<E, { _tag: K }>) => STM<any, any, any>) }
+  >(
+    cases: Cases
+  ): <R, A>(
+    self: STM<R, E, A>
+  ) => STM<
+    | R
+    | { [K in keyof Cases]: Cases[K] extends (...args: Array<any>) => STM<infer R, any, any> ? R : never }[keyof Cases],
+    | Exclude<E, { _tag: keyof Cases }>
+    | { [K in keyof Cases]: Cases[K] extends (...args: Array<any>) => STM<any, infer E, any> ? E : never }[keyof Cases],
+    | A
+    | { [K in keyof Cases]: Cases[K] extends (...args: Array<any>) => STM<any, any, infer A> ? A : never }[keyof Cases]
+  >
+  <
+    R,
+    E extends { _tag: string },
+    A,
+    Cases extends { [K in E["_tag"]]+?: ((error: Extract<E, { _tag: K }>) => STM<any, any, any>) }
+  >(
+    self: STM<R, E, A>,
+    cases: Cases
+  ): STM<
+    | R
+    | { [K in keyof Cases]: Cases[K] extends (...args: Array<any>) => STM<infer R, any, any> ? R : never }[keyof Cases],
+    | Exclude<E, { _tag: keyof Cases }>
+    | { [K in keyof Cases]: Cases[K] extends (...args: Array<any>) => STM<any, infer E, any> ? E : never }[keyof Cases],
+    | A
+    | { [K in keyof Cases]: Cases[K] extends (...args: Array<any>) => STM<any, any, infer A> ? A : never }[keyof Cases]
+  >
+} = stm.catchTags
+
+/**
  * Checks the condition, and if it's true, returns unit, otherwise, retries.
  *
  * @since 1.0.0

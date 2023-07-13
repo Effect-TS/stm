@@ -72,6 +72,8 @@ Added in v1.0.0
 - [error handling](#error-handling)
   - [catchAll](#catchall)
   - [catchSome](#catchsome)
+  - [catchTag](#catchtag)
+  - [catchTags](#catchtags)
   - [orDie](#ordie)
   - [orDieWith](#ordiewith)
   - [orElse](#orelse)
@@ -1013,6 +1015,72 @@ export declare const catchSome: {
     R | R2,
     E | E2,
     A | A2
+  >
+}
+```
+
+Added in v1.0.0
+
+## catchTag
+
+Recovers from the specified tagged error.
+
+**Signature**
+
+```ts
+export declare const catchTag: {
+  <K extends E['_tag'] & string, E extends { _tag: string }, R1, E1, A1>(
+    k: K,
+    f: (e: Extract<E, { _tag: K }>) => STM<R1, E1, A1>
+  ): <R, A>(self: STM<R, E, A>) => STM<R1 | R, E1 | Exclude<E, { _tag: K }>, A1 | A>
+  <R, E extends { _tag: string }, A, K extends E['_tag'] & string, R1, E1, A1>(
+    self: STM<R, E, A>,
+    k: K,
+    f: (e: Extract<E, { _tag: K }>) => STM<R1, E1, A1>
+  ): STM<R | R1, E1 | Exclude<E, { _tag: K }>, A | A1>
+}
+```
+
+Added in v1.0.0
+
+## catchTags
+
+Recovers from multiple tagged errors.
+
+**Signature**
+
+```ts
+export declare const catchTags: {
+  <
+    E extends { _tag: string },
+    Cases extends { [K in E['_tag']]+?: ((error: Extract<E, { _tag: K }>) => STM<any, any, any>) | undefined }
+  >(
+    cases: Cases
+  ): <R, A>(
+    self: STM<R, E, A>
+  ) => STM<
+    | R
+    | { [K in keyof Cases]: Cases[K] extends (...args: Array<any>) => STM<infer R, any, any> ? R : never }[keyof Cases],
+    | Exclude<E, { _tag: keyof Cases }>
+    | { [K in keyof Cases]: Cases[K] extends (...args: Array<any>) => STM<any, infer E, any> ? E : never }[keyof Cases],
+    | A
+    | { [K in keyof Cases]: Cases[K] extends (...args: Array<any>) => STM<any, any, infer A> ? A : never }[keyof Cases]
+  >
+  <
+    R,
+    E extends { _tag: string },
+    A,
+    Cases extends { [K in E['_tag']]+?: ((error: Extract<E, { _tag: K }>) => STM<any, any, any>) | undefined }
+  >(
+    self: STM<R, E, A>,
+    cases: Cases
+  ): STM<
+    | R
+    | { [K in keyof Cases]: Cases[K] extends (...args: Array<any>) => STM<infer R, any, any> ? R : never }[keyof Cases],
+    | Exclude<E, { _tag: keyof Cases }>
+    | { [K in keyof Cases]: Cases[K] extends (...args: Array<any>) => STM<any, infer E, any> ? E : never }[keyof Cases],
+    | A
+    | { [K in keyof Cases]: Cases[K] extends (...args: Array<any>) => STM<any, any, infer A> ? A : never }[keyof Cases]
   >
 }
 ```

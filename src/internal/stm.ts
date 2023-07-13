@@ -204,6 +204,80 @@ export const catchSome = dual<
     (e): STM.STM<R | R2, E | E2, A | A2> => Option.getOrElse(pf(e), () => core.fail(e))
   ))
 
+export const catchTag = dual<
+  <K extends E["_tag"] & string, E extends { _tag: string }, R1, E1, A1>(
+    k: K,
+    f: (e: Extract<E, { _tag: K }>) => STM.STM<R1, E1, A1>
+  ) => <R, A>(self: STM.STM<R, E, A>) => STM.STM<R | R1, Exclude<E, { _tag: K }> | E1, A | A1>,
+  <R, E extends { _tag: string }, A, K extends E["_tag"] & string, R1, E1, A1>(
+    self: STM.STM<R, E, A>,
+    k: K,
+    f: (e: Extract<E, { _tag: K }>) => STM.STM<R1, E1, A1>
+  ) => STM.STM<R | R1, Exclude<E, { _tag: K }> | E1, A | A1>
+>(3, (self, k, f) =>
+  core.catchAll(self, (e) => {
+    if ("_tag" in e && e["_tag"] === k) {
+      return f(e as any)
+    }
+    return core.fail(e as any)
+  }))
+
+/** @internal */
+export const catchTags: {
+  <
+    E extends { _tag: string },
+    Cases extends {
+      [K in E["_tag"]]+?: (error: Extract<E, { _tag: K }>) => STM.STM<any, any, any>
+    }
+  >(
+    cases: Cases
+  ): <R, A>(self: STM.STM<R, E, A>) => STM.STM<
+    | R
+    | {
+      [K in keyof Cases]: Cases[K] extends ((...args: Array<any>) => STM.STM<infer R, any, any>) ? R : never
+    }[keyof Cases],
+    | Exclude<E, { _tag: keyof Cases }>
+    | {
+      [K in keyof Cases]: Cases[K] extends ((...args: Array<any>) => STM.STM<any, infer E, any>) ? E : never
+    }[keyof Cases],
+    | A
+    | {
+      [K in keyof Cases]: Cases[K] extends ((...args: Array<any>) => STM.STM<any, any, infer A>) ? A : never
+    }[keyof Cases]
+  >
+  <
+    R,
+    E extends { _tag: string },
+    A,
+    Cases extends {
+      [K in E["_tag"]]+?: (error: Extract<E, { _tag: K }>) => STM.STM<any, any, any>
+    }
+  >(
+    self: STM.STM<R, E, A>,
+    cases: Cases
+  ): STM.STM<
+    | R
+    | {
+      [K in keyof Cases]: Cases[K] extends ((...args: Array<any>) => STM.STM<infer R, any, any>) ? R : never
+    }[keyof Cases],
+    | Exclude<E, { _tag: keyof Cases }>
+    | {
+      [K in keyof Cases]: Cases[K] extends ((...args: Array<any>) => STM.STM<any, infer E, any>) ? E : never
+    }[keyof Cases],
+    | A
+    | {
+      [K in keyof Cases]: Cases[K] extends ((...args: Array<any>) => STM.STM<any, any, infer A>) ? A : never
+    }[keyof Cases]
+  >
+} = dual(2, (self, cases) =>
+  core.catchAll(self, (e: any) => {
+    const keys = Object.keys(cases)
+    if ("_tag" in e && keys.includes(e["_tag"])) {
+      return cases[e["_tag"]](e as any)
+    }
+    return core.fail(e as any)
+  }))
+
 /** @internal */
 export const check = (predicate: LazyArg<boolean>): STM.STM<never, never, void> =>
   suspend(() => predicate() ? unit() : core.retry())
