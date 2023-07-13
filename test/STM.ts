@@ -337,33 +337,33 @@ describe.concurrent("STM", () => {
       assert.strictEqual(result, 2)
     }))
 
-  it.effect("filterOrElseWith - returns checked failure", () =>
+  it.effect("filterOrElse - returns checked failure", () =>
     Effect.gen(function*($) {
       const transaction = pipe(
         STM.succeed(1),
-        STM.filterOrElseWith((n) => n === 1, (n) => STM.succeed(n + 1))
+        STM.filterOrElse((n) => n === 1, (n) => STM.succeed(n + 1))
       )
       const result = yield* $(STM.commit(transaction))
       assert.strictEqual(result, 1)
     }))
 
-  it.effect("filterOrElseWith - returns held value", () =>
+  it.effect("filterOrElse - returns held value", () =>
     Effect.gen(function*($) {
       const transaction = pipe(
         STM.succeed(1),
-        STM.filterOrElseWith((n) => n !== 1, (n) => STM.succeed(n + 1))
+        STM.filterOrElse((n) => n !== 1, (n) => STM.succeed(n + 1))
       )
       const result = yield* $(STM.commit(transaction))
       assert.strictEqual(result, 2)
     }))
 
-  it.effect("filterOrElseWith - returns error", () =>
+  it.effect("filterOrElse - returns error", () =>
     Effect.gen(function*($) {
       const error = Cause.RuntimeException("Ouch")
       const transaction = pipe(
         STM.fail(error),
         STM.zipRight(STM.succeed(1)),
-        STM.filterOrElseWith((n) => n === 1, (n) => STM.succeed(n + 1))
+        STM.filterOrElse((n) => n === 1, (n) => STM.succeed(n + 1))
       )
       const result = yield* $(Effect.exit(STM.commit(transaction)))
       assert.deepStrictEqual(Exit.unannotate(result), Exit.fail(error))

@@ -17,7 +17,6 @@ Added in v1.0.0
   - [all](#all)
   - [attempt](#attempt)
   - [check](#check)
-  - [collectFirst](#collectfirst)
   - [cond](#cond)
   - [context](#context)
   - [contextWith](#contextwith)
@@ -87,7 +86,6 @@ Added in v1.0.0
   - [filterOrDie](#filterordie)
   - [filterOrDieMessage](#filterordiemessage)
   - [filterOrElse](#filterorelse)
-  - [filterOrElseWith](#filterorelsewith)
   - [filterOrFail](#filterorfail)
 - [finalization](#finalization)
   - [ensuring](#ensuring)
@@ -231,22 +229,6 @@ Checks the condition, and if it's true, returns unit, otherwise, retries.
 
 ```ts
 export declare const check: (predicate: LazyArg<boolean>) => STM<never, never, void>
-```
-
-Added in v1.0.0
-
-## collectFirst
-
-Collects the first element of the `Iterable<A>` for which the effectual
-function `f` returns `Some`.
-
-**Signature**
-
-```ts
-export declare const collectFirst: {
-  <A, R, E, A2>(pf: (a: A) => STM<R, E, Option.Option<A2>>): (iterable: Iterable<A>) => STM<R, E, Option.Option<A2>>
-  <A, R, E, A2>(iterable: Iterable<A>, pf: (a: A) => STM<R, E, Option.Option<A2>>): STM<R, E, Option.Option<A2>>
-}
 ```
 
 Added in v1.0.0
@@ -1274,27 +1256,6 @@ Supplies `orElse` if the predicate fails.
 
 ```ts
 export declare const filterOrElse: {
-  <A, R2, E2, A2>(predicate: Predicate<A>, orElse: LazyArg<STM<R2, E2, A2>>): <R, E>(
-    self: STM<R, E, A>
-  ) => STM<R2 | R, E2 | E, A | A2>
-  <R, E, A, R2, E2, A2>(self: STM<R, E, A>, predicate: Predicate<A>, orElse: LazyArg<STM<R2, E2, A2>>): STM<
-    R | R2,
-    E | E2,
-    A | A2
-  >
-}
-```
-
-Added in v1.0.0
-
-## filterOrElseWith
-
-Applies `orElse` if the predicate fails.
-
-**Signature**
-
-```ts
-export declare const filterOrElseWith: {
   <A, R2, E2, A2>(predicate: Predicate<A>, orElse: (a: A) => STM<R2, E2, A2>): <R, E>(
     self: STM<R, E, A>
   ) => STM<R2 | R, E2 | E, A | A2>
@@ -1316,8 +1277,8 @@ Fails with the specified error if the predicate fails.
 
 ```ts
 export declare const filterOrFail: {
-  <A, E2>(predicate: Predicate<A>, error: LazyArg<E2>): <R, E>(self: STM<R, E, A>) => STM<R, E2 | E, A>
-  <R, E, A, E2>(self: STM<R, E, A>, predicate: Predicate<A>, error: LazyArg<E2>): STM<R, E | E2, A>
+  <A, E2>(predicate: Predicate<A>, orFailWith: (a: A) => E2): <R, E>(self: STM<R, E, A>) => STM<R, E2 | E, A>
+  <R, E, A, E2>(self: STM<R, E, A>, predicate: Predicate<A>, orFailWith: (a: A) => E2): STM<R, E | E2, A>
 }
 ```
 

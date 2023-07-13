@@ -293,41 +293,6 @@ export const collect = dual<
   ))
 
 /** @internal */
-export const collectFirst = dual<
-  <A, R, E, A2>(
-    pf: (a: A) => STM.STM<R, E, Option.Option<A2>>
-  ) => (
-    iterable: Iterable<A>
-  ) => STM.STM<R, E, Option.Option<A2>>,
-  <A, R, E, A2>(
-    iterable: Iterable<A>,
-    pf: (a: A) => STM.STM<R, E, Option.Option<A2>>
-  ) => STM.STM<R, E, Option.Option<A2>>
->(2, <A, R, E, A2>(
-  iterable: Iterable<A>,
-  pf: (a: A) => STM.STM<R, E, Option.Option<A2>>
-): STM.STM<R, E, Option.Option<A2>> =>
-  pipe(
-    core.sync(() => iterable[Symbol.iterator]()),
-    core.flatMap((iterator) => {
-      const loop: STM.STM<R, E, Option.Option<A2>> = suspend(() => {
-        const next = iterator.next()
-        if (next.done) {
-          return succeedNone()
-        }
-        return pipe(
-          pf(next.value),
-          core.flatMap(Option.match({
-            onNone: () => loop,
-            onSome: succeedSome
-          }))
-        )
-      })
-      return loop
-    })
-  ))
-
-/** @internal */
 export const collectSTM = dual<
   <A, R2, E2, A2>(
     pf: (a: A) => Option.Option<STM.STM<R2, E2, A2>>
@@ -479,24 +444,6 @@ export const filterOrDieMessage = dual<
 export const filterOrElse = dual<
   <A, R2, E2, A2>(
     predicate: Predicate<A>,
-    orElse: LazyArg<STM.STM<R2, E2, A2>>
-  ) => <R, E>(
-    self: STM.STM<R, E, A>
-  ) => STM.STM<R2 | R, E2 | E, A | A2>,
-  <R, E, A, R2, E2, A2>(
-    self: STM.STM<R, E, A>,
-    predicate: Predicate<A>,
-    orElse: LazyArg<STM.STM<R2, E2, A2>>
-  ) => STM.STM<R2 | R, E2 | E, A | A2>
->(
-  3,
-  (self, predicate, orElse) => filterOrElseWith(self, predicate, orElse)
-)
-
-/** @internal */
-export const filterOrElseWith = dual<
-  <A, R2, E2, A2>(
-    predicate: Predicate<A>,
     orElse: (a: A) => STM.STM<R2, E2, A2>
   ) => <R, E>(
     self: STM.STM<R, E, A>
@@ -521,13 +468,13 @@ export const filterOrElseWith = dual<
 
 /** @internal */
 export const filterOrFail = dual<
-  <A, E2>(predicate: Predicate<A>, error: LazyArg<E2>) => <R, E>(self: STM.STM<R, E, A>) => STM.STM<R, E2 | E, A>,
-  <R, E, A, E2>(self: STM.STM<R, E, A>, predicate: Predicate<A>, error: LazyArg<E2>) => STM.STM<R, E2 | E, A>
->(3, (self, predicate, error) =>
+  <A, E2>(predicate: Predicate<A>, orFailWith: (a: A) => E2) => <R, E>(self: STM.STM<R, E, A>) => STM.STM<R, E2 | E, A>,
+  <R, E, A, E2>(self: STM.STM<R, E, A>, predicate: Predicate<A>, orFailWith: (a: A) => E2) => STM.STM<R, E2 | E, A>
+>(3, (self, predicate, orFailWith) =>
   filterOrElse(
     self,
     predicate,
-    () => core.failSync(error)
+    (a) => core.failSync(() => orFailWith(a))
   ))
 
 /** @internal */
