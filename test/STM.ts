@@ -159,7 +159,7 @@ describe.concurrent("STM", () => {
         STM.tap((queue) => pipe(queue, TQueue.offer(1))),
         STM.tap((queue) => pipe(queue, TQueue.offer(2))),
         STM.tap((queue) => pipe(queue, TQueue.offer(3))),
-        STM.flatMap((queue) => pipe(Array.from({ length: 3 }, () => TQueue.take(queue)), STM.all()))
+        STM.flatMap((queue) => STM.all(Array.from({ length: 3 }, () => TQueue.take(queue))))
       )
       const result = yield* $(STM.commit(transaction))
       assert.deepStrictEqual(Array.from(result), [1, 2, 3])
@@ -912,21 +912,21 @@ describe.concurrent("STM", () => {
 
   it.effect("replicate - zero", () =>
     Effect.gen(function*($) {
-      const transaction = pipe(STM.succeed(12), STM.replicate(0), STM.all())
+      const transaction = STM.all(STM.replicate(STM.succeed(12), 0))
       const result = yield* $(STM.commit(transaction))
       assert.deepStrictEqual(Array.from(result), [])
     }))
 
   it.effect("replicate - negative", () =>
     Effect.gen(function*($) {
-      const transaction = pipe(STM.succeed(12), STM.replicate(-1), STM.all())
+      const transaction = STM.all(STM.replicate(STM.succeed(12), -1))
       const result = yield* $(STM.commit(transaction))
       assert.deepStrictEqual(Array.from(result), [])
     }))
 
   it.effect("replicate - positive", () =>
     Effect.gen(function*($) {
-      const transaction = pipe(STM.succeed(12), STM.replicate(2), STM.all())
+      const transaction = STM.all(STM.replicate(STM.succeed(12), 2))
       const result = yield* $(STM.commit(transaction))
       assert.deepStrictEqual(Array.from(result), [12, 12])
     }))

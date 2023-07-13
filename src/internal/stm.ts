@@ -1153,13 +1153,13 @@ export const replicate = dual<
 export const replicateSTM = dual<
   (n: number) => <R, E, A>(self: STM.STM<R, E, A>) => STM.STM<R, E, Array<A>>,
   <R, E, A>(self: STM.STM<R, E, A>, n: number) => STM.STM<R, E, Array<A>>
->(2, (self, n) => pipe(self, replicate(n), all()))
+>(2, (self, n) => all(replicate(self, n)))
 
 /** @internal */
 export const replicateSTMDiscard = dual<
   (n: number) => <R, E, A>(self: STM.STM<R, E, A>) => STM.STM<R, E, void>,
   <R, E, A>(self: STM.STM<R, E, A>, n: number) => STM.STM<R, E, void>
->(2, (self, n) => pipe(self, replicate(n), all({ discard: true })))
+>(2, (self, n) => all(replicate(self, n), { discard: true }))
 
 /** @internal */
 export const retryUntil = dual<
@@ -1214,45 +1214,29 @@ export const some = <R, E, A>(self: STM.STM<R, E, Option.Option<A>>): STM.STM<R,
     })
   })
 
-const allIsDataFirst = (args: IArguments) => {
-  if (args.length === 0) {
-    return false
-  } else if (args.length > 1) {
-    return true
-  } else if (Symbol.iterator in args[0]) {
-    return true
-  }
-
-  const obj: STM.All.Options = args[0]
-
-  return (
-    typeof obj.discard === "boolean"
-  ) === false
-}
-
 /* @internal */
-export const all = dual<
-  (options?: STM.All.Options) => (arg: Iterable<STM.All.STMAny> | Record<string, STM.All.STMAny>) => STM.All.STMAny,
-  (arg: Iterable<STM.All.STMAny> | Record<string, STM.All.STMAny>, options?: STM.All.Options) => STM.All.STMAny
->(allIsDataFirst, (input, options) => {
+export const all = ((
+  input: Iterable<STM.All.STMAny> | Record<string, STM.All.STMAny>,
+  options?: STM.All.Options
+): STM.STM<any, any, any> => {
   if (Symbol.iterator in input) {
     return forEach(input, identity, options as any)
   } else if (options?.discard) {
     return forEach(Object.values(input), identity, options as any)
   }
 
-  return pipe(
+  return core.map(
     forEach(
       Object.entries(input),
       ([_, e]) => core.map(e, (a) => [_, a] as const)
     ),
-    core.map((values) => {
+    (values) => {
       const res = {}
       for (const [k, v] of values) {
         ;(res as any)[k] = v
       }
       return res
-    })
+    }
   )
 }) as STM.All.Signature
 
