@@ -1,5 +1,11 @@
 # @effect/stm
 
+## 0.15.0
+
+### Minor Changes
+
+- [#96](https://github.com/Effect-TS/stm/pull/96) [`0457d9b`](https://github.com/Effect-TS/stm/commit/0457d9be89570c0f974388d26ec18d442655480a) Thanks [@tim-smart](https://github.com/tim-smart)! - api updates - object arguments, constants and general clean-up
+
 ## 0.14.0
 
 ### Minor Changes
