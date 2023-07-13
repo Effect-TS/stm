@@ -228,37 +228,18 @@ export declare namespace All {
       : { -readonly [K in keyof T]: [T[K]] extends [STM.Variance<infer _R, infer _E, infer A>] ? A : never }
   >
 
-  export type Options = {
-    readonly discard: boolean
-  }
+  export type Options = { readonly discard?: boolean }
   type IsDiscard<A> = [Extract<A, { readonly discard: true }>] extends [never] ? false : true
-
   type Narrow<A> = (A extends [] ? [] : never) | A
 
   export interface Signature {
-    <O extends Options>(
+    <Arg extends ReadonlyArray<STMAny> | Iterable<STMAny> | Record<string, STMAny>, O extends Options>(
+      arg: Narrow<Arg>,
       options?: O
-    ): <Arg extends ReadonlyArray<STMAny> | Iterable<STMAny> | Record<string, STMAny>>(
-      arg: Arg
-    ) => [Arg] extends [ReadonlyArray<STMAny>] ? ReturnTuple<Arg, IsDiscard<O>>
+    ): [Arg] extends [ReadonlyArray<STMAny>] ? ReturnTuple<Arg, IsDiscard<O>>
       : [Arg] extends [Iterable<STMAny>] ? ReturnIterable<Arg, IsDiscard<O>>
       : [Arg] extends [Record<string, STMAny>] ? ReturnObject<Arg, IsDiscard<O>>
       : never
-
-    <Arg extends ReadonlyArray<STMAny>, O extends Options>(
-      arg: Narrow<Arg>,
-      options?: O
-    ): ReturnTuple<Arg, IsDiscard<O>>
-
-    <Arg extends Iterable<STMAny>, O extends Options>(
-      arg: Arg,
-      options?: O
-    ): ReturnIterable<Arg, IsDiscard<O>>
-
-    <Arg extends Record<string, STMAny>, O extends Options>(
-      arg: Arg,
-      options?: O
-    ): ReturnObject<Arg, IsDiscard<O>>
   }
 }
 
