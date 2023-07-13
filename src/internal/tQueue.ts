@@ -94,44 +94,32 @@ class TQueueImpl<A> implements TQueue.TQueue<A> {
     return this.requestedCapacity
   }
 
-  size(): STM.STM<never, never, number> {
-    return core.withSTMRuntime((runtime) => {
-      const queue = tRef.unsafeGet(this.ref, runtime.journal)
-      if (queue === undefined) {
-        return STM.interruptAs(runtime.fiberId)
-      }
-      return core.succeed(queue.length)
-    })
-  }
+  size: STM.STM<never, never, number> = core.withSTMRuntime((runtime) => {
+    const queue = tRef.unsafeGet(this.ref, runtime.journal)
+    if (queue === undefined) {
+      return STM.interruptAs(runtime.fiberId)
+    }
+    return core.succeed(queue.length)
+  })
 
-  isFull(): STM.STM<never, never, boolean> {
-    return core.map(this.size(), (size) => size === this.requestedCapacity)
-  }
+  isFull: STM.STM<never, never, boolean> = core.map(this.size, (size) => size === this.requestedCapacity)
 
-  isEmpty(): STM.STM<never, never, boolean> {
-    return core.map(this.size(), (size) => size === 0)
-  }
+  isEmpty: STM.STM<never, never, boolean> = core.map(this.size, (size) => size === 0)
 
-  shutdown(): STM.STM<never, never, void> {
-    return core.withSTMRuntime<never, never, void>((runtime) => {
-      tRef.unsafeSet(this.ref, void 0, runtime.journal)
-      return stm.unit
-    })
-  }
+  shutdown: STM.STM<never, never, void> = core.withSTMRuntime<never, never, void>((runtime) => {
+    tRef.unsafeSet(this.ref, void 0, runtime.journal)
+    return stm.unit
+  })
 
-  isShutdown(): STM.STM<never, never, boolean> {
-    return core.effect<never, boolean>((journal) => {
-      const queue = tRef.unsafeGet(this.ref, journal)
-      return queue === undefined
-    })
-  }
+  isShutdown: STM.STM<never, never, boolean> = core.effect<never, boolean>((journal) => {
+    const queue = tRef.unsafeGet(this.ref, journal)
+    return queue === undefined
+  })
 
-  awaitShutdown(): STM.STM<never, never, void> {
-    return core.flatMap(
-      this.isShutdown(),
-      (isShutdown) => isShutdown ? stm.unit : core.retry
-    )
-  }
+  awaitShutdown: STM.STM<never, never, void> = core.flatMap(
+    this.isShutdown,
+    (isShutdown) => isShutdown ? stm.unit : core.retry
+  )
 
   offer(value: A): STM.STM<never, never, boolean> {
     return core.withSTMRuntime((runtime) => {
@@ -195,55 +183,47 @@ class TQueueImpl<A> implements TQueue.TQueue<A> {
     })
   }
 
-  peek(): STM.STM<never, never, A> {
-    return core.withSTMRuntime((runtime) => {
-      const queue = tRef.unsafeGet(this.ref, runtime.journal)
-      if (queue === undefined) {
-        return core.interruptAs(runtime.fiberId)
-      }
-      const head = queue[0]
-      if (head === undefined) {
-        return core.retry
-      }
-      return core.succeed(head)
-    })
-  }
+  peek: STM.STM<never, never, A> = core.withSTMRuntime((runtime) => {
+    const queue = tRef.unsafeGet(this.ref, runtime.journal)
+    if (queue === undefined) {
+      return core.interruptAs(runtime.fiberId)
+    }
+    const head = queue[0]
+    if (head === undefined) {
+      return core.retry
+    }
+    return core.succeed(head)
+  })
 
-  peekOption(): STM.STM<never, never, Option.Option<A>> {
-    return core.withSTMRuntime((runtime) => {
-      const queue = tRef.unsafeGet(this.ref, runtime.journal)
-      if (queue === undefined) {
-        return core.interruptAs(runtime.fiberId)
-      }
-      return core.succeed(Option.fromNullable(queue[0]))
-    })
-  }
+  peekOption: STM.STM<never, never, Option.Option<A>> = core.withSTMRuntime((runtime) => {
+    const queue = tRef.unsafeGet(this.ref, runtime.journal)
+    if (queue === undefined) {
+      return core.interruptAs(runtime.fiberId)
+    }
+    return core.succeed(Option.fromNullable(queue[0]))
+  })
 
-  take(): STM.STM<never, never, A> {
-    return core.withSTMRuntime((runtime) => {
-      const queue = tRef.unsafeGet(this.ref, runtime.journal)
-      if (queue === undefined) {
-        return core.interruptAs(runtime.fiberId)
-      }
-      const dequeued = queue.shift()
-      if (dequeued === undefined) {
-        return core.retry
-      }
-      tRef.unsafeSet(this.ref, queue, runtime.journal)
-      return core.succeed(dequeued)
-    })
-  }
+  take: STM.STM<never, never, A> = core.withSTMRuntime((runtime) => {
+    const queue = tRef.unsafeGet(this.ref, runtime.journal)
+    if (queue === undefined) {
+      return core.interruptAs(runtime.fiberId)
+    }
+    const dequeued = queue.shift()
+    if (dequeued === undefined) {
+      return core.retry
+    }
+    tRef.unsafeSet(this.ref, queue, runtime.journal)
+    return core.succeed(dequeued)
+  })
 
-  takeAll(): STM.STM<never, never, Array<A>> {
-    return core.withSTMRuntime((runtime) => {
-      const queue = tRef.unsafeGet(this.ref, runtime.journal)
-      if (queue === undefined) {
-        return core.interruptAs(runtime.fiberId)
-      }
-      tRef.unsafeSet(this.ref, [], runtime.journal)
-      return core.succeed(queue)
-    })
-  }
+  takeAll: STM.STM<never, never, Array<A>> = core.withSTMRuntime((runtime) => {
+    const queue = tRef.unsafeGet(this.ref, runtime.journal)
+    if (queue === undefined) {
+      return core.interruptAs(runtime.fiberId)
+    }
+    tRef.unsafeSet(this.ref, [], runtime.journal)
+    return core.succeed(queue)
+  })
 
   takeUpTo(max: number): STM.STM<never, never, Array<A>> {
     return core.withSTMRuntime((runtime) => {
@@ -275,7 +255,7 @@ export const isTDequeue = (u: unknown): u is TQueue.TDequeue<unknown> => {
 
 /** @internal */
 export const awaitShutdown = <A>(self: TQueue.TDequeue<A> | TQueue.TEnqueue<A>): STM.STM<never, never, void> =>
-  self.awaitShutdown()
+  self.awaitShutdown
 
 /** @internal */
 export const bounded = <A>(requestedCapacity: number): STM.STM<never, never, TQueue.TQueue<A>> =>
@@ -292,15 +272,14 @@ export const dropping = <A>(requestedCapacity: number): STM.STM<never, never, TQ
 
 /** @internal */
 export const isEmpty = <A>(self: TQueue.TDequeue<A> | TQueue.TEnqueue<A>): STM.STM<never, never, boolean> =>
-  self.isEmpty()
+  self.isEmpty
 
 /** @internal */
-export const isFull = <A>(self: TQueue.TDequeue<A> | TQueue.TEnqueue<A>): STM.STM<never, never, boolean> =>
-  self.isFull()
+export const isFull = <A>(self: TQueue.TDequeue<A> | TQueue.TEnqueue<A>): STM.STM<never, never, boolean> => self.isFull
 
 /** @internal */
 export const isShutdown = <A>(self: TQueue.TDequeue<A> | TQueue.TEnqueue<A>): STM.STM<never, never, boolean> =>
-  self.isShutdown()
+  self.isShutdown
 
 /** @internal */
 export const offer = dual<
@@ -315,10 +294,10 @@ export const offerAll = dual<
 >(2, (self, iterable) => self.offerAll(iterable))
 
 /** @internal */
-export const peek = <A>(self: TQueue.TDequeue<A>): STM.STM<never, never, A> => self.peek()
+export const peek = <A>(self: TQueue.TDequeue<A>): STM.STM<never, never, A> => self.peek
 
 /** @internal */
-export const peekOption = <A>(self: TQueue.TDequeue<A>): STM.STM<never, never, Option.Option<A>> => self.peekOption()
+export const peekOption = <A>(self: TQueue.TDequeue<A>): STM.STM<never, never, Option.Option<A>> => self.peekOption
 
 /** @internal */
 export const poll = <A>(self: TQueue.TDequeue<A>): STM.STM<never, never, Option.Option<A>> =>
@@ -332,26 +311,25 @@ export const seek = dual<
 
 const seekLoop = <A>(self: TQueue.TDequeue<A>, predicate: Predicate<A>): STM.STM<never, never, A> =>
   core.flatMap(
-    self.take(),
+    self.take,
     (a) => predicate(a) ? core.succeed(a) : seekLoop(self, predicate)
   )
 
 /** @internal */
-export const shutdown = <A>(self: TQueue.TDequeue<A> | TQueue.TEnqueue<A>): STM.STM<never, never, void> =>
-  self.shutdown()
+export const shutdown = <A>(self: TQueue.TDequeue<A> | TQueue.TEnqueue<A>): STM.STM<never, never, void> => self.shutdown
 
 /** @internal */
-export const size = <A>(self: TQueue.TDequeue<A> | TQueue.TEnqueue<A>): STM.STM<never, never, number> => self.size()
+export const size = <A>(self: TQueue.TDequeue<A> | TQueue.TEnqueue<A>): STM.STM<never, never, number> => self.size
 
 /** @internal */
 export const sliding = <A>(requestedCapacity: number): STM.STM<never, never, TQueue.TQueue<A>> =>
   makeQueue<A>(requestedCapacity, Sliding)
 
 /** @internal */
-export const take = <A>(self: TQueue.TDequeue<A>): STM.STM<never, never, A> => self.take()
+export const take = <A>(self: TQueue.TDequeue<A>): STM.STM<never, never, A> => self.take
 
 /** @internal */
-export const takeAll = <A>(self: TQueue.TDequeue<A>): STM.STM<never, never, Array<A>> => self.takeAll()
+export const takeAll = <A>(self: TQueue.TDequeue<A>): STM.STM<never, never, Array<A>> => self.takeAll
 
 /** @internal */
 export const takeBetween = dual<
@@ -375,13 +353,13 @@ export const takeBetween = dual<
             const remaining = min - taken.length
             if (remaining === 1) {
               return pipe(
-                self.take(),
+                self.take,
                 core.map((a) => pipe(acc, Chunk.appendAll(Chunk.unsafeFromArray(taken)), Chunk.append(a)))
               )
             }
             if (remaining > 1) {
               return pipe(
-                self.take(),
+                self.take,
                 core.flatMap((a) =>
                   takeRemainder(
                     remaining - 1,

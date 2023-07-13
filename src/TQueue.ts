@@ -73,25 +73,25 @@ export interface TDequeue<A> extends TQueue.TDequeueVariance<A>, BaseTQueue {
    * Views the next element in the queue without removing it, retrying if the
    * queue is empty.
    */
-  peek(): STM.STM<never, never, A>
+  readonly peek: STM.STM<never, never, A>
 
   /**
    * Views the next element in the queue without removing it, returning `None`
    * if the queue is empty.
    */
-  peekOption(): STM.STM<never, never, Option.Option<A>>
+  readonly peekOption: STM.STM<never, never, Option.Option<A>>
 
   /**
    * Takes the oldest value in the queue. If the queue is empty, this will return
    * a computation that resumes when an item has been added to the queue.
    */
-  take(): STM.STM<never, never, A>
+  readonly take: STM.STM<never, never, A>
 
   /**
    * Takes all the values in the queue and returns the values. If the queue is
    * empty returns an empty collection.
    */
-  takeAll(): STM.STM<never, never, Array<A>>
+  readonly takeAll: STM.STM<never, never, Array<A>>
 
   /**
    * Takes up to max number of values from the queue.
@@ -116,36 +116,36 @@ export interface BaseTQueue {
    * in the queue. This may be negative if fibers are suspended waiting for
    * elements to be added to the queue.
    */
-  size(): STM.STM<never, never, number>
+  readonly size: STM.STM<never, never, number>
 
   /**
    * Returns `true` if the `TQueue` contains at least one element, `false`
    * otherwise.
    */
-  isFull(): STM.STM<never, never, boolean>
+  readonly isFull: STM.STM<never, never, boolean>
 
   /**
    * Returns `true` if the `TQueue` contains zero elements, `false` otherwise.
    */
-  isEmpty(): STM.STM<never, never, boolean>
+  readonly isEmpty: STM.STM<never, never, boolean>
 
   /**
    * Interrupts any fibers that are suspended on `offer` or `take`. Future calls
    * to `offer*` and `take*` will be interrupted immediately.
    */
-  shutdown(): STM.STM<never, never, void>
+  readonly shutdown: STM.STM<never, never, void>
 
   /**
    * Returns `true` if `shutdown` has been called, otherwise returns `false`.
    */
-  isShutdown(): STM.STM<never, never, boolean>
+  readonly isShutdown: STM.STM<never, never, boolean>
 
   /**
    * Waits until the queue is shutdown. The `STM` returned by this method will
    * not resume until the queue has been shutdown. If the queue is already
    * shutdown, the `STM` will resume right away.
    */
-  awaitShutdown(): STM.STM<never, never, void>
+  readonly awaitShutdown: STM.STM<never, never, void>
 }
 
 /**
