@@ -19,12 +19,12 @@ describe.concurrent("Foreign", () => {
   it.effect("Unify", () =>
     Effect.provideSomeLayer(
       STM.gen(function*($) {
-        const unifiedSTM = unify((yield* $(TRandom.nextInt())) > 0 ? STM.succeed(0) : STM.fail(1))
-        const unifiedEither = unify((yield* $(TRandom.nextInt())) > 0 ? Either.right(0) : Either.left(1))
+        const unifiedSTM = unify((yield* $(TRandom.nextInt)) > 0 ? STM.succeed(0) : STM.fail(1))
+        const unifiedEither = unify((yield* $(TRandom.nextInt)) > 0 ? Either.right(0) : Either.left(1))
         assert.deepEqual(yield* $(unifiedSTM), 0)
         assert.deepEqual(yield* $(unifiedEither), 0)
       }),
-      TRandom.live()
+      TRandom.live
     ))
   it.effect("Either", () =>
     STM.gen(function*($) {

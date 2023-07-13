@@ -49,7 +49,7 @@ Makes a new reentrant read/write lock.
 **Signature**
 
 ```ts
-export declare const make: () => STM.STM<never, never, TReentrantLock>
+export declare const make: STM.STM<never, never, TReentrantLock>
 ```
 
 Added in v1.0.0

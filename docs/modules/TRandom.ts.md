@@ -51,7 +51,7 @@ The "live" `TRandom` service wrapped into a `Layer`.
 **Signature**
 
 ```ts
-export declare const live: () => Layer.Layer<never, never, TRandom>
+export declare const live: Layer.Layer<never, never, TRandom>
 ```
 
 Added in v1.0.0
@@ -68,15 +68,15 @@ export interface TRandom {
   /**
    * Returns the next numeric value from the pseudo-random number generator.
    */
-  next(): STM.STM<never, never, number>
+  readonly next: STM.STM<never, never, number>
   /**
    * Returns the next boolean value from the pseudo-random number generator.
    */
-  nextBoolean(): STM.STM<never, never, boolean>
+  readonly nextBoolean: STM.STM<never, never, boolean>
   /**
    * Returns the next integer value from the pseudo-random number generator.
    */
-  nextInt(): STM.STM<never, never, number>
+  readonly nextInt: STM.STM<never, never, number>
   /**
    * Returns the next numeric value in the specified range from the
    * pseudo-random number generator.
@@ -105,7 +105,7 @@ Returns the next number from the pseudo-random number generator.
 **Signature**
 
 ```ts
-export declare const next: () => STM.STM<TRandom, never, number>
+export declare const next: STM.STM<TRandom, never, number>
 ```
 
 Added in v1.0.0
@@ -117,7 +117,7 @@ Returns the next boolean value from the pseudo-random number generator.
 **Signature**
 
 ```ts
-export declare const nextBoolean: () => STM.STM<TRandom, never, boolean>
+export declare const nextBoolean: STM.STM<TRandom, never, boolean>
 ```
 
 Added in v1.0.0
@@ -129,7 +129,7 @@ Returns the next integer from the pseudo-random number generator.
 **Signature**
 
 ```ts
-export declare const nextInt: () => STM.STM<TRandom, never, number>
+export declare const nextInt: STM.STM<TRandom, never, number>
 ```
 
 Added in v1.0.0

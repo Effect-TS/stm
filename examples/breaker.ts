@@ -58,7 +58,7 @@ export const makeCircuitBreaker = (opts?: CircuitBreakerOptions) =>
       const state = yield* $(TRef.get(stateRef))
 
       if (state !== "open") {
-        return yield* $(STM.retry())
+        return yield* $(STM.retry)
       }
 
       return state

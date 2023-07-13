@@ -123,14 +123,13 @@ export const findSTM = dual<
 ) =>
   reduceWithIndexSTM(self, Option.none<A>(), (acc, value, key) =>
     Option.isNone(acc) ?
-      core.matchSTM(
-        f(key, value),
-        Option.match({
-          onNone: stm.succeedNone,
+      core.matchSTM(f(key, value), {
+        onFailure: Option.match({
+          onNone: () => stm.succeedNone,
           onSome: core.fail
         }),
-        stm.succeedSome
-      ) :
+        onSuccess: stm.succeedSome
+      }) :
       STM.succeed(acc)))
 
 /** @internal */
@@ -166,14 +165,13 @@ export const findAllSTM = dual<
 ) =>
   core.map(
     reduceWithIndexSTM(self, Chunk.empty<A>(), (acc, value, key) =>
-      core.matchSTM(
-        pf(key, value),
-        Option.match({
+      core.matchSTM(pf(key, value), {
+        onFailure: Option.match({
           onNone: () => core.succeed(acc),
           onSome: core.fail
         }),
-        (a) => core.succeed(Chunk.append(acc, a))
-      )),
+        onSuccess: (a) => core.succeed(Chunk.append(acc, a))
+      })),
     (a) => Array.from(a)
   ))
 
@@ -515,7 +513,7 @@ export const setIfAbsent = dual<
     get(self, key),
     Option.match({
       onNone: () => set(self, key, value),
-      onSome: stm.unit
+      onSome: () => stm.unit
     })
   ))
 

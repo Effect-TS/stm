@@ -52,31 +52,31 @@ class THubImpl<A> implements THub.THub<A> {
     readonly subscribers: TRef.TRef<HashSet.HashSet<TRef.TRef<TRef.TRef<Node<A>> | undefined>>>
   ) {}
 
-  awaitShutdown(): STM.STM<never, never, void> {
-    return core.flatMap(
-      this.isShutdown(),
-      (isShutdown) => isShutdown ? stm.unit() : core.retry()
-    )
-  }
+  isShutdown: STM.STM<never, never, boolean> = core.effect<never, boolean>((journal) => {
+    const currentPublisherTail = tRef.unsafeGet(this.publisherTail, journal)
+    return currentPublisherTail === undefined
+  })
+
+  awaitShutdown: STM.STM<never, never, void> = core.flatMap(
+    this.isShutdown,
+    (isShutdown) => isShutdown ? stm.unit : core.retry
+  )
 
   capacity(): number {
     return this.requestedCapacity
   }
 
-  isEmpty(): STM.STM<never, never, boolean> {
-    return core.map(this.size(), (size) => size === 0)
-  }
+  size: STM.STM<never, never, number> = core.withSTMRuntime((runtime) => {
+    const currentPublisherTail = tRef.unsafeGet(this.publisherTail, runtime.journal)
+    if (currentPublisherTail === undefined) {
+      return core.interruptAs(runtime.fiberId)
+    }
+    return core.succeed(tRef.unsafeGet(this.hubSize, runtime.journal))
+  })
 
-  isFull(): STM.STM<never, never, boolean> {
-    return core.map(this.size(), (size) => size === this.capacity())
-  }
+  isEmpty: STM.STM<never, never, boolean> = core.map(this.size, (size) => size === 0)
 
-  isShutdown(): STM.STM<never, never, boolean> {
-    return core.effect<never, boolean>((journal) => {
-      const currentPublisherTail = tRef.unsafeGet(this.publisherTail, journal)
-      return currentPublisherTail === undefined
-    })
-  }
+  isFull: STM.STM<never, never, boolean> = core.map(this.size, (size) => size === this.capacity())
 
   offer(value: A): STM.STM<never, never, boolean> {
     return core.withSTMRuntime((runtime) => {
@@ -103,7 +103,7 @@ class THubImpl<A> implements THub.THub<A> {
       }
       switch (this.strategy._tag) {
         case OpCodes.OP_BACKPRESSURE_STRATEGY: {
-          return core.retry()
+          return core.retry
         }
         case OpCodes.OP_DROPPING_STRATEGY: {
           return core.succeed(false)
@@ -118,7 +118,7 @@ class THubImpl<A> implements THub.THub<A> {
             while (loop) {
               const node = tRef.unsafeGet(currentPublisherHead, runtime.journal)
               if (node === undefined) {
-                return core.retry()
+                return core.retry
               }
               const head = node.head
               const tail = node.tail
@@ -153,29 +153,17 @@ class THubImpl<A> implements THub.THub<A> {
     )
   }
 
-  size(): STM.STM<never, never, number> {
-    return core.withSTMRuntime((runtime) => {
-      const currentPublisherTail = tRef.unsafeGet(this.publisherTail, runtime.journal)
-      if (currentPublisherTail === undefined) {
-        return core.interruptAs(runtime.fiberId)
-      }
-      return core.succeed(tRef.unsafeGet(this.hubSize, runtime.journal))
-    })
-  }
-
-  shutdown(): STM.STM<never, never, void> {
-    return core.effect<never, void>((journal) => {
-      const currentPublisherTail = tRef.unsafeGet(this.publisherTail, journal)
-      if (currentPublisherTail !== undefined) {
-        tRef.unsafeSet<TRef.TRef<Node<A> | undefined> | undefined>(this.publisherTail, void 0, journal)
-        const currentSubscribers = tRef.unsafeGet(this.subscribers, journal)
-        HashSet.forEach(currentSubscribers, (subscriber) => {
-          tRef.unsafeSet<TRef.TRef<Node<A>> | undefined>(subscriber, void 0, journal)
-        })
-        tRef.unsafeSet(this.subscribers, HashSet.empty<TRef.TRef<TRef.TRef<Node<A>> | undefined>>(), journal)
-      }
-    })
-  }
+  shutdown: STM.STM<never, never, void> = core.effect<never, void>((journal) => {
+    const currentPublisherTail = tRef.unsafeGet(this.publisherTail, journal)
+    if (currentPublisherTail !== undefined) {
+      tRef.unsafeSet<TRef.TRef<Node<A> | undefined> | undefined>(this.publisherTail, void 0, journal)
+      const currentSubscribers = tRef.unsafeGet(this.subscribers, journal)
+      HashSet.forEach(currentSubscribers, (subscriber) => {
+        tRef.unsafeSet<TRef.TRef<Node<A>> | undefined>(subscriber, void 0, journal)
+      })
+      tRef.unsafeSet(this.subscribers, HashSet.empty<TRef.TRef<TRef.TRef<Node<A>> | undefined>>(), journal)
+    }
+  })
 }
 
 /** @internal */
@@ -191,202 +179,181 @@ class THubSubscriptionImpl<A> implements TQueue.TDequeue<A> {
     readonly subscribers: TRef.TRef<HashSet.HashSet<TRef.TRef<TRef.TRef<Node<A>> | undefined>>>
   ) {}
 
-  awaitShutdown(): STM.STM<never, never, void> {
-    return core.flatMap(
-      this.isShutdown(),
-      (isShutdown) => isShutdown ? stm.unit() : core.retry()
-    )
-  }
+  isShutdown: STM.STM<never, never, boolean> = core.effect<never, boolean>((journal) => {
+    const currentSubscriberHead = tRef.unsafeGet(this.subscriberHead, journal)
+    return currentSubscriberHead === undefined
+  })
+
+  awaitShutdown: STM.STM<never, never, void> = core.flatMap(
+    this.isShutdown,
+    (isShutdown) => isShutdown ? stm.unit : core.retry
+  )
 
   capacity(): number {
     return this.requestedCapacity
   }
-
-  isEmpty(): STM.STM<never, never, boolean> {
-    return core.map(this.size(), (size) => size === 0)
-  }
-
-  isFull(): STM.STM<never, never, boolean> {
-    return core.map(this.size(), (size) => size === this.capacity())
-  }
-
-  isShutdown(): STM.STM<never, never, boolean> {
-    return core.effect<never, boolean>((journal) => {
-      const currentSubscriberHead = tRef.unsafeGet(this.subscriberHead, journal)
-      return currentSubscriberHead === undefined
-    })
-  }
-
-  peek(): STM.STM<never, never, A> {
-    return core.withSTMRuntime((runtime) => {
-      let currentSubscriberHead = tRef.unsafeGet(this.subscriberHead, runtime.journal)
-      if (currentSubscriberHead === undefined) {
-        return core.interruptAs(runtime.fiberId)
-      }
-      let value: A | undefined = undefined
-      let loop = true
-      while (loop) {
-        const node = tRef.unsafeGet(currentSubscriberHead, runtime.journal)
-        if (node === undefined) {
-          return core.retry()
-        }
+  size: STM.STM<never, never, number> = core.withSTMRuntime((runtime) => {
+    let currentSubscriberHead = tRef.unsafeGet(this.subscriberHead, runtime.journal)
+    if (currentSubscriberHead === undefined) {
+      return core.interruptAs(runtime.fiberId)
+    }
+    let loop = true
+    let size = 0
+    while (loop) {
+      const node = tRef.unsafeGet(currentSubscriberHead, runtime.journal)
+      if (node === undefined) {
+        loop = false
+      } else {
         const head = node.head
         const tail: TRef.TRef<Node<A | undefined> | undefined> = node.tail
         if (head !== undefined) {
-          value = head
+          size = size + 1
+          if (size >= Number.MAX_SAFE_INTEGER) {
+            loop = false
+          }
+        }
+        currentSubscriberHead = tail
+      }
+    }
+    return core.succeed(size)
+  })
+
+  isEmpty: STM.STM<never, never, boolean> = core.map(this.size, (size) => size === 0)
+
+  isFull: STM.STM<never, never, boolean> = core.map(this.size, (size) => size === this.capacity())
+
+  peek: STM.STM<never, never, A> = core.withSTMRuntime((runtime) => {
+    let currentSubscriberHead = tRef.unsafeGet(this.subscriberHead, runtime.journal)
+    if (currentSubscriberHead === undefined) {
+      return core.interruptAs(runtime.fiberId)
+    }
+    let value: A | undefined = undefined
+    let loop = true
+    while (loop) {
+      const node = tRef.unsafeGet(currentSubscriberHead, runtime.journal)
+      if (node === undefined) {
+        return core.retry
+      }
+      const head = node.head
+      const tail: TRef.TRef<Node<A | undefined> | undefined> = node.tail
+      if (head !== undefined) {
+        value = head
+        loop = false
+      } else {
+        currentSubscriberHead = tail
+      }
+    }
+    return core.succeed(value!)
+  })
+
+  peekOption: STM.STM<never, never, Option.Option<A>> = core.withSTMRuntime((runtime) => {
+    let currentSubscriberHead = tRef.unsafeGet(this.subscriberHead, runtime.journal)
+    if (currentSubscriberHead === undefined) {
+      return core.interruptAs(runtime.fiberId)
+    }
+    let value: Option.Option<A> = Option.none()
+    let loop = true
+    while (loop) {
+      const node = tRef.unsafeGet(currentSubscriberHead, runtime.journal)
+      if (node === undefined) {
+        value = Option.none()
+        loop = false
+      } else {
+        const head = node.head
+        const tail: TRef.TRef<Node<A | undefined> | undefined> = node.tail
+        if (head !== undefined) {
+          value = Option.some(head)
           loop = false
         } else {
           currentSubscriberHead = tail
         }
       }
-      return core.succeed(value!)
-    })
-  }
+    }
+    return core.succeed(value)
+  })
 
-  peekOption(): STM.STM<never, never, Option.Option<A>> {
-    return core.withSTMRuntime((runtime) => {
-      let currentSubscriberHead = tRef.unsafeGet(this.subscriberHead, runtime.journal)
-      if (currentSubscriberHead === undefined) {
-        return core.interruptAs(runtime.fiberId)
-      }
-      let value: Option.Option<A> = Option.none()
+  shutdown: STM.STM<never, never, void> = core.effect<never, void>((journal) => {
+    let currentSubscriberHead = tRef.unsafeGet(this.subscriberHead, journal)
+    if (currentSubscriberHead !== undefined) {
+      tRef.unsafeSet<TRef.TRef<Node<A | undefined> | undefined> | undefined>(this.subscriberHead, void 0, journal)
       let loop = true
       while (loop) {
-        const node = tRef.unsafeGet(currentSubscriberHead, runtime.journal)
-        if (node === undefined) {
-          value = Option.none()
-          loop = false
-        } else {
-          const head = node.head
-          const tail: TRef.TRef<Node<A | undefined> | undefined> = node.tail
-          if (head !== undefined) {
-            value = Option.some(head)
-            loop = false
-          } else {
-            currentSubscriberHead = tail
-          }
-        }
-      }
-      return core.succeed(value)
-    })
-  }
-
-  size(): STM.STM<never, never, number> {
-    return core.withSTMRuntime((runtime) => {
-      let currentSubscriberHead = tRef.unsafeGet(this.subscriberHead, runtime.journal)
-      if (currentSubscriberHead === undefined) {
-        return core.interruptAs(runtime.fiberId)
-      }
-      let loop = true
-      let size = 0
-      while (loop) {
-        const node = tRef.unsafeGet(currentSubscriberHead, runtime.journal)
+        const node = tRef.unsafeGet(currentSubscriberHead, journal)
         if (node === undefined) {
           loop = false
         } else {
           const head = node.head
           const tail: TRef.TRef<Node<A | undefined> | undefined> = node.tail
           if (head !== undefined) {
-            size = size + 1
-            if (size >= Number.MAX_SAFE_INTEGER) {
-              loop = false
+            const subscribers = node.subscribers
+            if (subscribers === 1) {
+              const size = tRef.unsafeGet(this.hubSize, journal)
+              const updatedNode = makeNode(undefined, 0, tail)
+              tRef.unsafeSet<Node<A | undefined> | undefined>(currentSubscriberHead, updatedNode, journal)
+              tRef.unsafeSet(this.publisherHead, tail, journal)
+              tRef.unsafeSet(this.hubSize, size - 1, journal)
+            } else {
+              const updatedNode = makeNode(head, subscribers - 1, tail)
+              tRef.unsafeSet<Node<A | undefined> | undefined>(currentSubscriberHead, updatedNode, journal)
             }
           }
           currentSubscriberHead = tail
         }
       }
-      return core.succeed(size)
-    })
-  }
+      const currentSubscriberCount = tRef.unsafeGet(this.subscriberCount, journal)
+      tRef.unsafeSet(this.subscriberCount, currentSubscriberCount - 1, journal)
+      tRef.unsafeSet(
+        this.subscribers,
+        HashSet.remove(
+          tRef.unsafeGet(this.subscribers, journal),
+          this.subscriberHead
+        ),
+        journal
+      )
+    }
+  })
 
-  shutdown(): STM.STM<never, never, void> {
-    return core.effect<never, void>((journal) => {
-      let currentSubscriberHead = tRef.unsafeGet(this.subscriberHead, journal)
-      if (currentSubscriberHead !== undefined) {
-        tRef.unsafeSet<TRef.TRef<Node<A | undefined> | undefined> | undefined>(this.subscriberHead, void 0, journal)
-        let loop = true
-        while (loop) {
-          const node = tRef.unsafeGet(currentSubscriberHead, journal)
-          if (node === undefined) {
-            loop = false
-          } else {
-            const head = node.head
-            const tail: TRef.TRef<Node<A | undefined> | undefined> = node.tail
-            if (head !== undefined) {
-              const subscribers = node.subscribers
-              if (subscribers === 1) {
-                const size = tRef.unsafeGet(this.hubSize, journal)
-                const updatedNode = makeNode(undefined, 0, tail)
-                tRef.unsafeSet<Node<A | undefined> | undefined>(currentSubscriberHead, updatedNode, journal)
-                tRef.unsafeSet(this.publisherHead, tail, journal)
-                tRef.unsafeSet(this.hubSize, size - 1, journal)
-              } else {
-                const updatedNode = makeNode(head, subscribers - 1, tail)
-                tRef.unsafeSet<Node<A | undefined> | undefined>(currentSubscriberHead, updatedNode, journal)
-              }
-            }
-            currentSubscriberHead = tail
-          }
+  take: STM.STM<never, never, A> = core.withSTMRuntime((runtime) => {
+    let currentSubscriberHead = tRef.unsafeGet(this.subscriberHead, runtime.journal)
+    if (currentSubscriberHead === undefined) {
+      return core.interruptAs(runtime.fiberId)
+    }
+    let value: A | undefined = undefined
+    let loop = true
+    while (loop) {
+      const node = tRef.unsafeGet(currentSubscriberHead, runtime.journal)
+      if (node === undefined) {
+        return core.retry
+      }
+      const head = node.head
+      const tail: TRef.TRef<Node<A | undefined> | undefined> = node.tail
+      if (head !== undefined) {
+        const subscribers = node.subscribers
+        if (subscribers === 1) {
+          const size = tRef.unsafeGet(this.hubSize, runtime.journal)
+          const updatedNode = makeNode(void 0, 0, tail)
+          tRef.unsafeSet<Node<A | undefined> | undefined>(currentSubscriberHead, updatedNode, runtime.journal)
+          tRef.unsafeSet(this.publisherHead, tail, runtime.journal)
+          tRef.unsafeSet(this.hubSize, size - 1, runtime.journal)
+        } else {
+          const updatedNode = makeNode(head, subscribers - 1, tail)
+          tRef.unsafeSet<Node<A | undefined> | undefined>(currentSubscriberHead, updatedNode, runtime.journal)
         }
-        const currentSubscriberCount = tRef.unsafeGet(this.subscriberCount, journal)
-        tRef.unsafeSet(this.subscriberCount, currentSubscriberCount - 1, journal)
-        tRef.unsafeSet(
-          this.subscribers,
-          HashSet.remove(
-            tRef.unsafeGet(this.subscribers, journal),
-            this.subscriberHead
-          ),
-          journal
+        tRef.unsafeSet<TRef.TRef<Node<A | undefined> | undefined> | undefined>(
+          this.subscriberHead,
+          tail,
+          runtime.journal
         )
+        value = head
+        loop = false
+      } else {
+        currentSubscriberHead = tail
       }
-    })
-  }
+    }
+    return core.succeed(value!)
+  })
 
-  take(): STM.STM<never, never, A> {
-    return core.withSTMRuntime((runtime) => {
-      let currentSubscriberHead = tRef.unsafeGet(this.subscriberHead, runtime.journal)
-      if (currentSubscriberHead === undefined) {
-        return core.interruptAs(runtime.fiberId)
-      }
-      let value: A | undefined = undefined
-      let loop = true
-      while (loop) {
-        const node = tRef.unsafeGet(currentSubscriberHead, runtime.journal)
-        if (node === undefined) {
-          return core.retry()
-        }
-        const head = node.head
-        const tail: TRef.TRef<Node<A | undefined> | undefined> = node.tail
-        if (head !== undefined) {
-          const subscribers = node.subscribers
-          if (subscribers === 1) {
-            const size = tRef.unsafeGet(this.hubSize, runtime.journal)
-            const updatedNode = makeNode(void 0, 0, tail)
-            tRef.unsafeSet<Node<A | undefined> | undefined>(currentSubscriberHead, updatedNode, runtime.journal)
-            tRef.unsafeSet(this.publisherHead, tail, runtime.journal)
-            tRef.unsafeSet(this.hubSize, size - 1, runtime.journal)
-          } else {
-            const updatedNode = makeNode(head, subscribers - 1, tail)
-            tRef.unsafeSet<Node<A | undefined> | undefined>(currentSubscriberHead, updatedNode, runtime.journal)
-          }
-          tRef.unsafeSet<TRef.TRef<Node<A | undefined> | undefined> | undefined>(
-            this.subscriberHead,
-            tail,
-            runtime.journal
-          )
-          value = head
-          loop = false
-        } else {
-          currentSubscriberHead = tail
-        }
-      }
-      return core.succeed(value!)
-    })
-  }
-
-  takeAll(): STM.STM<never, never, Array<A>> {
-    return this.takeUpTo(Number.POSITIVE_INFINITY)
-  }
+  takeAll: STM.STM<never, never, Array<A>> = this.takeUpTo(Number.POSITIVE_INFINITY)
 
   takeUpTo(max: number): STM.STM<never, never, Array<A>> {
     return core.withSTMRuntime((runtime) => {
@@ -437,18 +404,18 @@ const makeHub = <A>(
   strategy: tQueue.TQueueStrategy
 ): STM.STM<never, never, THub.THub<A>> =>
   pipe(
-    stm.all(
+    stm.all([
       tRef.make<Node<A> | undefined>(void 0),
       tRef.make(0)
-    ),
+    ]),
     core.flatMap(([empty, hubSize]) =>
       pipe(
-        stm.all(
+        stm.all([
           tRef.make(empty),
           tRef.make(empty),
           tRef.make(0),
           tRef.make(HashSet.empty())
-        ),
+        ]),
         core.map(([publisherHead, publisherTail, subscriberCount, subscribers]) =>
           new THubImpl(
             hubSize,
@@ -476,11 +443,11 @@ const makeSubscription = <A>(
     tRef.get(publisherTail),
     core.flatMap((currentPublisherTail) =>
       pipe(
-        stm.all(
+        stm.all([
           tRef.make(currentPublisherTail),
           tRef.get(subscriberCount),
           tRef.get(subscribers)
-        ),
+        ]),
         stm.tap(([_, currentSubscriberCount]) =>
           pipe(
             subscriberCount,
@@ -508,7 +475,7 @@ const makeSubscription = <A>(
   )
 
 /** @internal */
-export const awaitShutdown = <A>(self: THub.THub<A>): STM.STM<never, never, void> => self.awaitShutdown()
+export const awaitShutdown = <A>(self: THub.THub<A>): STM.STM<never, never, void> => self.awaitShutdown
 
 /** @internal */
 export const bounded = <A>(requestedCapacity: number): STM.STM<never, never, THub.THub<A>> =>
@@ -522,13 +489,13 @@ export const dropping = <A>(requestedCapacity: number): STM.STM<never, never, TH
   makeHub<A>(requestedCapacity, tQueue.Dropping)
 
 /** @internal */
-export const isEmpty = <A>(self: THub.THub<A>): STM.STM<never, never, boolean> => self.isEmpty()
+export const isEmpty = <A>(self: THub.THub<A>): STM.STM<never, never, boolean> => self.isEmpty
 
 /** @internal */
-export const isFull = <A>(self: THub.THub<A>): STM.STM<never, never, boolean> => self.isFull()
+export const isFull = <A>(self: THub.THub<A>): STM.STM<never, never, boolean> => self.isFull
 
 /** @internal */
-export const isShutdown = <A>(self: THub.THub<A>): STM.STM<never, never, boolean> => self.isShutdown()
+export const isShutdown = <A>(self: THub.THub<A>): STM.STM<never, never, boolean> => self.isShutdown
 
 /** @internal */
 export const publish = dual<
@@ -543,10 +510,10 @@ export const publishAll = dual<
 >(2, (self, iterable) => self.offerAll(iterable))
 
 /** @internal */
-export const size = <A>(self: THub.THub<A>): STM.STM<never, never, number> => self.size()
+export const size = <A>(self: THub.THub<A>): STM.STM<never, never, number> => self.size
 
 /** @internal */
-export const shutdown = <A>(self: THub.THub<A>): STM.STM<never, never, void> => self.shutdown()
+export const shutdown = <A>(self: THub.THub<A>): STM.STM<never, never, void> => self.shutdown
 
 /** @internal */
 export const sliding = <A>(requestedCapacity: number): STM.STM<never, never, THub.THub<A>> =>

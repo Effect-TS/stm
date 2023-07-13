@@ -108,7 +108,7 @@ const compute3TRefN = (
   ref3: TRef.TRef<number>
 ): Effect.Effect<never, never, number> =>
   pipe(
-    STM.all(TRef.get(ref1), TRef.get(ref2)),
+    STM.all([TRef.get(ref1), TRef.get(ref2)]),
     STM.tap(([v1, v2]) => pipe(ref3, TRef.set(v1 + v2))),
     STM.flatMap(([v1, v2]) =>
       pipe(
@@ -129,7 +129,7 @@ const compute3TRefN = (
 
 const permutation = (ref1: TRef.TRef<number>, ref2: TRef.TRef<number>): STM.STM<never, never, void> =>
   pipe(
-    STM.all(TRef.get(ref1), TRef.get(ref2)),
+    STM.all([TRef.get(ref1), TRef.get(ref2)]),
     STM.flatMap(([a, b]) =>
       pipe(
         ref1,
@@ -159,7 +159,7 @@ describe.concurrent("STM", () => {
         STM.tap((queue) => pipe(queue, TQueue.offer(1))),
         STM.tap((queue) => pipe(queue, TQueue.offer(2))),
         STM.tap((queue) => pipe(queue, TQueue.offer(3))),
-        STM.flatMap((queue) => pipe(Array.from({ length: 3 }, () => TQueue.take(queue)), STM.all))
+        STM.flatMap((queue) => pipe(Array.from({ length: 3 }, () => TQueue.take(queue)), STM.all()))
       )
       const result = yield* $(STM.commit(transaction))
       assert.deepStrictEqual(Array.from(result), [1, 2, 3])
@@ -337,33 +337,33 @@ describe.concurrent("STM", () => {
       assert.strictEqual(result, 2)
     }))
 
-  it.effect("filterOrElseWith - returns checked failure", () =>
+  it.effect("filterOrElse - returns checked failure", () =>
     Effect.gen(function*($) {
       const transaction = pipe(
         STM.succeed(1),
-        STM.filterOrElseWith((n) => n === 1, (n) => STM.succeed(n + 1))
+        STM.filterOrElse((n) => n === 1, (n) => STM.succeed(n + 1))
       )
       const result = yield* $(STM.commit(transaction))
       assert.strictEqual(result, 1)
     }))
 
-  it.effect("filterOrElseWith - returns held value", () =>
+  it.effect("filterOrElse - returns held value", () =>
     Effect.gen(function*($) {
       const transaction = pipe(
         STM.succeed(1),
-        STM.filterOrElseWith((n) => n !== 1, (n) => STM.succeed(n + 1))
+        STM.filterOrElse((n) => n !== 1, (n) => STM.succeed(n + 1))
       )
       const result = yield* $(STM.commit(transaction))
       assert.strictEqual(result, 2)
     }))
 
-  it.effect("filterOrElseWith - returns error", () =>
+  it.effect("filterOrElse - returns error", () =>
     Effect.gen(function*($) {
       const error = Cause.RuntimeException("Ouch")
       const transaction = pipe(
         STM.fail(error),
         STM.zipRight(STM.succeed(1)),
-        STM.filterOrElseWith((n) => n === 1, (n) => STM.succeed(n + 1))
+        STM.filterOrElse((n) => n === 1, (n) => STM.succeed(n + 1))
       )
       const result = yield* $(Effect.exit(STM.commit(transaction)))
       assert.deepStrictEqual(Exit.unannotate(result), Exit.fail(error))
@@ -401,7 +401,7 @@ describe.concurrent("STM", () => {
     Effect.gen(function*($) {
       const ref = yield* $(TRef.make(0))
       const chunk = Chunk.range(1, 5)
-      yield* $(pipe(chunk, STM.forEachDiscard((n) => pipe(ref, TRef.update((i) => i + n)))))
+      yield* $(STM.forEach(chunk, (n) => pipe(ref, TRef.update((i) => i + n)), { discard: true }))
       const expected = pipe(chunk, Chunk.reduceRight(0, (acc, curr) => acc + curr))
       const result = yield* $(TRef.get(ref))
       assert.strictEqual(result, expected)
@@ -410,8 +410,8 @@ describe.concurrent("STM", () => {
   it.effect("fold - handles both failure and success", () =>
     Effect.gen(function*($) {
       const transaction = STM.all({
-        success: pipe(STM.succeed("yes"), STM.match(() => -1, () => 1)),
-        failure: pipe(STM.fail("no"), STM.match(() => -1, () => 1))
+        success: pipe(STM.succeed("yes"), STM.match({ onFailure: () => -1, onSuccess: () => 1 })),
+        failure: pipe(STM.fail("no"), STM.match({ onFailure: () => -1, onSuccess: () => 1 }))
       })
       const { failure, success } = yield* $(STM.commit(transaction))
       assert.strictEqual(success, 1)
@@ -421,8 +421,8 @@ describe.concurrent("STM", () => {
   it.effect("foldSTM - folds over the `STM` effect, and handle failure and success", () =>
     Effect.gen(function*($) {
       const transaction = STM.all({
-        success: pipe(STM.succeed("yes"), STM.matchSTM(() => STM.succeed("no"), STM.succeed)),
-        failure: pipe(STM.fail("no"), STM.matchSTM(STM.succeed, () => STM.succeed("yes")))
+        success: pipe(STM.succeed("yes"), STM.matchSTM({ onFailure: () => STM.succeed("no"), onSuccess: STM.succeed })),
+        failure: pipe(STM.fail("no"), STM.matchSTM({ onFailure: STM.succeed, onSuccess: () => STM.succeed("yes") }))
       })
       const { failure, success } = yield* $(STM.commit(transaction))
       assert.strictEqual(failure, "no")
@@ -450,21 +450,27 @@ describe.concurrent("STM", () => {
       assert.deepStrictEqual(Exit.unannotate(result), Exit.fail(Option.some("Ouch")))
     }))
 
-  it.effect("ifSTM - runs `onTrue` if result is `true`", () =>
+  it.effect("if - runs `onTrue` if result is `true`", () =>
     Effect.gen(function*($) {
       const transaction = pipe(
         STM.succeed(true),
-        STM.ifSTM(STM.succeed(1), STM.succeed(-1))
+        STM.if({
+          onFalse: STM.succeed(-1),
+          onTrue: STM.succeed(1)
+        })
       )
       const result = yield* $(STM.commit(transaction))
       assert.strictEqual(result, 1)
     }))
 
-  it.effect("ifSTM - runs `onFalse` if result is `false`", () =>
+  it.effect("if - runs `onFalse` if result is `false`", () =>
     Effect.gen(function*($) {
       const transaction = pipe(
         STM.succeed(false),
-        STM.ifSTM(STM.succeed(1), STM.succeed(-1))
+        STM.if({
+          onFalse: STM.succeed(-1),
+          onTrue: STM.succeed(1)
+        })
       )
       const result = yield* $(STM.commit(transaction))
       assert.strictEqual(result, -1)
@@ -472,14 +478,14 @@ describe.concurrent("STM", () => {
 
   it.effect("mapBoth - success value", () =>
     Effect.gen(function*($) {
-      const transaction = pipe(STM.succeed(1), STM.mapBoth(() => -1, (n) => `${n} as string`))
+      const transaction = pipe(STM.succeed(1), STM.mapBoth({ onFailure: () => -1, onSuccess: (n) => `${n} as string` }))
       const result = yield* $(STM.commit(transaction))
       assert.strictEqual(result, "1 as string")
     }))
 
   it.effect("mapBoth - success value", () =>
     Effect.gen(function*($) {
-      const transaction = pipe(STM.fail(-1), STM.mapBoth((n) => `${n} as string`, () => 0))
+      const transaction = pipe(STM.fail(-1), STM.mapBoth({ onFailure: (n) => `${n} as string`, onSuccess: () => 0 }))
       const result = yield* $(Effect.exit(STM.commit(transaction)))
       assert.deepStrictEqual(Exit.unannotate(result), Exit.fail("-1 as string"))
     }))
@@ -528,7 +534,7 @@ describe.concurrent("STM", () => {
   it.effect("mergeAll - return error if it exists in list", () =>
     Effect.gen(function*($) {
       const transaction = pipe(
-        [STM.unit(), STM.fail(1)] as Array<STM.STM<never, number, void>>,
+        [STM.unit, STM.fail(1)] as Array<STM.STM<never, number, void>>,
         STM.mergeAll(void 0 as void, constVoid)
       )
       const result = yield* $(Effect.exit(STM.commit(transaction)))
@@ -581,7 +587,7 @@ describe.concurrent("STM", () => {
 
   it.effect("orElse - succeeds if right succeeds", () =>
     Effect.gen(function*($) {
-      const left = STM.retry()
+      const left = STM.retry
       const right = STM.succeed("right")
       const result = yield* $(STM.commit(pipe(left, STM.orElse(() => right))))
       assert.strictEqual(result, "right")
@@ -590,7 +596,7 @@ describe.concurrent("STM", () => {
   it.effect("orElse - tries alternative once left retries", () =>
     Effect.gen(function*($) {
       const ref = yield* $(TRef.make(0))
-      const left = pipe(ref, TRef.update((n) => n + 100), STM.zipRight(STM.retry()))
+      const left = pipe(ref, TRef.update((n) => n + 100), STM.zipRight(STM.retry))
       const right = pipe(ref, TRef.update((n) => n + 200))
       yield* $(pipe(left, STM.orElse(() => right)))
       const result = yield* $(TRef.get(ref))
@@ -617,9 +623,9 @@ describe.concurrent("STM", () => {
 
   it.effect("orElseEither - orElseEither returns result of the first successful transaction", () =>
     Effect.gen(function*($) {
-      const result1 = yield* $(pipe(STM.retry(), STM.orElseEither(() => STM.succeed(42))))
+      const result1 = yield* $(pipe(STM.retry, STM.orElseEither(() => STM.succeed(42))))
       const result2 = yield* $(pipe(STM.succeed(1), STM.orElseEither(() => STM.succeed("no"))))
-      const result3 = yield* $(pipe(STM.succeed(2), STM.orElseEither(() => STM.retry())))
+      const result3 = yield* $(pipe(STM.succeed(2), STM.orElseEither(() => STM.retry)))
       assert.deepStrictEqual(result1, Either.right(42))
       assert.deepStrictEqual(result2, Either.left(1))
       assert.deepStrictEqual(result3, Either.left(2))
@@ -634,7 +640,7 @@ describe.concurrent("STM", () => {
 
   it.effect("orElseFail - fails with the specified error once left retries", () =>
     Effect.gen(function*($) {
-      const transaction = pipe(STM.retry(), STM.orElseFail(() => false), STM.either)
+      const transaction = pipe(STM.retry, STM.orElseFail(() => false), STM.either)
       const result = yield* $(STM.commit(transaction))
       assert.deepStrictEqual(result, Either.left(false))
     }))
@@ -655,7 +661,7 @@ describe.concurrent("STM", () => {
 
   it.effect("orElseSucceed - succeeds with the specified error once left retries", () =>
     Effect.gen(function*($) {
-      const transaction = pipe(STM.retry(), STM.orElseSucceed(() => false))
+      const transaction = pipe(STM.retry, STM.orElseSucceed(() => false))
       const result = yield* $(STM.commit(transaction))
       assert.isFalse(result)
     }))
@@ -906,21 +912,21 @@ describe.concurrent("STM", () => {
 
   it.effect("replicate - zero", () =>
     Effect.gen(function*($) {
-      const transaction = pipe(STM.succeed(12), STM.replicate(0), STM.all)
+      const transaction = pipe(STM.succeed(12), STM.replicate(0), STM.all())
       const result = yield* $(STM.commit(transaction))
       assert.deepStrictEqual(Array.from(result), [])
     }))
 
   it.effect("replicate - negative", () =>
     Effect.gen(function*($) {
-      const transaction = pipe(STM.succeed(12), STM.replicate(-1), STM.all)
+      const transaction = pipe(STM.succeed(12), STM.replicate(-1), STM.all())
       const result = yield* $(STM.commit(transaction))
       assert.deepStrictEqual(Array.from(result), [])
     }))
 
   it.effect("replicate - positive", () =>
     Effect.gen(function*($) {
-      const transaction = pipe(STM.succeed(12), STM.replicate(2), STM.all)
+      const transaction = pipe(STM.succeed(12), STM.replicate(2), STM.all())
       const result = yield* $(STM.commit(transaction))
       assert.deepStrictEqual(Array.from(result), [12, 12])
     }))
@@ -947,50 +953,6 @@ describe.concurrent("STM", () => {
       assert.deepStrictEqual(Exit.unannotate(result), Exit.fail(Option.some(error)))
     }))
 
-  it.effect("someOrElse - extracts the value from Some", () =>
-    Effect.gen(function*($) {
-      const transaction = pipe(STM.succeed(Option.some(1)), STM.someOrElse(() => 2))
-      const result = yield* $(STM.commit(transaction))
-      assert.strictEqual(result, 1)
-    }))
-
-  it.effect("someOrElse - falls back to the default value if None", () =>
-    Effect.gen(function*($) {
-      const transaction = pipe(STM.succeed(Option.none()), STM.someOrElse(() => 42))
-      const result = yield* $(STM.commit(transaction))
-      assert.strictEqual(result, 42)
-    }))
-
-  it.effect("someOrElse - does not change failed state", () =>
-    Effect.gen(function*($) {
-      const error = Cause.RuntimeException("Ouch")
-      const transaction = pipe(STM.fail(error), STM.someOrElse(() => 42))
-      const result = yield* $(Effect.exit(STM.commit(transaction)))
-      assert.deepStrictEqual(Exit.unannotate(result), Exit.fail(error))
-    }))
-
-  it.effect("someOrElseSTM - extracts the value from Some", () =>
-    Effect.gen(function*($) {
-      const transaction = pipe(STM.succeed(Option.some(1)), STM.someOrElseSTM(() => STM.succeed(2)))
-      const result = yield* $(STM.commit(transaction))
-      assert.strictEqual(result, 1)
-    }))
-
-  it.effect("someOrElseSTM - falls back to the default value if None", () =>
-    Effect.gen(function*($) {
-      const transaction = pipe(STM.succeed(Option.none()), STM.someOrElseSTM(() => STM.succeed(42)))
-      const result = yield* $(STM.commit(transaction))
-      assert.strictEqual(result, 42)
-    }))
-
-  it.effect("someOrElseSTM - does not change failed state", () =>
-    Effect.gen(function*($) {
-      const error = Cause.RuntimeException("Ouch")
-      const transaction = pipe(STM.fail(error), STM.someOrElseSTM(() => STM.succeed(42)))
-      const result = yield* $(Effect.exit(STM.commit(transaction)))
-      assert.deepStrictEqual(Exit.unannotate(result), Exit.fail(error))
-    }))
-
   it.effect("succeed", () =>
     Effect.gen(function*($) {
       const result = yield* $(STM.commit(STM.succeed("test")))
@@ -1015,7 +977,7 @@ describe.concurrent("STM", () => {
   it.effect("tap - applies the function to the result preserving the original result", () =>
     Effect.gen(function*($) {
       const transaction = pipe(
-        STM.all(TRef.make(10), TRef.make(0)),
+        STM.all([TRef.make(10), TRef.make(0)]),
         STM.flatMap(([refA, refB]) =>
           STM.all({
             result1: pipe(TRef.get(refA), STM.tap((n) => pipe(refB, TRef.set(n + 1)))),
@@ -1035,10 +997,10 @@ describe.concurrent("STM", () => {
         const tapError = yield* $(TDeferred.make<never, string>())
         const result = yield* $(pipe(
           STM.succeed(42),
-          STM.tapBoth(
-            (e: string) => pipe(tapError, TDeferred.succeed(e)),
-            (n) => pipe(tapSuccess, TDeferred.succeed(n))
-          )
+          STM.tapBoth({
+            onFailure: (e: string) => pipe(tapError, TDeferred.succeed(e)),
+            onSuccess: (n) => pipe(tapSuccess, TDeferred.succeed(n))
+          })
         ))
         const success = yield* $(TDeferred.await(tapSuccess))
         return [result, success] as const
@@ -1054,10 +1016,10 @@ describe.concurrent("STM", () => {
         const tapError = yield* $(TDeferred.make<never, string>())
         const result = yield* $(pipe(
           STM.fail("error"),
-          STM.tapBoth(
-            (e) => pipe(tapError, TDeferred.succeed(e)),
-            (n: number) => pipe(tapSuccess, TDeferred.succeed(n))
-          ),
+          STM.tapBoth({
+            onFailure: (e) => pipe(tapError, TDeferred.succeed(e)),
+            onSuccess: (n: number) => pipe(tapSuccess, TDeferred.succeed(n))
+          }),
           STM.either
         ))
         const error = yield* $(TDeferred.await(tapError))
@@ -1232,16 +1194,17 @@ describe.concurrent("STM", () => {
     Effect.gen(function*($) {
       const transaction = STM.gen(function*($) {
         const ref = yield* $(TRef.make(0))
-        yield* $(STM.loopDiscard(
-          10_000,
-          (n) => n > 0,
-          (n) => n - 1,
-          () =>
+        const value = yield* $(STM.loop(10_000, {
+          while: (n) => n > 0,
+          step: (n) => n - 1,
+          body: () =>
             pipe(
-              STM.retry(),
+              STM.retry,
               STM.orTry(() => pipe(ref, TRef.getAndUpdate((n) => n + 1)))
-            )
-        ))
+            ),
+          discard: true
+        }))
+        assert.strictEqual(value, void 0)
         return yield* $(TRef.get(ref))
       })
       const result = yield* $(STM.commit(transaction))
@@ -1274,13 +1237,15 @@ describe.concurrent("STM", () => {
 
   it.effect("stack-safety - long fold chains", () =>
     Effect.gen(function*($) {
-      const result = yield* $(chain(10_000)(STM.match(() => 0, (n) => n + 1)))
+      const result = yield* $(chain(10_000)(STM.match({ onFailure: () => 0, onSuccess: (n) => n + 1 })))
       assert.strictEqual(result, 10_000)
     }))
 
   it.effect("stack-safety - long foldSTM chains", () =>
     Effect.gen(function*($) {
-      const result = yield* $(chain(10_000)(STM.matchSTM(() => STM.succeed(0), (n) => STM.succeed(n + 1))))
+      const result = yield* $(
+        chain(10_000)(STM.matchSTM({ onFailure: () => STM.succeed(0), onSuccess: (n) => STM.succeed(n + 1) }))
+      )
       assert.strictEqual(result, 10_000)
     }))
 
@@ -1295,12 +1260,12 @@ describe.concurrent("STM", () => {
       const transaction = pipe(
         TRef.make(0),
         STM.tap((ref) =>
-          STM.loopDiscard(
-            10_000,
-            (n) => n > 0,
-            (n) => n - 1,
-            () => pipe(STM.retry(), STM.orElse(() => pipe(ref, TRef.getAndUpdate((n) => n + 1))))
-          )
+          STM.loop(10_000, {
+            while: (n) => n > 0,
+            step: (n) => n - 1,
+            body: () => pipe(STM.retry, STM.orElse(() => pipe(ref, TRef.getAndUpdate((n) => n + 1)))),
+            discard: true
+          })
         ),
         STM.flatMap(TRef.get)
       )
@@ -1353,7 +1318,7 @@ describe.concurrent("STM", () => {
 
     it.effect("compute a `TRef` from 2 variables, increment the first `TRef` and decrement the second `TRef` in different fibers", () =>
       Effect.gen(function*($) {
-        const refs = yield* $(STM.all(TRef.make(10_000), TRef.make(0), TRef.make(0)))
+        const refs = yield* $(STM.all([TRef.make(10_000), TRef.make(0), TRef.make(0)]))
         const fiber = yield* $(Effect.forkAll(
           Array.from({ length: 10 }, () => compute3TRefN(99, refs[0], refs[1], refs[2]))
         ))

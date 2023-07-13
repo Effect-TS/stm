@@ -29,7 +29,7 @@ const pollSchedule = <E, A>(): Schedule.Schedule<
 describe.concurrent("TReentrantLock", () => {
   it.effect("one read lock", () =>
     Effect.gen(function*($) {
-      const lock = yield* $(TReentrantLock.make())
+      const lock = yield* $(TReentrantLock.make)
       const result = yield* $(pipe(
         TReentrantLock.readLock(lock),
         Effect.flatMap(Effect.succeed),
@@ -40,7 +40,7 @@ describe.concurrent("TReentrantLock", () => {
 
   it.effect("two read locks from the same fiber", () =>
     Effect.gen(function*($) {
-      const lock = yield* $(TReentrantLock.make())
+      const lock = yield* $(TReentrantLock.make)
       const result = yield* $(pipe(
         TReentrantLock.readLock(lock),
         Effect.flatMap(() =>
@@ -57,7 +57,7 @@ describe.concurrent("TReentrantLock", () => {
 
   it.effect("two read locks from different fibers", () =>
     Effect.gen(function*($) {
-      const lock = yield* $(TReentrantLock.make())
+      const lock = yield* $(TReentrantLock.make)
       const rLatch = yield* $(Deferred.make<never, void>())
       const mLatch = yield* $(Deferred.make<never, void>())
       const wLatch = yield* $(Deferred.make<never, void>())
@@ -94,7 +94,7 @@ describe.concurrent("TReentrantLock", () => {
 
   it.effect("one write lock, then one read lock, different fibers", () =>
     Effect.gen(function*($) {
-      const lock = yield* $(TReentrantLock.make())
+      const lock = yield* $(TReentrantLock.make)
       const rLatch = yield* $(Deferred.make<never, void>())
       const mLatch = yield* $(Deferred.make<never, void>())
       const wLatch = yield* $(Deferred.make<never, void>())
@@ -137,7 +137,7 @@ describe.concurrent("TReentrantLock", () => {
 
   it.effect("write lock followed by read lock from the same fiber", () =>
     Effect.gen(function*($) {
-      const lock = yield* $(TReentrantLock.make())
+      const lock = yield* $(TReentrantLock.make)
       const ref = yield* $(Ref.make(0))
       const readerCount = yield* $(pipe(
         TReentrantLock.writeLock(lock),
@@ -163,7 +163,7 @@ describe.concurrent("TReentrantLock", () => {
 
   it.effect("upgrade read lock to write lock from the same fiber", () =>
     Effect.gen(function*($) {
-      const lock = yield* $(TReentrantLock.make())
+      const lock = yield* $(TReentrantLock.make)
       const ref = yield* $(Ref.make(0))
       const readerCount = yield* $(pipe(
         TReentrantLock.readLock(lock),
@@ -189,7 +189,7 @@ describe.concurrent("TReentrantLock", () => {
 
   it.effect("read to writer upgrade with other readers", () =>
     Effect.gen(function*($) {
-      const lock = yield* $(TReentrantLock.make())
+      const lock = yield* $(TReentrantLock.make)
       const rLatch = yield* $(Deferred.make<never, void>())
       const mLatch = yield* $(Deferred.make<never, void>())
       const wLatch = yield* $(Deferred.make<never, void>())
