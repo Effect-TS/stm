@@ -145,7 +145,7 @@ export const retainIf = dual<
     tRef.update(
       self.ref,
       (map) =>
-        SortedMap.reduceWithIndex(map, SortedMap.empty(SortedMap.getOrder(map)), (map, value, key) => {
+        SortedMap.reduce(map, SortedMap.empty(SortedMap.getOrder(map)), (map, value, key) => {
           const filtered: ReadonlyArray<A> = ReadonlyArray.filter(value, predicate)
           return filtered.length > 0 ?
             SortedMap.set(map, key, filtered as [A, ...Array<A>]) :

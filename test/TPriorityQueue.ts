@@ -18,7 +18,7 @@ interface Event {
 
 const orderByTime: Order.Order<Event> = pipe(
   number.Order,
-  Order.contramap((event) => event.time)
+  Order.mapInput((event) => event.time)
 )
 
 const eventArb: fc.Arbitrary<Event> = fc.tuple(
