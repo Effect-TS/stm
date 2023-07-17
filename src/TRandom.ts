@@ -2,7 +2,7 @@
  * @since 1.0.0
  */
 import type * as Context from "@effect/data/Context"
-import type * as Random from "@effect/data/Random"
+import type * as Random from "@effect/data/DeterministicRandom"
 import type * as Layer from "@effect/io/Layer"
 import * as internal from "@effect/stm/internal/tRandom"
 import type * as STM from "@effect/stm/STM"
