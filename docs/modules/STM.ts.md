@@ -53,7 +53,7 @@ Added in v1.0.0
   - [try](#try)
   - [unit](#unit)
 - [context](#context-1)
-  - [contramapContext](#contramapcontext)
+  - [mapInputContext](#mapinputcontext)
   - [provideContext](#providecontext)
   - [provideService](#provideservice)
   - [provideServiceSTM](#provideservicestm)
@@ -760,7 +760,7 @@ Added in v1.0.0
 
 # context
 
-## contramapContext
+## mapInputContext
 
 Transforms the environment being provided to this effect with the specified
 function.
@@ -768,7 +768,7 @@ function.
 **Signature**
 
 ```ts
-export declare const contramapContext: {
+export declare const mapInputContext: {
   <R0, R>(f: (context: Context.Context<R0>) => Context.Context<R>): <E, A>(self: STM<R, E, A>) => STM<R0, E, A>
   <E, A, R0, R>(self: STM<R, E, A>, f: (context: Context.Context<R0>) => Context.Context<R>): STM<R0, E, A>
 }
@@ -1223,8 +1223,10 @@ Dies with specified defect if the predicate fails.
 
 ```ts
 export declare const filterOrDie: {
-  <A>(predicate: Predicate<A>, defect: LazyArg<unknown>): <R, E>(self: STM<R, E, A>) => STM<R, E, A>
-  <R, E, A>(self: STM<R, E, A>, predicate: Predicate<A>, defect: LazyArg<unknown>): STM<R, E, A>
+  <A, B extends A>(refinement: Refinement<A, B>, defect: LazyArg<unknown>): <R, E>(self: STM<R, E, A>) => STM<R, E, B>
+  <A, X extends A>(predicate: Predicate<X>, defect: LazyArg<unknown>): <R, E>(self: STM<R, E, A>) => STM<R, E, A>
+  <R, E, A, B extends A>(self: STM<R, E, A>, refinement: Refinement<A, B>, defect: LazyArg<unknown>): STM<R, E, B>
+  <R, E, A, X extends A>(self: STM<R, E, A>, predicate: Predicate<X>, defect: LazyArg<unknown>): STM<R, E, A>
 }
 ```
 
@@ -1239,8 +1241,10 @@ predicate fails.
 
 ```ts
 export declare const filterOrDieMessage: {
-  <A>(predicate: Predicate<A>, message: string): <R, E>(self: STM<R, E, A>) => STM<R, E, A>
-  <R, E, A>(self: STM<R, E, A>, predicate: Predicate<A>, message: string): STM<R, E, A>
+  <A, B extends A>(refinement: Refinement<A, B>, message: string): <R, E>(self: STM<R, E, A>) => STM<R, E, B>
+  <A, X extends A>(predicate: Predicate<X>, message: string): <R, E>(self: STM<R, E, A>) => STM<R, E, A>
+  <R, E, A, B extends A>(self: STM<R, E, A>, refinement: Refinement<A, B>, message: string): STM<R, E, B>
+  <R, E, A, X extends A>(self: STM<R, E, A>, predicate: Predicate<X>, message: string): STM<R, E, A>
 }
 ```
 
@@ -1254,14 +1258,22 @@ Supplies `orElse` if the predicate fails.
 
 ```ts
 export declare const filterOrElse: {
-  <A, R2, E2, A2>(predicate: Predicate<A>, orElse: (a: A) => STM<R2, E2, A2>): <R, E>(
+  <A, B extends A, X extends A, R2, E2, A2>(refinement: Refinement<A, B>, orElse: (a: X) => STM<R2, E2, A2>): <R, E>(
+    self: STM<R, E, A>
+  ) => STM<R2 | R, E2 | E, B | A2>
+  <A, X extends A, Y extends A, R2, E2, A2>(predicate: Predicate<X>, orElse: (a: Y) => STM<R2, E2, A2>): <R, E>(
     self: STM<R, E, A>
   ) => STM<R2 | R, E2 | E, A | A2>
-  <R, E, A, R2, E2, A2>(self: STM<R, E, A>, predicate: Predicate<A>, orElse: (a: A) => STM<R2, E2, A2>): STM<
-    R | R2,
-    E | E2,
-    A | A2
-  >
+  <R, E, A, B extends A, X extends A, R2, E2, A2>(
+    self: STM<R, E, A>,
+    refinement: Refinement<A, B>,
+    orElse: (a: X) => STM<R2, E2, A2>
+  ): STM<R | R2, E | E2, B | A2>
+  <R, E, A, X extends A, Y extends A, R2, E2, A2>(
+    self: STM<R, E, A>,
+    predicate: Predicate<X>,
+    orElse: (a: Y) => STM<R2, E2, A2>
+  ): STM<R | R2, E | E2, A | A2>
 }
 ```
 
@@ -1275,8 +1287,22 @@ Fails with the specified error if the predicate fails.
 
 ```ts
 export declare const filterOrFail: {
-  <A, E2>(predicate: Predicate<A>, orFailWith: (a: A) => E2): <R, E>(self: STM<R, E, A>) => STM<R, E2 | E, A>
-  <R, E, A, E2>(self: STM<R, E, A>, predicate: Predicate<A>, orFailWith: (a: A) => E2): STM<R, E | E2, A>
+  <A, B extends A, X extends A, E2>(refinement: Refinement<A, B>, orFailWith: (a: X) => E2): <R, E>(
+    self: STM<R, E, A>
+  ) => STM<R, E2 | E, B>
+  <A, X extends A, Y extends A, E2>(predicate: Predicate<X>, orFailWith: (a: Y) => E2): <R, E>(
+    self: STM<R, E, A>
+  ) => STM<R, E2 | E, A>
+  <R, E, A, B extends A, X extends A, E2>(
+    self: STM<R, E, A>,
+    refinement: Refinement<A, B>,
+    orFailWith: (a: X) => E2
+  ): STM<R, E | E2, B>
+  <R, E, A, X extends A, Y extends A, E2>(self: STM<R, E, A>, predicate: Predicate<X>, orFailWith: (a: Y) => E2): STM<
+    R,
+    E | E2,
+    A
+  >
 }
 ```
 
@@ -2367,8 +2393,8 @@ Added in v1.0.0
 
 ```ts
 export declare const tap: {
-  <A, R2, E2, _>(f: (a: A) => STM<R2, E2, _>): <R, E>(self: STM<R, E, A>) => STM<R2 | R, E2 | E, A>
-  <R, E, A, R2, E2, _>(self: STM<R, E, A>, f: (a: A) => STM<R2, E2, _>): STM<R | R2, E | E2, A>
+  <A, X extends A, R2, E2, _>(f: (a: X) => STM<R2, E2, _>): <R, E>(self: STM<R, E, A>) => STM<R2 | R, E2 | E, A>
+  <R, E, A, X extends A, R2, E2, _>(self: STM<R, E, A>, f: (a: X) => STM<R2, E2, _>): STM<R | R2, E | E2, A>
 }
 ```
 
@@ -2382,13 +2408,13 @@ Added in v1.0.0
 
 ```ts
 export declare const tapBoth: {
-  <E, R2, E2, A2, A, R3, E3, A3>(options: {
-    readonly onFailure: (error: E) => STM<R2, E2, A2>
-    readonly onSuccess: (value: A) => STM<R3, E3, A3>
+  <E, XE extends E, R2, E2, A2, A, XA extends A, R3, E3, A3>(options: {
+    readonly onFailure: (error: XE) => STM<R2, E2, A2>
+    readonly onSuccess: (value: XA) => STM<R3, E3, A3>
   }): <R>(self: STM<R, E, A>) => STM<R2 | R3 | R, E | E2 | E3, A>
-  <R, E, R2, E2, A2, A, R3, E3, A3>(
+  <R, E, XE extends E, R2, E2, A2, A, XA extends A, R3, E3, A3>(
     self: STM<R, E, A>,
-    options: { readonly onFailure: (error: E) => STM<R2, E2, A2>; readonly onSuccess: (value: A) => STM<R3, E3, A3> }
+    options: { readonly onFailure: (error: XE) => STM<R2, E2, A2>; readonly onSuccess: (value: XA) => STM<R3, E3, A3> }
   ): STM<R | R2 | R3, E | E2 | E3, A>
 }
 ```
@@ -2403,8 +2429,8 @@ Added in v1.0.0
 
 ```ts
 export declare const tapError: {
-  <E, R2, E2, _>(f: (error: E) => STM<R2, E2, _>): <R, A>(self: STM<R, E, A>) => STM<R2 | R, E | E2, A>
-  <R, A, E, R2, E2, _>(self: STM<R, E, A>, f: (error: E) => STM<R2, E2, _>): STM<R | R2, E | E2, A>
+  <E, X extends E, R2, E2, _>(f: (error: X) => STM<R2, E2, _>): <R, A>(self: STM<R, E, A>) => STM<R2 | R, E | E2, A>
+  <R, A, E, X extends E, R2, E2, _>(self: STM<R, E, A>, f: (error: X) => STM<R2, E2, _>): STM<R | R2, E | E2, A>
 }
 ```
 

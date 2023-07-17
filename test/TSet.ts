@@ -224,7 +224,7 @@ describe.concurrent("TSet", () => {
     Effect.gen(function*($) {
       const transaction = pipe(
         TSet.make(1, 2, 3),
-        STM.tap(TSet.transform((n) => n * 2)),
+        STM.tap((set) => TSet.transform(set, (n) => n * 2)),
         STM.flatMap(TSet.toReadonlyArray)
       )
       const result = yield* $(STM.commit(transaction))
@@ -246,7 +246,7 @@ describe.concurrent("TSet", () => {
     Effect.gen(function*($) {
       const transaction = pipe(
         TSet.make(1, 2, 3),
-        STM.tap(TSet.transformSTM((n) => STM.succeed(n * 2))),
+        STM.tap((set) => TSet.transformSTM(set, (n) => STM.succeed(n * 2))),
         STM.flatMap(TSet.toReadonlyArray)
       )
       const result = yield* $(STM.commit(transaction))
