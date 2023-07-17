@@ -1311,11 +1311,11 @@ export const tapError = dual<
 
 /** @internal */
 export const try_: {
-  <A>(try_: LazyArg<A>): STM.STM<never, unknown, A>
   <A, E>(options: {
     readonly try: LazyArg<A>
     readonly catch: (u: unknown) => E
   }): STM.STM<never, E, A>
+  <A>(try_: LazyArg<A>): STM.STM<never, unknown, A>
 } = <A, E>(
   arg: LazyArg<A> | {
     readonly try: LazyArg<A>

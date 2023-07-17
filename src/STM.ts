@@ -1808,11 +1808,11 @@ export const tapError: {
 } = stm.tapError
 
 const try_: {
-  <A>(try_: LazyArg<A>): STM<never, unknown, A>
   <A, E>(options: {
     readonly try: LazyArg<A>
     readonly catch: (u: unknown) => E
   }): STM<never, E, A>
+  <A>(try_: LazyArg<A>): STM<never, unknown, A>
 } = stm.try_
 export {
   /**
