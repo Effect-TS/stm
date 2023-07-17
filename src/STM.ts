@@ -477,10 +477,10 @@ export const contextWithSTM: <R0, R, E, A>(
  * @since 1.0.0
  * @category context
  */
-export const contramapContext: {
+export const mapInputContext: {
   <R0, R>(f: (context: Context.Context<R0>) => Context.Context<R>): <E, A>(self: STM<R, E, A>) => STM<R0, E, A>
   <E, A, R0, R>(self: STM<R, E, A>, f: (context: Context.Context<R0>) => Context.Context<R>): STM<R0, E, A>
-} = core.contramapContext
+} = core.mapInputContext
 
 /**
  * Fails the transactional effect with the specified defect.
