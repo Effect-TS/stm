@@ -946,7 +946,7 @@ export const orElseSucceed = dual<
 export const provideContext = dual<
   <R>(env: Context.Context<R>) => <E, A>(self: STM.STM<R, E, A>) => STM.STM<never, E, A>,
   <E, A, R>(self: STM.STM<R, E, A>, env: Context.Context<R>) => STM.STM<never, E, A>
->(2, (self, env) => core.contramapContext(self, (_: Context.Context<never>) => env))
+>(2, (self, env) => core.mapInputContext(self, (_: Context.Context<never>) => env))
 
 /** @internal */
 export const provideSomeContext = dual<
@@ -956,7 +956,7 @@ export const provideSomeContext = dual<
   self: STM.STM<R1, E, A>,
   context: Context.Context<R>
 ): STM.STM<Exclude<R1, R>, E, A> =>
-  core.contramapContext(
+  core.mapInputContext(
     self,
     (parent: Context.Context<Exclude<R1, R>>): Context.Context<R1> => Context.merge(parent, context) as any
   ))
