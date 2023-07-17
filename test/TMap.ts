@@ -352,7 +352,7 @@ describe.concurrent("TMap", () => {
     Effect.gen(function*($) {
       const transaction = pipe(
         TMap.make(["a", 1], ["aa", 2], ["aaa", 3]),
-        STM.tap(TMap.transform((key, value) => [key.replaceAll("a", "b"), value * 2])),
+        STM.tap((map) => TMap.transform(map, (key, value) => [key.replaceAll("a", "b"), value * 2])),
         STM.flatMap(TMap.toReadonlyArray)
       )
       const result = yield* $(STM.commit(transaction))
@@ -365,7 +365,7 @@ describe.concurrent("TMap", () => {
     Effect.gen(function*($) {
       const transaction = pipe(
         TMap.make([new HashContainer(-1), 1], [new HashContainer(-2), 2], [new HashContainer(-3), 3]),
-        STM.tap(TMap.transform((key, value) => [new HashContainer(key.i * -2), value * 2])),
+        STM.tap((map) => TMap.transform(map, (key, value) => [new HashContainer(key.i * -2), value * 2])),
         STM.flatMap(TMap.toReadonlyArray)
       )
       const result = yield* $(STM.commit(transaction))
@@ -378,7 +378,7 @@ describe.concurrent("TMap", () => {
     Effect.gen(function*($) {
       const transaction = pipe(
         TMap.make(["a", 1], ["aa", 2], ["aaa", 3]),
-        STM.tap(TMap.transform((_, value) => ["key", value * 2])),
+        STM.tap((map) => TMap.transform(map, (_, value) => ["key", value * 2])),
         STM.flatMap(TMap.toReadonlyArray)
       )
       const result = yield* $(STM.commit(transaction))
@@ -389,7 +389,7 @@ describe.concurrent("TMap", () => {
     Effect.gen(function*($) {
       const transaction = pipe(
         TMap.make(["a", 1], ["aa", 2], ["aaa", 3]),
-        STM.tap(TMap.transformSTM((key, value) => STM.succeed([key.replaceAll("a", "b"), value * 2]))),
+        STM.tap((map) => TMap.transformSTM(map, (key, value) => STM.succeed([key.replaceAll("a", "b"), value * 2]))),
         STM.flatMap(TMap.toReadonlyArray)
       )
       const result = yield* $(STM.commit(transaction))
@@ -402,7 +402,7 @@ describe.concurrent("TMap", () => {
     Effect.gen(function*($) {
       const transaction = pipe(
         TMap.make(["a", 1], ["aa", 2], ["aaa", 3]),
-        STM.tap(TMap.transformSTM((_, value) => STM.succeed(["key", value * 2]))),
+        STM.tap((map) => TMap.transformSTM(map, (_, value) => STM.succeed(["key", value * 2]))),
         STM.flatMap(TMap.toReadonlyArray)
       )
       const result = yield* $(STM.commit(transaction))
@@ -413,7 +413,7 @@ describe.concurrent("TMap", () => {
     Effect.gen(function*($) {
       const transaction = pipe(
         TMap.make(["a", 1], ["aa", 2], ["aaa", 3]),
-        STM.tap(TMap.transformValues((value) => value * 2)),
+        STM.tap((map) => TMap.transformValues(map, (value) => value * 2)),
         STM.flatMap(TMap.toReadonlyArray)
       )
       const result = yield* $(STM.commit(transaction))
@@ -443,7 +443,7 @@ describe.concurrent("TMap", () => {
     Effect.gen(function*($) {
       const transaction = pipe(
         TMap.make(["a", 1], ["aa", 2], ["aaa", 3]),
-        STM.tap(TMap.transformValuesSTM((value) => STM.succeed(value * 2))),
+        STM.tap((map) => TMap.transformValuesSTM(map, (value) => STM.succeed(value * 2))),
         STM.flatMap(TMap.toReadonlyArray)
       )
       const result = yield* $(STM.commit(transaction))
