@@ -1,5 +1,21 @@
 # @effect/stm
 
+## 0.18.0
+
+### Minor Changes
+
+- [#102](https://github.com/Effect-TS/stm/pull/102) [`2dcc986`](https://github.com/Effect-TS/stm/commit/2dcc9864a61db82d8cd95cd759d60e2a5dc9cd17) Thanks [@tim-smart](https://github.com/tim-smart)! - rename contramap to mapInput
+
+- [#106](https://github.com/Effect-TS/stm/pull/106) [`787ffd5`](https://github.com/Effect-TS/stm/commit/787ffd50c5ce9c36d3079af7c0f8ec62ee195214) Thanks [@tim-smart](https://github.com/tim-smart)! - update /io
+
+### Patch Changes
+
+- [#105](https://github.com/Effect-TS/stm/pull/105) [`57d28de`](https://github.com/Effect-TS/stm/commit/57d28de923c99745011ea999e1755478f95a96a6) Thanks [@tim-smart](https://github.com/tim-smart)! - fix inference of tacit usage in tap* and filterOr*
+
+- [#105](https://github.com/Effect-TS/stm/pull/105) [`57d28de`](https://github.com/Effect-TS/stm/commit/57d28de923c99745011ea999e1755478f95a96a6) Thanks [@tim-smart](https://github.com/tim-smart)! - support refinements in filterOr\*
+
+- [#103](https://github.com/Effect-TS/stm/pull/103) [`f160457`](https://github.com/Effect-TS/stm/commit/f16045755866a8c783f49c22a018b147fb8e3bd5) Thanks [@tim-smart](https://github.com/tim-smart)! - improve option automplete for .try
+
 ## 0.17.0
 
 ### Minor Changes
