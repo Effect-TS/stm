@@ -388,13 +388,13 @@ export const takeAll: <A>(self: TDequeue<A>) => STM.STM<never, never, Array<A>> 
 
 /**
  * Takes all the values in the queue and returns the values. If the queue is 
- * empty, this will return a computation that resumes when atleast one item has
- * been added to the queue.
+ * empty, retries until atleast one item has been added to the queue.
  *
  * @since 1.0.0
  * @category mutations
  */
-export const takeAllNonEmpty: <A>(self: TDequeue<A>) => STM.STM<never, never, RA.NonEmptyArray<A>> = internal.takeAllNonEmpty
+export const takeAllNonEmpty: <A>(self: TDequeue<A>) => STM.STM<never, never, RA.NonEmptyArray<A>> = 
+  internal.takeAllNonEmpty
 
 /**
  * Takes a number of elements from the queue between the specified minimum and
