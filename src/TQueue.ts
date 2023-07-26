@@ -387,8 +387,9 @@ export const take: <A>(self: TDequeue<A>) => STM.STM<never, never, A> = internal
 export const takeAll: <A>(self: TDequeue<A>) => STM.STM<never, never, Array<A>> = internal.takeAll
 
 /**
- * Takes all the values in the queue and returns the values. If the queue is empty, this will return
- * a computation that resumes when atleast one item has been added to the queue.
+ * Takes all the values in the queue and returns the values. If the queue is 
+ * empty, this will return a computation that resumes when atleast one item has
+ * been added to the queue.
  *
  * @since 1.0.0
  * @category mutations
