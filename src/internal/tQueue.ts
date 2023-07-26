@@ -332,6 +332,10 @@ export const take = <A>(self: TQueue.TDequeue<A>): STM.STM<never, never, A> => s
 export const takeAll = <A>(self: TQueue.TDequeue<A>): STM.STM<never, never, Array<A>> => self.takeAll
 
 /** @internal */
+export const takeAllNonEmpty = <A>(self: TQueue.TDequeue<A>): STM.STM<never, never, RA.NonEmptyArray<A>> =>
+  core.flatMap(self.takeAll, (_) => RA.isNonEmptyArray(_) ? core.succeed(_) : core.retry)
+
+/** @internal */
 export const takeBetween = dual<
   (min: number, max: number) => <A>(self: TQueue.TDequeue<A>) => STM.STM<never, never, Array<A>>,
   <A>(self: TQueue.TDequeue<A>, min: number, max: number) => STM.STM<never, never, Array<A>>

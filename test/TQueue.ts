@@ -47,7 +47,18 @@ describe.concurrent("TQueue", () => {
       assert.deepStrictEqual(Array.from(result), array)
     }))
 
-  it.effect("takeUpTo", () =>
+    it.effect("takeAllNonEmpty", () =>
+    Effect.gen(function*($) {
+      const array = [1, 2, 3, 4, 5]
+      const queue = yield* $(TQueue.bounded<number>(5))
+      yield* $(pipe(queue, TQueue.offerAll(array)))
+      const result = yield* $(pipe(queue, TQueue.takeAllNonEmpty))
+      const size = yield* $(TQueue.size(queue))
+      assert.deepStrictEqual(Array.from(result), array)
+      assert.strictEqual(size, 0)
+    }))
+
+    it.effect("takeUpTo", () =>
     Effect.gen(function*($) {
       const queue = yield* $(TQueue.bounded<number>(5))
       yield* $(pipe(queue, TQueue.offerAll([1, 2, 3, 4, 5])))

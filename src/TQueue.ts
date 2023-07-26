@@ -2,6 +2,7 @@
  * @since 1.0.0
  */
 import type * as Option from "@effect/data/Option"
+import * as RA from "@effect/data/ReadonlyArray"
 import type { Predicate } from "@effect/data/Predicate"
 import * as internal from "@effect/stm/internal/tQueue"
 import type * as STM from "@effect/stm/STM"
@@ -384,6 +385,15 @@ export const take: <A>(self: TDequeue<A>) => STM.STM<never, never, A> = internal
  * @category mutations
  */
 export const takeAll: <A>(self: TDequeue<A>) => STM.STM<never, never, Array<A>> = internal.takeAll
+
+/**
+ * Takes all the values in the queue and returns the values. If the queue is empty, this will return
+ * a computation that resumes when atleast one item has been added to the queue.
+ *
+ * @since 1.0.0
+ * @category mutations
+ */
+export const takeAllNonEmpty: <A>(self: TDequeue<A>) => STM.STM<never, never, RA.NonEmptyArray<A>> = internal.takeAllNonEmpty
 
 /**
  * Takes a number of elements from the queue between the specified minimum and
