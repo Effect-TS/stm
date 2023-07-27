@@ -50,11 +50,11 @@ describe.concurrent("TQueue", () => {
     it.effect("takeAllNonEmpty", () =>
     Effect.gen(function*($) {
       const array = [1, 2, 3, 4, 5]
-      const queue = yield* $(TQueue.bounded<number>(5))
-      yield* $(pipe(queue, TQueue.offerAll(array)))
+      const queue = yield* $(TQueue.unbounded<number>())
+      yield* $(STM.forEach(array, (_) => TQueue.offer(queue, _)))
       const result = yield* $(pipe(queue, TQueue.takeAllNonEmpty))
       const size = yield* $(TQueue.size(queue))
-      assert.deepStrictEqual(Array.from(result), array)
+      assert.deepStrictEqual(result, array)
       assert.strictEqual(size, 0)
     }))
 
