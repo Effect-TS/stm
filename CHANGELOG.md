@@ -1,5 +1,11 @@
 # @effect/stm
 
+## 0.20.0
+
+### Minor Changes
+
+- [#110](https://github.com/Effect-TS/stm/pull/110) [`371d8c6`](https://github.com/Effect-TS/stm/commit/371d8c661417ba6cbf3e1b316e691f7929926418) Thanks [@tim-smart](https://github.com/tim-smart)! - update /data and /io
+
 ## 0.19.0
 
 ### Minor Changes
