@@ -114,9 +114,6 @@ declare module "@effect/data/Either" {
   interface Right<E, A> extends STM<never, E, A> {
     readonly _tag: "Right"
   }
-  interface TracedEither<E, A> extends STM<never, E, A> {
-    readonly _tag: "Traced"
-  }
 }
 
 /**
@@ -127,11 +124,8 @@ declare module "@effect/data/Option" {
   interface None<A> extends STM<never, Cause.NoSuchElementException, A> {
     readonly _tag: "None"
   }
-  interface Some<A> extends STM<never, never, A> {
+  interface Some<A> extends STM<never, Cause.NoSuchElementException, A> {
     readonly _tag: "Some"
-  }
-  interface TracedOption<A> extends STM<never, Cause.NoSuchElementException, A> {
-    readonly _tag: "Traced"
   }
 }
 
