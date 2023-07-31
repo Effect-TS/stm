@@ -1,5 +1,15 @@
 # @effect/stm
 
+## 0.21.0
+
+### Minor Changes
+
+- [#114](https://github.com/Effect-TS/stm/pull/114) [`6b8b653`](https://github.com/Effect-TS/stm/commit/6b8b6531c646b692e20c0c53809fd4df38f31208) Thanks [@tim-smart](https://github.com/tim-smart)! - update dependencies
+
+### Patch Changes
+
+- [#112](https://github.com/Effect-TS/stm/pull/112) [`7bbbc69`](https://github.com/Effect-TS/stm/commit/7bbbc699f905de1596dd29e4c0ce9764ad32a45e) Thanks [@tim-smart](https://github.com/tim-smart)! - align Option sub-typing with Effect
+
 ## 0.20.0
 
 ### Minor Changes
