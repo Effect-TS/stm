@@ -50,20 +50,20 @@ class UnpureBarrier {
 }
 
 const chain = (depth: number) =>
-  (
-    next: (stm: STM.STM<never, never, number>) => STM.STM<never, never, number>
-  ): Effect.Effect<never, never, number> => {
-    const loop = (_n: number, _acc: STM.STM<never, never, number>): Effect.Effect<never, never, number> => {
-      let n = _n
-      let acc = _acc
-      while (n > 0) {
-        acc = next(acc)
-        n = n - 1
-      }
-      return STM.commit(acc)
+(
+  next: (stm: STM.STM<never, never, number>) => STM.STM<never, never, number>
+): Effect.Effect<never, never, number> => {
+  const loop = (_n: number, _acc: STM.STM<never, never, number>): Effect.Effect<never, never, number> => {
+    let n = _n
+    let acc = _acc
+    while (n > 0) {
+      acc = next(acc)
+      n = n - 1
     }
-    return loop(depth, STM.succeed(0))
+    return STM.commit(acc)
   }
+  return loop(depth, STM.succeed(0))
+}
 
 const chainError = (depth: number): Effect.Effect<never, number, never> => {
   const loop = (_n: number, _acc: STM.STM<never, number, never>): Effect.Effect<never, number, never> => {

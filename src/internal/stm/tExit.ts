@@ -161,7 +161,7 @@ export const succeed = <A>(value: A): TExit<never, A> => ({
 })
 
 /** @internal */
-export const retry: TExit<never, never> = ({
+export const retry: TExit<never, never> = {
   [TExitTypeId]: variance,
   _tag: OpCodes.OP_RETRY,
   [Hash.symbol](): number {
@@ -174,7 +174,7 @@ export const retry: TExit<never, never> = ({
   [Equal.symbol](that: unknown): boolean {
     return isExit(that) && isRetry(that)
   }
-})
+}
 
 /** @internal */
 export const unit = (): TExit<never, void> => succeed(undefined)

@@ -37,8 +37,8 @@ export const empty = <A>(order: Order.Order<A>): STM.STM<never, never, TPriority
   )
 
 /** @internal */
-export const fromIterable = <A>(order: Order.Order<A>) =>
-  (iterable: Iterable<A>): STM.STM<never, never, TPriorityQueue.TPriorityQueue<A>> =>
+export const fromIterable =
+  <A>(order: Order.Order<A>) => (iterable: Iterable<A>): STM.STM<never, never, TPriorityQueue.TPriorityQueue<A>> =>
     pipe(
       tRef.make(
         Array.from(iterable).reduce(
@@ -72,8 +72,9 @@ export const isNonEmpty = <A>(self: TPriorityQueue.TPriorityQueue<A>): STM.STM<n
   core.map(tRef.get(self.ref), SortedMap.isNonEmpty)
 
 /** @internal */
-export const make = <A>(order: Order.Order<A>) =>
-  (...elements: Array<A>): STM.STM<never, never, TPriorityQueue.TPriorityQueue<A>> => fromIterable(order)(elements)
+export const make =
+  <A>(order: Order.Order<A>) => (...elements: Array<A>): STM.STM<never, never, TPriorityQueue.TPriorityQueue<A>> =>
+    fromIterable(order)(elements)
 
 /** @internal */
 export const offer = dual<
