@@ -1,5 +1,17 @@
 # @effect/stm
 
+## 0.22.0
+
+### Minor Changes
+
+- [#118](https://github.com/Effect-TS/stm/pull/118) [`971fdc7`](https://github.com/Effect-TS/stm/commit/971fdc7e7d6eebe7474609df251d954352ad22b9) Thanks [@tim-smart](https://github.com/tim-smart)! - update dependencies
+
+### Patch Changes
+
+- [#115](https://github.com/Effect-TS/stm/pull/115) [`1bb8f48`](https://github.com/Effect-TS/stm/commit/1bb8f489e77c851cb17cdf899cea2ae0ed1245fc) Thanks [@tim-smart](https://github.com/tim-smart)! - update build tools
+
+- [#116](https://github.com/Effect-TS/stm/pull/116) [`7d89c79`](https://github.com/Effect-TS/stm/commit/7d89c79bfe6af48989cd1182d687b4378eb4858f) Thanks [@tim-smart](https://github.com/tim-smart)! - use peer deps for /data and /io
+
 ## 0.21.0
 
 ### Minor Changes
