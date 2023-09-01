@@ -64,6 +64,9 @@ Added in v1.0.0
 - [symbols](#symbols)
   - [TMapTypeId](#tmaptypeid)
   - [TMapTypeId (type alias)](#tmaptypeid-type-alias)
+- [utils](#utils)
+  - [TMap (namespace)](#tmap-namespace)
+    - [Variance (interface)](#variance-interface)
 
 ---
 
@@ -723,6 +726,27 @@ Added in v1.0.0
 
 ```ts
 export type TMapTypeId = typeof TMapTypeId
+```
+
+Added in v1.0.0
+
+# utils
+
+## TMap (namespace)
+
+Added in v1.0.0
+
+### Variance (interface)
+
+**Signature**
+
+```ts
+export interface Variance<K, V> {
+  readonly [TMapTypeId]: {
+    readonly _K: (_: never) => K
+    readonly _V: (_: never) => V
+  }
+}
 ```
 
 Added in v1.0.0

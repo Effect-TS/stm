@@ -1,6 +1,6 @@
 import * as Context from "@effect/data/Context"
-import * as Random from "@effect/data/DeterministicRandom"
 import { pipe } from "@effect/data/Function"
+import * as Random from "@effect/data/PCGRandom"
 import * as Layer from "@effect/io/Layer"
 import * as core from "@effect/stm/internal/core"
 import * as stm from "@effect/stm/internal/stm"

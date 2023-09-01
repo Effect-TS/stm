@@ -39,6 +39,9 @@ Added in v1.0.0
 - [symbols](#symbols)
   - [TPriorityQueueTypeId](#tpriorityqueuetypeid)
   - [TPriorityQueueTypeId (type alias)](#tpriorityqueuetypeid-type-alias)
+- [utils](#utils)
+  - [TPriorityQueue (namespace)](#tpriorityqueue-namespace)
+    - [Variance (interface)](#variance-interface)
 
 ---
 
@@ -322,6 +325,26 @@ Added in v1.0.0
 
 ```ts
 export type TPriorityQueueTypeId = typeof TPriorityQueueTypeId
+```
+
+Added in v1.0.0
+
+# utils
+
+## TPriorityQueue (namespace)
+
+Added in v1.0.0
+
+### Variance (interface)
+
+**Signature**
+
+```ts
+export interface Variance<A> {
+  readonly [TPriorityQueueTypeId]: {
+    readonly _A: (_: never) => A
+  }
+}
 ```
 
 Added in v1.0.0

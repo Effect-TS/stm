@@ -37,6 +37,9 @@ Added in v1.0.0
 - [symbols](#symbols)
   - [TReentrantLockTypeId](#treentrantlocktypeid)
   - [TReentrantLockTypeId (type alias)](#treentrantlocktypeid-type-alias)
+- [utils](#utils)
+  - [TReentrantLock (namespace)](#treentrantlock-namespace)
+    - [Proto (interface)](#proto-interface)
 
 ---
 
@@ -323,6 +326,24 @@ Added in v1.0.0
 
 ```ts
 export type TReentrantLockTypeId = typeof TReentrantLockTypeId
+```
+
+Added in v1.0.0
+
+# utils
+
+## TReentrantLock (namespace)
+
+Added in v1.0.0
+
+### Proto (interface)
+
+**Signature**
+
+```ts
+export interface Proto {
+  readonly [TReentrantLockTypeId]: TReentrantLockTypeId
+}
 ```
 
 Added in v1.0.0

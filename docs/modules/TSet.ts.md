@@ -52,6 +52,9 @@ Added in v1.0.0
 - [symbols](#symbols)
   - [TSetTypeId](#tsettypeid)
   - [TSetTypeId (type alias)](#tsettypeid-type-alias)
+- [utils](#utils)
+  - [TSet (namespace)](#tset-namespace)
+    - [Variance (interface)](#variance-interface)
 
 ---
 
@@ -512,6 +515,26 @@ Added in v1.0.0
 
 ```ts
 export type TSetTypeId = typeof TSetTypeId
+```
+
+Added in v1.0.0
+
+# utils
+
+## TSet (namespace)
+
+Added in v1.0.0
+
+### Variance (interface)
+
+**Signature**
+
+```ts
+export interface Variance<A> {
+  readonly [TSetTypeId]: {
+    readonly _A: (_: never) => A
+  }
+}
 ```
 
 Added in v1.0.0
