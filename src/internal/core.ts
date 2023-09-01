@@ -9,7 +9,7 @@ import { pipeArguments } from "@effect/data/Pipeable"
 import * as Cause from "@effect/io/Cause"
 import * as Effect from "@effect/io/Effect"
 import * as Exit from "@effect/io/Exit"
-import type * as FiberId from "@effect/io/Fiber/Id"
+import type * as FiberId from "@effect/io/FiberId"
 import * as FiberRef from "@effect/io/FiberRef"
 import { withFiberRuntime } from "@effect/io/internal/core"
 import { OP_COMMIT } from "@effect/io/internal/opCodes/effect"
@@ -464,7 +464,7 @@ export class STMDriver<R, E, A> {
               break
             }
             case "Left": {
-              curr = fail((current as any)["i0"]) as Primitive
+              curr = fail(current.left) as Primitive
               break
             }
             case "None": {
@@ -472,11 +472,11 @@ export class STMDriver<R, E, A> {
               break
             }
             case "Right": {
-              curr = succeed((current as any)["i0"]) as Primitive
+              curr = succeed(current.right) as Primitive
               break
             }
             case "Some": {
-              curr = succeed((current as any)["i0"]) as Primitive
+              curr = succeed(current.value) as Primitive
               break
             }
             case "Commit": {

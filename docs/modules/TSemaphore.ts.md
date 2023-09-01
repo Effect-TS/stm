@@ -32,6 +32,9 @@ Added in v1.0.0
   - [TSemaphoreTypeId (type alias)](#tsemaphoretypeid-type-alias)
 - [unsafe](#unsafe)
   - [unsafeMake](#unsafemake)
+- [utils](#utils)
+  - [TSemaphore (namespace)](#tsemaphore-namespace)
+    - [Proto (interface)](#proto-interface)
 
 ---
 
@@ -198,6 +201,24 @@ Added in v1.0.0
 
 ```ts
 export declare const unsafeMake: (permits: number) => TSemaphore
+```
+
+Added in v1.0.0
+
+# utils
+
+## TSemaphore (namespace)
+
+Added in v1.0.0
+
+### Proto (interface)
+
+**Signature**
+
+```ts
+export interface Proto {
+  readonly [TSemaphoreTypeId]: TSemaphoreTypeId
+}
 ```
 
 Added in v1.0.0

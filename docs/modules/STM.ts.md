@@ -157,6 +157,12 @@ Added in v1.0.0
   - [partition](#partition)
 - [type lambdas](#type-lambdas)
   - [STMTypeLambda (interface)](#stmtypelambda-interface)
+- [utils](#utils)
+  - [All (namespace)](#all-namespace)
+    - [Signature (interface)](#signature-interface)
+    - [Options (type alias)](#options-type-alias)
+  - [STM (namespace)](#stm-namespace)
+    - [Variance (interface)](#variance-interface)
 - [zipping](#zipping)
   - [zip](#zip)
   - [zipLeft](#zipleft)
@@ -741,7 +747,7 @@ exceptions into typed failed effects.
 **Signature**
 
 ```ts
-export declare const try: { <A>(try_: LazyArg<A>): STM<never, unknown, A>; <A, E>(options: { readonly try: LazyArg<A>; readonly catch: (u: unknown) => E; }): STM<never, E, A>; }
+export declare const try: { <A, E>(options: { readonly try: LazyArg<A>; readonly catch: (u: unknown) => E; }): STM<never, E, A>; <A>(try_: LazyArg<A>): STM<never, unknown, A>; }
 ```
 
 Added in v1.0.0
@@ -2511,6 +2517,63 @@ Added in v1.0.0
 ```ts
 export interface STMTypeLambda extends TypeLambda {
   readonly type: STM<this['Out2'], this['Out1'], this['Target']>
+}
+```
+
+Added in v1.0.0
+
+# utils
+
+## All (namespace)
+
+Added in v1.0.0
+
+### Signature (interface)
+
+**Signature**
+
+```ts
+export interface Signature {
+  <Arg extends ReadonlyArray<STMAny> | Iterable<STMAny> | Record<string, STMAny>, O extends Options>(
+    arg: Narrow<Arg>,
+    options?: O
+  ): [Arg] extends [ReadonlyArray<STMAny>]
+    ? ReturnTuple<Arg, IsDiscard<O>>
+    : [Arg] extends [Iterable<STMAny>]
+    ? ReturnIterable<Arg, IsDiscard<O>>
+    : [Arg] extends [Record<string, STMAny>]
+    ? ReturnObject<Arg, IsDiscard<O>>
+    : never
+}
+```
+
+Added in v1.0.0
+
+### Options (type alias)
+
+**Signature**
+
+```ts
+export type Options = { readonly discard?: boolean }
+```
+
+Added in v1.0.0
+
+## STM (namespace)
+
+Added in v1.0.0
+
+### Variance (interface)
+
+**Signature**
+
+```ts
+export interface Variance<R, E, A> {
+  readonly [STMTypeId]: {
+    readonly _R: (_: never) => R
+    readonly _E: (_: never) => E
+    readonly _A: (_: never) => A
+  }
 }
 ```
 

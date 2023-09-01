@@ -12,7 +12,7 @@ import type { Predicate, Refinement } from "@effect/data/Predicate"
 import type * as Unify from "@effect/data/Unify"
 import * as Cause from "@effect/io/Cause"
 import type * as Effect from "@effect/io/Effect"
-import type * as FiberId from "@effect/io/Fiber/Id"
+import type * as FiberId from "@effect/io/FiberId"
 import * as core from "@effect/stm/internal/core"
 import * as stm from "@effect/stm/internal/stm"
 
@@ -194,9 +194,9 @@ export const acquireUseRelease: {
  * @category utils
  */
 export declare namespace All {
-  export type STMAny = STM<any, any, any>
+  type STMAny = STM<any, any, any>
 
-  export type ReturnTuple<T extends ReadonlyArray<STM<any, any, any>>, Discard extends boolean> = STM<
+  type ReturnTuple<T extends ReadonlyArray<STM<any, any, any>>, Discard extends boolean> = STM<
     T[number] extends never ? never
       : [T[number]] extends [{ [STMTypeId]: { _R: (_: never) => infer R } }] ? R
       : never,
@@ -208,10 +208,10 @@ export declare namespace All {
       : { -readonly [K in keyof T]: [T[K]] extends [STM<infer _R, infer _E, infer A>] ? A : never }
   > extends infer X ? X : never
 
-  export type ReturnIterable<T extends Iterable<STMAny>, Discard extends boolean> = [T] extends
+  type ReturnIterable<T extends Iterable<STMAny>, Discard extends boolean> = [T] extends
     [Iterable<STM.Variance<infer R, infer E, infer A>>] ? STM<R, E, Discard extends true ? void : Array<A>> : never
 
-  export type ReturnObject<T extends Record<string, STMAny>, Discard extends boolean> = STM<
+  type ReturnObject<T extends Record<string, STMAny>, Discard extends boolean> = STM<
     keyof T extends never ? never
       : [T[keyof T]] extends [{ [STMTypeId]: { _R: (_: never) => infer R } }] ? R
       : never,
@@ -222,10 +222,18 @@ export declare namespace All {
       : { -readonly [K in keyof T]: [T[K]] extends [STM.Variance<infer _R, infer _E, infer A>] ? A : never }
   >
 
+  /**
+   * @since 1.0.0
+   * @category utils
+   */
   export type Options = { readonly discard?: boolean }
   type IsDiscard<A> = [Extract<A, { readonly discard: true }>] extends [never] ? false : true
   type Narrow<A> = (A extends [] ? [] : never) | A
 
+  /**
+   * @since 1.0.0
+   * @category utils
+   */
   export interface Signature {
     <Arg extends ReadonlyArray<STMAny> | Iterable<STMAny> | Record<string, STMAny>, O extends Options>(
       arg: Narrow<Arg>,

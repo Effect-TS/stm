@@ -62,6 +62,9 @@ Added in v1.0.0
 - [symbols](#symbols)
   - [TArrayTypeId](#tarraytypeid)
   - [TArrayTypeId (type alias)](#tarraytypeid-type-alias)
+- [utils](#utils)
+  - [TArray (namespace)](#tarray-namespace)
+    - [Variance (interface)](#variance-interface)
 
 ---
 
@@ -703,6 +706,26 @@ Added in v1.0.0
 
 ```ts
 export type TArrayTypeId = typeof TArrayTypeId
+```
+
+Added in v1.0.0
+
+# utils
+
+## TArray (namespace)
+
+Added in v1.0.0
+
+### Variance (interface)
+
+**Signature**
+
+```ts
+export interface Variance<A> {
+  readonly [TArrayTypeId]: {
+    readonly _A: (_: never) => A
+  }
+}
 ```
 
 Added in v1.0.0

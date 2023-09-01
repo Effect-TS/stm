@@ -26,6 +26,9 @@ Added in v1.0.0
 - [symbols](#symbols)
   - [TDeferredTypeId](#tdeferredtypeid)
   - [TDeferredTypeId (type alias)](#tdeferredtypeid-type-alias)
+- [utils](#utils)
+  - [TDeferred (namespace)](#tdeferred-namespace)
+    - [Variance (interface)](#variance-interface)
 
 ---
 
@@ -134,6 +137,27 @@ Added in v1.0.0
 
 ```ts
 export type TDeferredTypeId = typeof TDeferredTypeId
+```
+
+Added in v1.0.0
+
+# utils
+
+## TDeferred (namespace)
+
+Added in v1.0.0
+
+### Variance (interface)
+
+**Signature**
+
+```ts
+export interface Variance<E, A> {
+  readonly [TDeferredTypeId]: {
+    readonly _E: (_: never) => E
+    readonly _A: (_: never) => A
+  }
+}
 ```
 
 Added in v1.0.0

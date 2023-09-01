@@ -51,6 +51,10 @@ Added in v1.0.0
   - [TDequeueTypeId (type alias)](#tdequeuetypeid-type-alias)
   - [TEnqueueTypeId](#tenqueuetypeid)
   - [TEnqueueTypeId (type alias)](#tenqueuetypeid-type-alias)
+- [utils](#utils)
+  - [TQueue (namespace)](#tqueue-namespace)
+    - [TDequeueVariance (interface)](#tdequeuevariance-interface)
+    - [TEnqueueVariance (interface)](#tenqueuevariance-interface)
 
 ---
 
@@ -593,6 +597,40 @@ Added in v1.0.0
 
 ```ts
 export type TEnqueueTypeId = typeof TEnqueueTypeId
+```
+
+Added in v1.0.0
+
+# utils
+
+## TQueue (namespace)
+
+Added in v1.0.0
+
+### TDequeueVariance (interface)
+
+**Signature**
+
+```ts
+export interface TDequeueVariance<A> {
+  readonly [TDequeueTypeId]: {
+    readonly _Out: (_: never) => A
+  }
+}
+```
+
+Added in v1.0.0
+
+### TEnqueueVariance (interface)
+
+**Signature**
+
+```ts
+export interface TEnqueueVariance<A> {
+  readonly [TEnqueueTypeId]: {
+    readonly _In: (_: A) => void
+  }
+}
 ```
 
 Added in v1.0.0

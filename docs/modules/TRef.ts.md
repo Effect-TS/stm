@@ -32,6 +32,9 @@ Added in v1.0.0
 - [symbols](#symbols)
   - [TRefTypeId](#treftypeid)
   - [TRefTypeId (type alias)](#treftypeid-type-alias)
+- [utils](#utils)
+  - [TRef (namespace)](#tref-namespace)
+    - [Variance (interface)](#variance-interface)
 
 ---
 
@@ -245,6 +248,26 @@ Added in v1.0.0
 
 ```ts
 export type TRefTypeId = typeof TRefTypeId
+```
+
+Added in v1.0.0
+
+# utils
+
+## TRef (namespace)
+
+Added in v1.0.0
+
+### Variance (interface)
+
+**Signature**
+
+```ts
+export interface Variance<A> {
+  readonly [TRefTypeId]: {
+    readonly _A: (_: never) => A
+  }
+}
 ```
 
 Added in v1.0.0
