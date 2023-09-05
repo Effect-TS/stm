@@ -1,5 +1,11 @@
 # @effect/stm
 
+## 0.24.0
+
+### Minor Changes
+
+- [#122](https://github.com/Effect-TS/stm/pull/122) [`dccf3c4`](https://github.com/Effect-TS/stm/commit/dccf3c4046cbbaec590e76b137157b6587048b43) Thanks [@tim-smart](https://github.com/tim-smart)! - update /io
+
 ## 0.23.0
 
 ### Minor Changes
