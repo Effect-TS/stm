@@ -39,6 +39,7 @@ export interface TRef<A> extends TRef.Variance<A> {
    */
   modify<B>(f: (a: A) => readonly [B, A]): STM.STM<never, never, B>
 }
+
 /**
  * @internal
  * @since 1.0.0

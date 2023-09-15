@@ -30,7 +30,9 @@ export type TSubscriptionRefTypeId = typeof TSubscriptionRefTypeId
 export interface TSubscriptionRef<A> extends TSubscriptionRef.Variance<A> {
   /** @internal */
   readonly ref: TRef.TRef<A>
-  /** @internal */
+  /**
+   * A hub to subscribe for changes transactionally
+   */
   readonly hub: THub.THub<A>
   /**
    * A stream containing the current value of the `TRef` as well as all comitted

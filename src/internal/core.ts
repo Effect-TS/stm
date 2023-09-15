@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unsafe-declaration-merging */
 import * as Context from "@effect/data/Context"
 import * as Either from "@effect/data/Either"
 import * as Equal from "@effect/data/Equal"
@@ -138,7 +139,7 @@ const stmVariance = {
   _A: (_: never) => _
 }
 
-/** @internal */
+interface STMPrimitive extends Effect.Effect<any, any, any> {}
 class STMPrimitive implements STM.STM<any, any, any> {
   public _tag = OP_COMMIT
   public i1: any = undefined
@@ -732,7 +733,7 @@ export const orTry = dual<
 })
 
 /** @internal */
-export const retry: STM.STM<never, never, never> = new STMPrimitive(OpCodes.OP_RETRY)
+export const retry: STM.STM<never, never, never> = new STMPrimitive(OpCodes.OP_RETRY) as any
 
 /** @internal */
 export const succeed = <A>(value: A): STM.STM<never, never, A> => {
