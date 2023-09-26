@@ -1,5 +1,11 @@
 # @effect/stm
 
+## 0.25.0
+
+### Minor Changes
+
+- [#126](https://github.com/Effect-TS/stm/pull/126) [`4ebeb44`](https://github.com/Effect-TS/stm/commit/4ebeb44755d87a2cbfcb1e23e2493498c5fc4246) Thanks [@tim-smart](https://github.com/tim-smart)! - update dependencies
+
 ## 0.24.0
 
 ### Minor Changes
