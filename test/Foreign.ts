@@ -17,7 +17,7 @@ describe.concurrent("Foreign", () => {
       assert.deepEqual(result, 10)
     }))
   it.effect("Unify", () =>
-    Effect.provideSomeLayer(
+    Effect.provide(
       STM.gen(function*($) {
         const unifiedSTM = unify((yield* $(TRandom.nextInt)) > 0 ? STM.succeed(0) : STM.fail(1))
         const unifiedEither = unify((yield* $(TRandom.nextInt)) > 0 ? Either.right(0) : Either.left(1))

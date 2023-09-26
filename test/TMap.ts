@@ -493,6 +493,6 @@ describe.concurrent("TMap", () => {
           ), { discard: true }),
         Effect.exit
       ))
-      assert.deepStrictEqual(Exit.unannotate(result), Exit.unit)
+      assert.deepStrictEqual(result, Exit.unit)
     }))
 })
