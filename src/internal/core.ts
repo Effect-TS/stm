@@ -4,6 +4,7 @@ import * as Equal from "@effect/data/Equal"
 import type { LazyArg } from "@effect/data/Function"
 import { constVoid, dual, pipe } from "@effect/data/Function"
 import * as Hash from "@effect/data/Hash"
+import * as Inspectable from "@effect/data/Inspectable"
 import type * as Option from "@effect/data/Option"
 import { pipeArguments } from "@effect/data/Pipeable"
 import * as Cause from "@effect/io/Cause"
@@ -142,17 +143,31 @@ const stmVariance = {
 class STMPrimitive implements STM.STM<any, any, any> {
   public _tag = OP_COMMIT
   public i1: any = undefined
-  public i2: any = undefined;
-  [Effect.EffectTypeId] = stmVariance
+  public i2: any = undefined
+  readonly [Effect.EffectTypeId]: any
   get [STMTypeId]() {
     return stmVariance
   }
-  constructor(readonly i0: Primitive["i0"]) {}
+  constructor(readonly i0: Primitive["i0"]) {
+    this[Effect.EffectTypeId] = stmVariance
+  }
   [Equal.symbol](this: {}, that: unknown) {
     return this === that
   }
   [Hash.symbol](this: {}) {
     return Hash.random(this)
+  }
+  toJSON() {
+    return {
+      _id: "STM",
+      i0: this.i0
+    }
+  }
+  toString() {
+    return Inspectable.toString(this)
+  }
+  [Inspectable.NodeInspectSymbol]() {
+    return this.toJSON()
   }
   commit(this: STM.STM<any, any, any>): Effect.Effect<any, any, any> {
     return unsafeAtomically(this, constVoid, constVoid)

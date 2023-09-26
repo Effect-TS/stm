@@ -142,7 +142,7 @@ const program = Effect.gen(function*($) {
 
 pipe(
   program,
-  Effect.provideSomeLayer(
+  Effect.provide(
     Layer.mergeAll(
       LiveCircuitBreakerAWS,
       LiveCircuitBreakerGCE
